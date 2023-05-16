@@ -170,7 +170,7 @@ def task_convert_msh_xdmf():
     }
 
 
-@create_after(executed=["convert_msh_xdmf", "generate_gcode"])
+@create_after(executed="convert_msh_xdmf")
 def task_simulation():
     """run Fenics simulation"""
     # OUTPUT folder already existend
