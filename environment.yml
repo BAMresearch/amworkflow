@@ -1,0 +1,21 @@
+name: amworkflow
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - matplotlib
+  - scipy
+  - doit
+  - ipython
+  - meshio
+  - h5py
+  - pytest
+  - fenics-dolfinx
+  - mpich
+  - pyvista
+  - pandas
+  - pygraphviz
+  - pip:
+    - gmsh==4.11.1
+    - doit-graph
