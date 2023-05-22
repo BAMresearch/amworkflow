@@ -6,7 +6,7 @@ def environment_init() -> bool:
     return True
 
 def run_gui() -> str:
-    return "python amworkflow/main2.py"
+    return "python amworkflow/src/main2.py"
 # Define tasks here
 def task_start() -> None:
     return {
