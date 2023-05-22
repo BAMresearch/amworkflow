@@ -16,6 +16,7 @@ dependencies:
   - pyvista
   - pandas
   - pygraphviz
+  - pythonocc-core=7.7.0
   - pip:
     - gmsh==4.11.1
     - doit-graph

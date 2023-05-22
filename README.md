@@ -18,3 +18,7 @@ This repository contains a module for creating automated workflows in the contex
 ## Conda
 ```conda env create -f environment.yml```
 
+## How to use
+for now, using
+``` doit start ```
+will run the GUI interface, displaying geometries and storing them sequentially. These functions of the command will be altered in the future developments.
