@@ -4,16 +4,6 @@ from src.infrastructure.database.Engine.engine import session
 from sqlalchemy import insert
 from sqlalchemy.sql.expression import select
 
-data_input = {
-    "withCurve": True,
-    "length": 10,
-    "width": 8,
-    "height": 6,
-    "radius": 2,
-    "linear_deflection": 0.001,
-    "angular_deflection": 0.01 
-}
-
 def insert_data(table: callable,
                 data: dict, 
                 isbatch: bool) -> None:
