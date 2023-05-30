@@ -1,0 +1,63 @@
+from uuid import uuid4
+from src.infrastructure.database.models.model import STLFile
+from src.infrastructure.database.Engine.engine import session
+from sqlalchemy import insert
+from sqlalchemy.sql.expression import select
+
+data_input = {
+    "withCurve": True,
+    "length": 10,
+    "width": 8,
+    "height": 6,
+    "radius": 2,
+    "linear_deflection": 0.001,
+    "angular_deflection": 0.01 
+}
+
+def insert_data(table: callable,
+                data: dict, 
+                isbatch: bool) -> None:
+    session.new
+    if not isbatch:
+        transaction = table(**data)
+        session.add(transaction)
+    else:
+        for sub_data in data:
+            transaction = table(**sub_data)
+            session.add(transaction)  
+    session.commit()
+
+def _query_data(table: callable,
+               by_hash: str | list):
+    exec_result = session.execute(select(table).filter_by(stl_id = by_hash)).scalar_one()
+    return exec_result
+
+def update_data(table: callable,
+                by_hash: str | list,
+                target_column: str,
+                new_value: int | str | float | bool,
+                isbatch: bool) -> None:
+    session.new
+    if not isbatch:
+        transaction = _query_data(table, by_hash)
+        setattr(transaction, target_column, new_value)
+    else:
+        for hash in by_hash:
+            transaction = _query_data(table, hash)
+            setattr(transaction, target_column, new_value)
+    session.commit()
+
+def delete_data(table: callable,
+                by_hash: str | list,
+                isbatch: bool,
+                column: str | list = None) -> None:
+    session.new
+    if not isbatch:
+        transaction = session.get(table, by_hash)
+        session.delete(transaction)
+    else:
+        for hash in by_hash:
+            transaction = session.get(table, hash)
+            session.delete(transaction)
+    session.commit()
+

@@ -1,0 +1,25 @@
+batch_parameter:
+  isbatch: True
+geometry_parameter:
+  with_curve: False
+  length:
+    length: 5
+    endpoint: 10
+    num: 3
+  height:
+    length: 4.3
+    endpoint: 6.6
+    num: 5
+  width:
+    length: 9.2
+    endpoint: 19.1
+    num: 8
+  curve:
+    radius: 4
+    endpoint: 17
+    num: 5
+stl_parameter:
+  linear_deflection: 0.001
+  angular_deflection: 0.1
+
+  

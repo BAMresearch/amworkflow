@@ -170,3 +170,10 @@ examples
 
 # Doit temp files
 *.doit.*
+
+# database file
+amworkflow/src/infrastructure/database/files/test.db
+
+#testfile
+test_main
+
