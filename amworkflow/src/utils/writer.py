@@ -4,7 +4,7 @@ import os
 import sys
 import copy
 from OCC.Core.StlAPI import StlAPI_Writer
-from OCC.Extend.DataExchange import write_stl_file
+from OCC.Extend.DataExchange import write_stl_file, write_step_file, read_stl_file
 from src.utils.sanity_check import path_append_check
 path_append_check()
 from src.constants.data_info_format import stl_info
@@ -27,7 +27,7 @@ def stl_writer(item: any, item_name: str, linear_deflection: float = 0.001, angu
             if status:
                 logging.info("Done!")
         case 1:
-            stl_output_dir = Directory.SYS_PATH.value + "/stlOutput/"+"/testbatch/"
+            stl_output_dir = Directory.TEST_OUTPUT_PATH.value
             try:
                 os.path.isdir(stl_output_dir)
             except:
@@ -36,6 +36,10 @@ def stl_writer(item: any, item_name: str, linear_deflection: float = 0.001, angu
                            stl_output_dir+item_name, mode="binary", linear_deflection = linear_deflection, 
                            angular_deflection = angular_deflection,
             )
+
+def step_writer(item: any, filename: str):
+    result = write_step_file(a_shape= item,
+                             filename= filename)
 
 def namer(name_type: str,
           with_curve: bool = None,

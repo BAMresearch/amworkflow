@@ -6,7 +6,8 @@ from src.utils.parser import yaml_parser
 from src.utils.permutator import simple_permutator
 from src.infrastructure.database.cruds.crud import insert_data
 from src.infrastructure.database.models.model import STLFile
-
+from src.utils.sanity_check import dimension_check
+from src.utils.download import downloader
 import copy
 
 class CreateWall(object):
@@ -15,6 +16,7 @@ class CreateWall(object):
         self.h: float
         self.w: float
         self.r: float
+        self.a: float
         self.isbatch: bool
         self.withcurve: bool
         self.l_ndp: float
@@ -33,6 +35,8 @@ class CreateWall(object):
         self.hex_name: str
         self.hex_name_list: list
         self.db_data: list
+        self.geom_store: list
+        self.name_store: list
     
     def data_assign(self) -> None:
         input_data = yaml_parser(self.yml_dir, self.yml_name)
@@ -42,10 +46,11 @@ class CreateWall(object):
         self.r = input_data[M.RADIUS.value]
         self.start_vector = np.array([self.l, self.w, self.h, self.r]).astype(np.float64)
         self.isbatch = input_data[M.ISBATCH.value]
-        self.withcurve = input_data[M.WITHCURVE.value]
+        self.withcurve = False
         self.lin_deflect = input_data[M.LIN_DEFLECT.value]
         self.ang_deflect = input_data[M.ANG_DEFLECT.value]
         self.db_data = [self.withcurve, self.lin_deflect, self.ang_deflect]
+        self.batch_num = 0
         if self.isbatch == True:
             self.batch_num = batch_num_creator()
             self.l_ndp = input_data[M.L_ENDPOINT.value]
@@ -62,9 +67,10 @@ class CreateWall(object):
     def create_wall(self):
         CreateWall.data_assign(self)
         if self.isbatch == True:
-            geom_store = []
-            name_store = []
+            self.geom_store = []
+            self.name_store = []
             permutation = CreateWall.permutator(self)
+            dimension_check(permutation)
             db_data_collection = []
             is_start_vector = False
             for iter_ind, iter_perm in enumerate(permutation):
@@ -74,8 +80,8 @@ class CreateWall(object):
                                 width=iter_perm[1],
                                 height=iter_perm[2],
                                 radius=iter_perm[3])
-                        geom_store.append(tp_box)
-                        name_store.append(np.copy(iter_perm)) 
+                        self.geom_store.append(tp_box)
+                        self.name_store.append(np.copy(iter_perm)) 
                         is_start_vector = True
                     else:
                         pass
@@ -84,12 +90,17 @@ class CreateWall(object):
                                 width=iter_perm[1],
                                 height=iter_perm[2],
                                 radius=iter_perm[3])
-                    geom_store.append(tp_box)     
-                    name_store.append(np.copy(iter_perm))         
-            for ind, item in enumerate(geom_store):
+                    self.geom_store.append(tp_box)     
+                    self.name_store.append(np.copy(iter_perm))         
+            for ind, item in enumerate(self.geom_store):
+                if permutation[ind][3] == None or 0:
+                    self.withcurve = False
+                else:
+                    self.withcurve = True
+                    self.db_data[0] = self.withcurve
                 opt_name = namer(name_type="dimension-batch",
                                  with_curve=self.withcurve,
-                                 dim_vector=name_store[ind],
+                                 dim_vector=self.name_store[ind],
                                  batch_num=self.batch_num) + ".stl"
                 opt_name_hex = namer("hex")
                 stl_writer(item=item,
@@ -97,7 +108,7 @@ class CreateWall(object):
                         linear_deflection= self.lin_deflect,
                         angular_deflection= self.ang_deflect)
                 self.db_data.append(self.batch_num)
-                self.db_data += np.ndarray.tolist(name_store[ind])
+                self.db_data += np.ndarray.tolist(self.name_store[ind])
                 self.db_data.append(opt_name)
                 self.db_data.append(opt_name_hex)
                 db_data_collection.append(copy.copy(self.db_data))
@@ -110,7 +121,9 @@ class CreateWall(object):
             opt_name = namer(name_type="dimension",
                              with_curve=self.withcurve,
                              dim_vector=self.start_vector) + ".stl"
+            self.geom_store.append(tp_box)
             opt_name_hex = namer("hex")
+            self.hex_name = opt_name_hex
             stl_writer(item=tp_box,
                        item_name=opt_name_hex + ".stl",
                        linear_deflection=self.lin_deflect,
@@ -142,6 +155,11 @@ class CreateWall(object):
     def db_data_renew(self):
         self.db_data = [self.withcurve, self.lin_deflect,self.ang_deflect]
     
+    def download(self):
+        if self.isbatch:
+            downloader(batch_num = self.batch_num)
+        else:
+            downloader(hashname=self.hex_name)
 
     
         

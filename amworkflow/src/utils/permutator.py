@@ -1,8 +1,8 @@
 import numpy as np
 
-st_pt = np.array([10, 8, 6, 4])
-nd_pt = np.array([20, 16, 12, 8])
-num = [20, 24, 30, 40]
+# st_pt = np.array([10, 8, 6, 4])
+# nd_pt = np.array([20, 16, 12, 8])
+# num = [20, 24, 30, 40]
 def simple_permutator(start_point: np.ndarray,
                       end_point: np.ndarray,
                       num: np.ndarray) -> np.ndarray:

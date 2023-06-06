@@ -1,72 +1,60 @@
 from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox
-from OCC.Core.TopoDS import TopoDS_Shape
-from OCC.Core.TColgp import TColgp_Array1OfPnt
-from OCC.Core.gp import gp_Pnt, gp_Vec
-from OCC.Core.GeomAPI import GeomAPI_PointsToBSpline
+from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Wire
+from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Ax2, gp_Dir
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace
 from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakePrism, BRepPrimAPI_MakeCylinder
-from OCC.Core.BRepFilletAPI import BRepFilletAPI_MakeFillet
+from src.geometries.operator import geom_copy, translate, reverse
+from src.geometries.builder import geometry_builder
+
 from OCC.Core.GC import GC_MakeArcOfCircle
-# from OCC.Display.backend import load_backend
-# load_backend('qt-pyqt5')  # Specify the backend here (e.g., 'qt-pyqt5', 'qt-pyside2', etc.)
-from OCC.Display.SimpleGui import init_display
-import math
+import math as m
 
 
-def create_box(length, width, height, radius) -> TopoDS_Shape:
-    return BRepPrimAPI_MakeBox(length, width, height).Shape()
+def create_box(length: float, 
+               width: float, 
+               height: float, 
+               radius: float = None,
+               alpha: float = None) -> TopoDS_Shape:
+    if (radius == None) | (radius == 0):
+        return BRepPrimAPI_MakeBox(length, width, height).Shape()
+    else:
+        if alpha == None:
+            alpha = (length / radius)% (m.pi * 2)
+        R = radius + (width / 2)
+        r = radius - (width / 2)
+        print(R - r * m.cos(alpha))
+        p1 = gp_Pnt(0, 0, 0)
+        p1_2 = gp_Pnt((1 - m.cos(0.5 * alpha)) * R, R * m.sin(0.5 * alpha), 0)
+        p2 = gp_Pnt((1 - m.cos(alpha)) * R, R * m.sin(alpha), 0)
+        p3 = gp_Pnt(R - r * m.cos(alpha), r * m.sin(alpha), 0)
+        p3_4 = gp_Pnt(R - r * m.cos(0.1 * alpha), r * m.sin(0.1 * alpha), 0)
+        p4 = gp_Pnt(width, 0, 0)
+        arch1_2 = GC_MakeArcOfCircle(p1, p1_2, p2)
+        arch3_4 = GC_MakeArcOfCircle(p3, p3_4, p4)
+        arch_edge1_2 = BRepBuilderAPI_MakeEdge(arch1_2.Value()).Edge()
+        arch_edge3_4 = BRepBuilderAPI_MakeEdge(arch3_4.Value()).Edge()
+        edge2 = BRepBuilderAPI_MakeEdge(p2, p3).Edge()
+        edge4 = BRepBuilderAPI_MakeEdge(p4, p1).Edge()
+        wire = BRepBuilderAPI_MakeWire(arch_edge1_2, edge2, arch_edge3_4, edge4).Wire()
+        wire_top = geom_copy(wire)
+        translate(wire_top, [0, 0, height])
+        prism = create_prism(wire, [0, 0, height], True).Shape()
+        bottom_face = create_face(wire)
+        top_face = reverse(create_face(wire_top))
+        component = [prism, top_face, bottom_face]
+        curve_box = geometry_builder(component)
+        return curve_box
 
 def create_cylinder(radius: float, length: float) -> TopoDS_Shape:
     return BRepPrimAPI_MakeCylinder(radius, length).Shape()
 
-def create_prism():
-    array = TColgp_Array1OfPnt(1, 5)
-    array.SetValue(1, gp_Pnt(0, 0, 0))
-    array.SetValue(2, gp_Pnt(0, 2, 0))
-    array.SetValue(3, gp_Pnt(2, 2, 0))
-    array.SetValue(4, gp_Pnt(4, 0, 0))
-    array.SetValue(5, gp_Pnt(0, 0, 0))
-    bspline = GeomAPI_PointsToBSpline(array).Curve()
-    profile = BRepBuilderAPI_MakeEdge(bspline).Edge()
-    starting_point = gp_Pnt(0.0, 0.0, 0.0)
-    end_point = gp_Pnt(0.0, 0.0, 6.0)
-    vec = gp_Vec(starting_point, end_point)
-    path = BRepBuilderAPI_MakeEdge(starting_point, end_point).Edge()
-    return BRepPrimAPI_MakePrism(profile, vec).Shape()
+def create_prism(wire: TopoDS_Wire,
+                 vector: list,
+                 copy: bool):
+    return BRepPrimAPI_MakePrism(wire, gp_Vec(vector[0],
+                                              vector[1],
+                                              vector[2]),
+                                 copy)
 
-def create_sweep():
-    radius = 5.0  # Radius of the arc
-
-    # Define the profile curve
-    profile_center = gp_Pnt(0, 0, 0)
-    profile_radius = radius
-    profile_start_angle = 0  # Starting angle of the arc
-    profile_end_angle = math.pi/2  # Ending angle of the arc
-
-    profile_arc = GC_MakeArcOfCircle(profile_center, profile_radius, profile_start_angle, profile_end_angle)
-
-    profile_wire_builder = BRepBuilderAPI_MakeWire()
-    profile_wire_builder.Add(profile_arc.Value())
-
-    profile_wire = profile_wire_builder.Wire()
-
-    # Define the path curve
-    path_radius = radius  # Radius of the path
-    path_center = gp_Pnt(0, 0, 0)
-
-    path_arc = GC_MakeArcOfCircle(path_center, path_radius, 0, 2 * math.pi)
-
-    path_wire_builder = BRepBuilderAPI_MakeWire()
-    path_wire_builder.Add(path_arc.Value())
-
-    path_wire = path_wire_builder.Wire()
-
-    # Create the sweep
-    sweep_builder = BRepBuilderAPI_MakeFace(profile_wire, True)
-    sweep_shape = sweep_builder.Shape()
-
-    swept_shape_builder = BRepPrimAPI_MakePrism(sweep_shape, path_wire)
-    sweep_shape = swept_shape_builder.Shape()
-    display, start_display, add_menu, add_function_to_menu = init_display()
-    display.DisplayShape(sweep_shape)
-    start_display()
+def create_face(wire: TopoDS_Wire):
+    return BRepBuilderAPI_MakeFace(wire).Face()

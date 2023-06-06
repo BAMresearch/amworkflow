@@ -18,8 +18,16 @@ def insert_data(table: callable,
     session.commit()
 
 def _query_data(table: callable,
-               by_hash: str | list):
-    exec_result = session.execute(select(table).filter_by(stl_id = by_hash)).scalar_one()
+               by_hash: str):
+    exec_result = session.execute(select(table).filter_by(stl_hashname = by_hash)).scalar_one()
+    return exec_result
+
+def query_multi_data(table: callable,
+                     by_batch_num: str):
+    if by_batch_num != None:
+        exec_result = session.execute(select(table).filter_by(batch_num = by_batch_num))
+    else:
+        exec_result = session.execute(select(table))
     return exec_result
 
 def update_data(table: callable,
@@ -50,4 +58,3 @@ def delete_data(table: callable,
             transaction = session.get(table, hash)
             session.delete(transaction)
     session.commit()
-

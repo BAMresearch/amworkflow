@@ -9,6 +9,7 @@ class Directory(Enum):
     DATABASE_FILE_PATH = op.dirname(op.dirname(__file__)) + r'/infrastructure/database/files/'
     USECASE_PATH = SYS_PATH + r'/usecases'
     USECASE_PATH_PARAMWALL_PATH = USECASE_PATH + r'/param_wall/'
+    TEST_OUTPUT_PATH = SYS_PATH + "/stlOutput/"+"testbatch/"
 
 class Mapper(Enum):
     LENGTH = 'geometry_parameter:length:length'
