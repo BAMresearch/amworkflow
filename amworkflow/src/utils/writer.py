@@ -90,3 +90,8 @@ def data_input(data: np.ndarray, input_type: str) -> dict:
             
 
     return input_format
+
+def vtk_writer(item: any,
+               dirname:  str,
+               filename: str) -> None:
+    item.write(dirname + filename)
