@@ -5,7 +5,7 @@ import inspect
 from src.constants.enums import InputFormat, Directory
 
 def db_calib():
-    tables = [model.STLFile]
+    tables = [model.GeometryFile]
     hashname_list = []
     file_lib = Directory.TEST_OUTPUT_PATH.value
     filename_list = [i.replace(".stl", "") for i in os.listdir(file_lib)]

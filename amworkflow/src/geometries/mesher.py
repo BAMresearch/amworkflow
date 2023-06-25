@@ -1,31 +1,46 @@
-import pygmsh
-import pyvista as pv
+import gmsh
 import math as m
+from OCC.Core.TopoDS import TopoDS_Shape
+from src.geometries.operator import split
+from src.geometries.operator import get_occ_bounding_box
+import logging
 
-def wall_mesher(radius: float,
-                width: float,
-                height: float,
-                length: float,
-                alpha: float = None):
-    with pygmsh.geo.Geometry() as geom:
-        if alpha == None:
-            alpha = (length / radius)% (m.pi * 2)
-        R = radius + (width / 2)
-        r = radius - (width / 2)
-        p1 = geom.add_point([0,0,0])
-        p0 = geom.add_point([-radius,0,0])
-        p2 = geom.add_point([R - r * m.cos(alpha),r * m.sin(alpha),0])
-        p11 = geom.add_point([width,0,0])
-        p22 = geom.add_point([(1 - m.cos(alpha)) * R, R * m.sin(alpha),0])
-        line1 = geom.add_line(p1, p11)
-        line2 = geom.add_line(p22, p2)
-        curve1 = geom.add_circle_arc(p2, p0, p1 )
-        curve2 = geom.add_circle_arc(p11, p0, p22 )
-        curve_loop = geom.add_curve_loop([line1, curve2, line2, curve1])
-        surface = geom.add_plane_surface(curve_loop)
-        extrude = geom.extrude(surface, (0,0,height), num_layers=10)
-        # Generate the mesh
-        mesh = geom.generate_mesh()
-        return mesh
+def get_geom_pointer(model: gmsh.model, shape: TopoDS_Shape) -> None:
+    try:
+        gmsh.is_initialized()
+    except:
+        logging.info("Gmsh must be initialized first!")
+    return model.occ.importShapesNativePointer(int(shape.this), highestDimOnly=True)
     
-    
+def mesher(item: TopoDS_Shape,
+           model_name: str,
+           layer_type: bool,
+           layer_param : float = None,
+           size_factor: float = 0.1):
+    try:
+        gmsh.is_initialized()
+    except:
+        logging.info("Gmsh must be initialized first!")
+    if layer_type: 
+        geo = split(item=item,
+            split_z=True,
+            layer_thickness= layer_param)
+    else:
+        geo = split(item=item,
+            split_z=True,
+            nz = layer_param)
+    model = gmsh.model()
+    model.add(model_name)
+    v = get_geom_pointer(model, geo)
+    model.occ.synchronize()
+    for layer in v:
+        model.add_physical_group(3,[layer[1]], name=f"layer{layer[1]}")
+        phy_gp = model.getPhysicalGroups()
+    gmsh.option.setNumber("Mesh.MeshSizeFactor", 0.1)
+    model.mesh.generate()
+    model.mesh.remove_duplicate_nodes()
+    model.mesh.remove_duplicate_elements()
+    phy_gp = model.getPhysicalGroups()
+    model_name = model.get_current()
+    return model
+

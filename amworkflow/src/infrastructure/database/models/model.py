@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from src.constants.enums import Directory as D
-engine = create_engine("sqlite+pysqlite:////" + D.DATABASE_FILE_PATH.value + r'test.db', echo=True)
+engine = create_engine("sqlite+pysqlite:////" + D.DATABASE_FILE_PATH.value + r'amworkflow.db', echo=True)
 
 from typing import List
 from typing import Optional
@@ -12,8 +12,8 @@ from datetime import datetime
 class Base(DeclarativeBase):
     pass
 
-class STLFile(Base):
-    __tablename__ = "STLFile"
+class GeometryFile(Base):
+    __tablename__ = "GeometryFile"
 #    stl_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     filename: Mapped[str] = mapped_column(String)
     stl_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
@@ -26,10 +26,10 @@ class STLFile(Base):
     angular_deflection: Mapped[float] = mapped_column(nullable=False)
     created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
     batch_num: Mapped[str] = mapped_column(nullable=True)
-    SliceFile = relationship("SliceFile", cascade="all, delete", back_populates="STLFile")
-    MeshFile = relationship("MeshFile", cascade="all, delete", back_populates="STLFile")
-    GCode = relationship("GCode", cascade="all, delete", back_populates="STLFile")
-    FEResult = relationship("FEResult", cascade="all, delete", back_populates="STLFile")
+    SliceFile = relationship("SliceFile", cascade="all, delete", back_populates="GeometryFile")
+    XdmfFile = relationship("XdmfFile", cascade="all, delete", back_populates="GeometryFile")
+    GCode = relationship("GCode", cascade="all, delete", back_populates="GeometryFile")
+    FEResult = relationship("FEResult", cascade="all, delete", back_populates="GeometryFile")
     
 
 class SliceFile(Base):
@@ -37,34 +37,45 @@ class SliceFile(Base):
 #    slice_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     slice_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
     step_length: Mapped[float] = mapped_column(nullable=False)
-    stl_hashname_ = mapped_column(ForeignKey('STLFile.stl_hashname', ondelete="CASCADE"))
+    stl_hashname_ = mapped_column(ForeignKey('GeometryFile.stl_hashname', ondelete="CASCADE"))
     created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
     batch_num: Mapped[str] = mapped_column(nullable=True)
     GCode = relationship("GCode", cascade="all, delete", back_populates="SliceFile")
     # gcode_hashname_ = mapped_column(ForeignKey('GCode.gcode_hashname', ondelete="CASCADE"))
-    STLFile = relationship("STLFile", back_populates="SliceFile")
+    GeometryFile = relationship("GeometryFile", back_populates="SliceFile")
     
-class MeshFile(Base):
-    __tablename__ = "MeshFile"
+class XdmfFile(Base):
+    __tablename__ = "XdmfFile"
 #    mesh_id : Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    mesh_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
-    deflection_threshold: Mapped[float] = mapped_column(nullable=False)
-    angle_threshold: Mapped[float] = mapped_column(nullable=False)
-    tolerance: Mapped[float] = mapped_column(nullable=False)
-    iteration: Mapped[int] = mapped_column(nullable=False)
+    xdmf_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
+    meshs_size_factor: Mapped[float] = mapped_column(nullable=False)
+    layer: Mapped[int] = mapped_column(nullable=False)
     created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
     batch_num: Mapped[str] = mapped_column(nullable=True)
-    stl_hashname_ = mapped_column(ForeignKey('STLFile.stl_hashname', ondelete="CASCADE"))
-    STLFile = relationship("STLFile", back_populates="MeshFile")
+    stl_hashname_ = mapped_column(ForeignKey('GeometryFile.stl_hashname', ondelete="CASCADE"))
+    GeometryFile = relationship("GeometryFile", back_populates="XdmfFile")
+    H5File = relationship("H5File", cascade="all, delete", back_populates="XdmfFile")
+    
+class H5File(Base):
+    __tablename__ = "H5File"
+#    mesh_id : Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    h5_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
+    file_format: Mapped[str] = mapped_column(String(4), nullable=False)
+    layer: Mapped[int] = mapped_column(nullable=False)
+    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
+    batch_num: Mapped[str] = mapped_column(nullable=True)
+    stl_hashname_ = mapped_column(ForeignKey('XdmfFile.xdmf_hashname', ondelete="CASCADE"))
+    XdmfFile = relationship("XdmfFile", back_populates="H5File")
+    
 class GCode(Base):
     __tablename__ = "GCode"
 #    gcode_id : Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     gcode_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
     created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
     batch_num: Mapped[str] = mapped_column(nullable=True)
-    stl_hashname_ = mapped_column(ForeignKey('STLFile.stl_hashname', ondelete="CASCADE"))
+    stl_hashname_ = mapped_column(ForeignKey('GeometryFile.stl_hashname', ondelete="CASCADE"))
     slice_hashname_ = mapped_column(ForeignKey('SliceFile.slice_hashname', ondelete="CASCADE"))
-    STLFile = relationship("STLFile", back_populates="GCode")
+    GeometryFile = relationship("GeometryFile", back_populates="GCode")
     SliceFile = relationship("SliceFile", back_populates="GCode")
     
 class FEResult(Base):
@@ -73,6 +84,6 @@ class FEResult(Base):
     fe_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
     created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
     batch_num: Mapped[str] = mapped_column(nullable=True)
-    stl_hashname_ = mapped_column(ForeignKey('STLFile.stl_hashname', ondelete="CASCADE"))
-    STLFile = relationship("STLFile", back_populates="FEResult")
+    stl_hashname_ = mapped_column(ForeignKey('GeometryFile.stl_hashname', ondelete="CASCADE"))
+    GeometryFile = relationship("GeometryFile", back_populates="FEResult")
     

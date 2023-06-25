@@ -5,8 +5,8 @@ from src.utils.writer import stl_writer, namer, batch_num_creator, data_input
 from src.utils.parser import yaml_parser
 from src.utils.permutator import simple_permutator
 from src.infrastructure.database.cruds.crud import insert_data
-from src.infrastructure.database.models.model import STLFile
-from src.utils.sanity_check import dimension_check
+from src.infrastructure.database.models.model import GeometryFile
+from tests.test import dimension_check
 from src.utils.download import downloader
 import copy
 
@@ -147,10 +147,10 @@ class CreateWall(object):
             for sub_perm in data:
                 output.append(data_input(data=sub_perm,
                                          input_type="stl"))
-            insert_data(STLFile, output, True)
+            insert_data(GeometryFile, output, True)
         else:
             output = data_input(data=data, input_type="stl")
-            insert_data(STLFile, output, False)
+            insert_data(GeometryFile, output, False)
     
     def db_data_renew(self):
         self.db_data = [self.withcurve, self.lin_deflect,self.ang_deflect]

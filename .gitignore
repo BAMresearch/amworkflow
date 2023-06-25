@@ -177,3 +177,5 @@ amworkflow/src/infrastructure/database/files/test.db
 #testfile
 test_main
 
+# pyocc-utils lib
+pythonocc-utils

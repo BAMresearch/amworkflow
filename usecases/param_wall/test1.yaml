@@ -1,11 +1,10 @@
 batch_parameter:
   isbatch: True
 geometry_parameter:
-  with_curve: False
   length:
     length: 100
     endpoint: 180
-    num: 1
+    num: 2
   height:
     length: 4.3
     endpoint: 6.6
@@ -14,10 +13,18 @@ geometry_parameter:
     length: 9.2
     endpoint: 14.2
     num: 0
-  curve:
-    radius: 100
+  radius:
+    radius: 0
     endpoint: 150
     num: 0
+mesh_parameter:
+  layer_num:
+    config: False
+    num: 0
+  layer_thickness:
+    config: True
+    num: 0.3
+  mesh_size_factor: 0.1
 stl_parameter:
   linear_deflection: 0.01
   angular_deflection: 0.5

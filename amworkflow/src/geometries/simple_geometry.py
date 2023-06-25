@@ -1,7 +1,7 @@
 from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox
 from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Wire, TopoDS_Shell
 from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Ax2, gp_Dir
-from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace, BRepBuilderAPI_Sewing, BRepBuilderAPI_MakeSolid, BRepBuilderAPI_MakeShell
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace, BRepBuilderAPI_Sewing, BRepBuilderAPI_MakeSolid, BRepBuilderAPI_MakeShell, brepbuilderapi_Precision
 from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakePrism, BRepPrimAPI_MakeCylinder
 from src.geometries.operator import geom_copy, translate, reverse
 from src.geometries.builder import geometry_builder

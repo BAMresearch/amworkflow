@@ -1,5 +1,5 @@
 from src.infrastructure.database.cruds.crud import _query_data, query_multi_data
-from src.infrastructure.database.models.model import STLFile
+from src.infrastructure.database.models.model import GeometryFile
 from src.constants.enums import Directory as D
 from src.constants.enums import InputFormat as I
 import shutil
@@ -10,7 +10,7 @@ def downloader(batch_num: int | str = None,
                time_range: str = None):
     file_lib = D.TEST_OUTPUT_PATH.value
     if hashname != None:
-        result = _query_data(STLFile, hashname).__dict__
+        result = _query_data(GeometryFile, hashname).__dict__
         try:
             new_path = D.USECASE_PATH_PARAMWALL_PATH.value + result[I.STL_HASHNAME.value] + "/"
             if not os.path.exists(new_path):
@@ -20,7 +20,7 @@ def downloader(batch_num: int | str = None,
         except Exception as e:
             print(f"Unexpected error occurred: {e}")
     if batch_num != None:
-        result = query_multi_data(STLFile, str(batch_num))
+        result = query_multi_data(GeometryFile, str(batch_num))
         new_path = D.USECASE_PATH_PARAMWALL_PATH.value + batch_num + "/"
         if not os.path.exists(new_path):
                 os.mkdir(new_path)
