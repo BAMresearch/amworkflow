@@ -47,24 +47,25 @@ class SliceFile(Base):
 class XdmfFile(Base):
     __tablename__ = "XdmfFile"
 #    mesh_id : Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    xdmf_name: Mapped[str] = mapped_column(nullable=False)
     xdmf_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
-    meshs_size_factor: Mapped[float] = mapped_column(nullable=False)
-    layer: Mapped[int] = mapped_column(nullable=False)
+    mesh_size_factor: Mapped[float] = mapped_column(nullable=False)
+    layer_thickness: Mapped[float] = mapped_column(nullable=True)
+    layer_num: Mapped[int] = mapped_column(nullable=True)
     created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
     batch_num: Mapped[str] = mapped_column(nullable=True)
-    stl_hashname_ = mapped_column(ForeignKey('GeometryFile.stl_hashname', ondelete="CASCADE"))
+    stl_hashname = mapped_column(ForeignKey('GeometryFile.stl_hashname', ondelete="CASCADE"))
     GeometryFile = relationship("GeometryFile", back_populates="XdmfFile")
     H5File = relationship("H5File", cascade="all, delete", back_populates="XdmfFile")
     
 class H5File(Base):
     __tablename__ = "H5File"
 #    mesh_id : Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    h5_name: Mapped[str] = mapped_column(nullable=False)
     h5_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
-    file_format: Mapped[str] = mapped_column(String(4), nullable=False)
-    layer: Mapped[int] = mapped_column(nullable=False)
     created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
     batch_num: Mapped[str] = mapped_column(nullable=True)
-    stl_hashname_ = mapped_column(ForeignKey('XdmfFile.xdmf_hashname', ondelete="CASCADE"))
+    xdmf_hashname = mapped_column(ForeignKey('XdmfFile.xdmf_hashname', ondelete="CASCADE"))
     XdmfFile = relationship("XdmfFile", back_populates="H5File")
     
 class GCode(Base):

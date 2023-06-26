@@ -1,7 +1,7 @@
 from OCC.Core.TopoDS import TopoDS_Shape
 import yaml
 from src.constants.enums import Directory as D
-from src.constants.data_model import WallParam, DB_WallGeometryFile
+from src.constants.data_model import WallParam, DB_WallGeometryFile, DB_XdmfFile, DB_H5File
 from src.utils.parser import yaml_parser
 import gmsh
 from src.infrastructure.database.models.model import XdmfFile, H5File, FEResult, SliceFile, GCode
@@ -29,6 +29,8 @@ class BaseWorkflow(object):
         self.parm_list = []
         self.permutation: np.ndarray
         self.hashname_list = []
+        self.mesh_name_list = []
+        self.mesh_hashname_list = []
         self.db = db
         self.start_vector = []
         self.end_vector = []
@@ -82,29 +84,56 @@ class BaseWorkflow(object):
         mesh the geom created by create()
         '''   
         gmsh.initialize()
-        self.db_data_collection["mesh"] = []
+        self.db_data_collection["mesh"] = {"xdmf": [],
+                                           "h5": []}
         for index, item in enumerate(self.shape):
-            is_thickness = self.data.mesh_parameter.layer_thickness.config
-            size_factor = self.data.mesh_parameter.mesh_size_factor
+            mesh_param = self.data.mesh_parameter
+            is_thickness = mesh_param.layer_thickness.config
+            size_factor = mesh_param.mesh_size_factor
             if is_thickness:
-                layer_param = self.data.mesh_parameter.layer_thickness.num
+                layer_param = mesh_param.layer_thickness.num
             else:
-                layer_param = self.data.mesh_parameter.layer_num.num
+                layer_param = mesh_param.layer_num.num
             model = mesher(item=item,
                    model_name=self.hashname_list[index],
                    layer_type = is_thickness,
                    layer_param=layer_param,
                    size_factor=size_factor)
             mesh_hashname = self.namer(name_type="hex")
-            # mesh_name = self.namer(name_type="mesh-batch",
-            #                        is_layer_thickness=True)
-            mesh_writer(item = model, 
-                        directory=D.DATABASE_OUTPUT_FILE_PATH.value, 
-                        filename=self.hashname_list[index],
-                        output_filename = mesh_hashname,
-                        format="xdmf")
+            self.mesh_hashname_list.append(mesh_hashname)
+            mesh_name = self.namer(name_type="mesh",
+                                   is_layer_thickness=True,
+                                   layer_param= layer_param,
+                                   geom_name=self.name_list[index])
+            self.mesh_name_list.append(mesh_name)
+            if self.db:
+                mesh_writer(item = model, 
+                            directory=D.DATABASE_OUTPUT_FILE_PATH.value, 
+                            filename=self.hashname_list[index],
+                            output_filename = mesh_hashname,
+                            format="xdmf")
+                db_model_xdmf = DB_XdmfFile()
+                db_model_h5 = DB_H5File()
+                db_model_xdmf.xdmf_hashname = mesh_hashname
+                db_model_h5.h5_hashname = mesh_hashname
+                db_model_h5.xdmf_hashname = mesh_hashname
+                db_model_xdmf.xdmf_name = mesh_name + ".xdmf"
+                db_model_h5.h5_name = mesh_name + ".h5"
+                db_model_xdmf.mesh_size_factor = mesh_param.mesh_size_factor
+                if is_thickness:
+                    db_model_xdmf.layer_thickness = layer_param
+                else:
+                    db_model_xdmf.layer_num = layer_param
+                db_model_xdmf.batch_num = self.batch_num
+                db_model_xdmf.stl_hashname = self.hashname_list[index]
+                db_model_h5.batch_num = self.batch_num
+                xdmf_collection = self.db_data_collection["mesh"]["xdmf"]
+                h5_collection = self.db_data_collection["mesh"]["h5"]
+                xdmf_collection.append(db_model_xdmf.dict())
+                h5_collection.append(db_model_h5.dict())
         if self.db:
-            pass
+            self.db_insert(XdmfFile, xdmf_collection)
+            self.db_insert(H5File, h5_collection)
         
     def slice():
         '''

@@ -48,7 +48,9 @@ def namer(name_type: str,
           dim_vector: np.ndarray = None,
           batch_num: int = None,
           parm_title: list = None,
-          is_layer_thickness: bool = None 
+          is_layer_thickness: bool = None,
+          layer_param: float or int = None,
+          geom_name: str = None
           ) -> str:
     if parm_title != None:
         title = [[j for j in i][0].upper() for i in parm_title]
@@ -66,8 +68,11 @@ def namer(name_type: str,
             repl_vector = [str(i).replace(".", "_") for i in dim_vector]
             output = "-".join([title[i] + repl_vector[i] for i in range(len(title))]) + "-" + str(batch_num)
         
-        case "mesh-batch":
-            pass
+        case "mesh":
+            if is_layer_thickness:
+                output = f"MeLT_{layer_param}" + geom_name
+            else:
+                output = f"MeLN_{layer_param}" + geom_name
             
     return output
 

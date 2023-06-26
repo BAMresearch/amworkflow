@@ -61,11 +61,26 @@ class DB_WallGeometryFile(BaseModel):
     length: Optional[PositiveFloat]
     width: Optional[PositiveFloat]
     height: Optional[PositiveFloat]
-    radius: Optional[PositiveFloat]
+    radius: Optional[float]
     linear_deflection: Optional[PositiveFloat]
     angular_deflection: Optional[PositiveFloat]
     filename: Optional[str]
     stl_hashname: Optional[constr(max_length=32, min_length=32)]
+    
+class DB_XdmfFile(BaseModel):
+    xdmf_hashname: Optional[constr(max_length=32, min_length=32)]
+    mesh_size_factor: Optional[PositiveFloat]
+    layer_thickness: Optional[ PositiveFloat]
+    layer_num: Optional[PositiveInt]
+    batch_num: Optional[PositiveInt]
+    stl_hashname: Optional[constr(max_length=32, min_length=32)]
+    xdmf_name: Optional[str]
+
+class DB_H5File(BaseModel):
+    h5_hashname: Optional[constr(max_length=32, min_length=32)]
+    batch_num: Optional[PositiveInt]
+    xdmf_hashname: Optional[constr(max_length=32, min_length=32)]
+    h5_name: Optional[str]
     
 class DBFactory(ModelFactory[DB_WallGeometryFile]):
     __model__ = DB_WallGeometryFile
