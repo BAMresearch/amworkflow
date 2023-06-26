@@ -7,10 +7,8 @@ from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Extend.DataExchange import write_stl_file, write_step_file, read_stl_file
 from tests.test import path_append_check
 path_append_check()
-from src.constants.data_info_format import stl_info
 from src.constants.enums import Directory
 from src.constants.enums import Timestamp as T
-from src.constants.enums import InputFormat as I
 from datetime import datetime
 import numpy as np
 import gmsh
@@ -80,24 +78,6 @@ def namer(name_type: str,
 
 def batch_num_creator():
         return datetime.now().strftime(T.YY_MM_DD_HH_MM_SS.value)
-    
-def data_input(data: np.ndarray, input_type: str) -> dict:
-    match input_type:
-        case "stl":
-            input_format = copy.copy(stl_info)
-            input_format[I.WITH_CURVE.value] = data[0]
-            input_format[I.LIN_DEFLECT.value] = data[1]
-            input_format[I.ANG_DEFLECT.value] = data[2]
-            input_format[I.BATCH_NUM.value] = data[3]
-            input_format[I.LENGTH.value] = data[4]
-            input_format[I.WIDTH.value] = data[5]
-            input_format[I.HEIGHT.value] = data[6]
-            input_format[I.RADIUS.value] = data[7]
-            input_format[I.FILE_NAME.value] = data[8]
-            input_format[I.STL_HASHNAME.value] = data[9]
-            
-
-    return input_format
 
 def vtk_writer(item: any,
                dirname:  str,
