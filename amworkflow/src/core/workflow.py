@@ -12,10 +12,11 @@ from src.utils.permutator import simple_permutator
 from src.utils.writer import namer, stl_writer, batch_num_creator
 from tests.test import dimension_check
 import numpy as np
+from src.utils.download import downloader
 import copy
 
 class BaseWorkflow(object):
-    def __init__(self, yaml_dir: str, filename: str, data_model: callable, geom_db_model: callable = None, db_data_model: callable = None, db : bool = True):
+    def __init__(self, yaml_dir: str, filename: str, data_model: callable, geom_db_model: callable = None, geom_db_data_model: callable = None, db : bool = True):
         self.yaml_dir = yaml_dir
         self.yaml_filename = filename
         self.data_model = data_model
@@ -38,9 +39,9 @@ class BaseWorkflow(object):
         self.title = []
         self.db_data_collection = {}
         self.is_curve_list = []
-        self.batch_num = 0
+        self.batch_num = None
         self.geom_db_model = geom_db_model
-        self.db_data_model = db_data_model
+        self.geom_db_data_model = geom_db_data_model
         self.namer = namer
         pass
     
@@ -104,7 +105,7 @@ class BaseWorkflow(object):
             mesh_name = self.namer(name_type="mesh",
                                    is_layer_thickness=True,
                                    layer_param= layer_param,
-                                   geom_name=self.name_list[index])
+                                   geom_name=self.name_list[index][:-4])
             self.mesh_name_list.append(mesh_name)
             if self.db:
                 mesh_writer(item = model, 
@@ -117,8 +118,8 @@ class BaseWorkflow(object):
                 db_model_xdmf.xdmf_hashname = mesh_hashname
                 db_model_h5.h5_hashname = mesh_hashname
                 db_model_h5.xdmf_hashname = mesh_hashname
-                db_model_xdmf.xdmf_name = mesh_name + ".xdmf"
-                db_model_h5.h5_name = mesh_name + ".h5"
+                db_model_xdmf.filename = mesh_name + ".xdmf"
+                db_model_h5.filename = mesh_name + ".h5"
                 db_model_xdmf.mesh_size_factor = mesh_param.mesh_size_factor
                 if is_thickness:
                     db_model_xdmf.layer_thickness = layer_param
@@ -180,7 +181,9 @@ class BaseWorkflow(object):
                         angular_deflection= self.data.stl_parameter.angular_deflection)
             
     def download(self):
-        pass
+        if self.db:
+            if self.batch_num != None:
+                downloader(batch_num=self.batch_num)
                 
     def item_namer(self, name_type, ind):
         hash_name = self.namer(name_type="hex")
