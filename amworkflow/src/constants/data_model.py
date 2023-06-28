@@ -74,13 +74,13 @@ class DB_XdmfFile(BaseModel):
     layer_num: Optional[PositiveInt]
     batch_num: Optional[PositiveInt]
     stl_hashname: Optional[constr(max_length=32, min_length=32)]
-    filename: Optional[str]
+    xdmf_name: Optional[str]
 
 class DB_H5File(BaseModel):
     h5_hashname: Optional[constr(max_length=32, min_length=32)]
     batch_num: Optional[PositiveInt]
     xdmf_hashname: Optional[constr(max_length=32, min_length=32)]
-    filename: Optional[str]
+    h5_name: Optional[str]
     
 class DBFactory(ModelFactory[DB_WallGeometryFile]):
     __model__ = DB_WallGeometryFile

@@ -28,7 +28,7 @@ def stl_writer(item: any, item_name: str, linear_deflection: float = 0.001, angu
             if status:
                 logging.info("Done!")
         case 1:
-            stl_output_dir = Directory.DATABASE_OUTPUT_FILE_PATH.value
+            stl_output_dir = Directory.TEST_OUTPUT_PATH.value
             try:
                 os.path.isdir(stl_output_dir)
             except:
@@ -68,9 +68,9 @@ def namer(name_type: str,
         
         case "mesh":
             if is_layer_thickness:
-                output = f"MeLT_{layer_param}_" + geom_name
+                output = f"MeLT_{layer_param}" + geom_name
             else:
-                output = f"MeLN_{layer_param}_" + geom_name
+                output = f"MeLN_{layer_param}" + geom_name
             
     return output
 
