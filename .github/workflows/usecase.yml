@@ -19,7 +19,6 @@ jobs:
             with:
                 miniforge-variant: Mambaforge
                 miniforge-version: latest
-                activate-environment: amworkflow
                 environment-file: environment.yml
                 use-mamba: true
 
