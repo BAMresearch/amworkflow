@@ -1,11 +1,8 @@
 # This workflow will install the environment, run the usecase param_wall
 
-name: Tests for pgdrome
+name: Test
 
 on: [push]
-
-env:
-  CACHE_NUMBER: 1 # increase to reset cache manually
 
 jobs:
   # Run tests
@@ -22,7 +19,7 @@ jobs:
         channels: conda-forge
         channel-priority: strict
         auto-update-conda: true
-        environment-file: environment.yml
+        environment-file: environment.yaml
 
     - name: Install package
       run: git clone https://github.com/tpaviot/pythonocc-utils.git && pip install ./pythonocc-utils
