@@ -1,30 +1,84 @@
 # This workflow will install the environment, run the usecase param_wall
+name: tests
 
-name: Test
+on:
+  push:
+    branches-ignore:
 
-on: [push]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  CACHE_NUMBER: 1 # increase to reset cache manually
 
 jobs:
-  # Run tests
-  test_model:
-    name: Run tests
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      matrix:
-        operating-system: [ubuntu-latest]
+  tests:
+    runs-on: ubuntu-latest
+
+    outputs:
+      branch_coverage: ${{ steps.pytest.outputs.coverage }}
+      coverage_report: ${{ steps.pytest.outputs.report }}
+
     steps:
-    - uses: actions/checkout@v2
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        channels: conda-forge
-        channel-priority: strict
-        auto-update-conda: true
-        environment-file: environment.yaml
+      - name: checkout repo content
+        uses: actions/checkout@v2
+      - name: Setup Mambaforge
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+            miniforge-variant: Mambaforge
+            miniforge-version: latest
+            activate-environment: amworkflow
+            use-mamba: true
 
-    - name: Install package
-      run: git clone https://github.com/tpaviot/pythonocc-utils.git && pip install ./pythonocc-utils
+      - name: Set cache date
+        run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
 
-    - name: Run param_wall
-      shell: bash -l {0} #new shell
-      run: |
-        python usecases/param_wall/param_wall.py 
+      - uses: actions/cache@v2
+        with:
+          path: "/usr/share/miniconda3/envs/amworkflow"
+          key: conda-${{ hashFiles('environment.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+        id: cache
+
+      - name: Update environment
+        run: mamba env update -n amworkflow -f environment.yaml
+        if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: Install package
+        run: git clone https://github.com/tpaviot/pythonocc-utils.git && pip install ./pythonocc-utils
+
+      - name: Run param_wall
+        shell: bash -l {0} #new shell
+        run: |
+          python usecases/param_wall/param_wall.py
+
+
+
+
+#name: Test
+#
+#on: [push]
+#
+#jobs:
+#  # Run tests
+#  test_model:
+#    name: Run tests
+#    runs-on: ${{ matrix.operating-system }}
+#    strategy:
+#      matrix:
+#        operating-system: [ubuntu-latest]
+#    steps:
+#    - uses: actions/checkout@v2
+#    - uses: conda-incubator/setup-miniconda@v2
+#      with:
+#        channels: conda-forge
+#        channel-priority: strict
+#        auto-update-conda: true
+#        environment-file: environment.yaml
+#
+#    - name: Install package
+#      run: git clone https://github.com/tpaviot/pythonocc-utils.git && pip install ./pythonocc-utils
+#
+#    - name: Run param_wall
+#      shell: bash -l {0} #new shell
+#      run: |
+#        python usecases/param_wall/param_wall.py
