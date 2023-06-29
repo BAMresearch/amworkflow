@@ -1,6 +1,6 @@
 from param_wall import ParamWallWorkflow
-from amworkflow.src.constants.data_model import WallGeometryParameter, DB_WallGeometryFile
-from amworkflow.src.infrastructure.database.models.model import GeometryFile
+from amworkflow.amworkflow.src.constants.data_model import WallGeometryParameter, DB_WallGeometryFile
+from amworkflow.amworkflow.src.infrastructure.database.models.model import GeometryFile
 
 def create_param_wall(yaml_dir: str, 
                       filename: str,

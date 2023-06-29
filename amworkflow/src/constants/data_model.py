@@ -1,8 +1,8 @@
 from pydantic import BaseModel, ValidationError, NegativeInt, PositiveInt, conint, conlist, constr, PositiveFloat, validator
 from typing import Optional
 from polyfactory.factories.pydantic_factory import ModelFactory
-from src.utils.parser import yaml_parser
-from src.constants.enums import Directory as D
+from amworkflow.src.utils.parser import yaml_parser
+from amworkflow.src.constants.enums import Directory as D
 class BatchParameter(BaseModel):
     isbatch: bool
 

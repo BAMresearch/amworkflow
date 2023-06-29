@@ -1,5 +1,5 @@
 from uuid import uuid4
-from src.infrastructure.database.Engine.engine import session
+from amworkflow.src.infrastructure.database.Engine.engine import session
 from sqlalchemy import insert
 from sqlalchemy.sql.expression import select
 

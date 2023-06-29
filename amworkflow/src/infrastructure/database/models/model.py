@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from src.constants.enums import Directory as D
+from amworkflow.src.constants.enums import Directory as D
 engine = create_engine("sqlite+pysqlite:////" + D.DATABASE_FILE_PATH.value + r'amworkflow.db', echo=True)
 
 from typing import List
@@ -7,7 +7,7 @@ from typing import Optional
 from sqlalchemy import ForeignKey
 from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from src.constants.enums import Timestamp as T
+from amworkflow.src.constants.enums import Timestamp as T
 from datetime import datetime
 class Base(DeclarativeBase):
     pass

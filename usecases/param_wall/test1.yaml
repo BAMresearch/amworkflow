@@ -4,7 +4,7 @@ geometry_parameter:
   length:
     length: 100
     endpoint: 180
-    num: 1
+    num: 2
   height:
     length: 4.3
     endpoint: 6.6

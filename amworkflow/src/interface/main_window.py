@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QToolTip, QMessa
 from PyQt5.QtGui import QFont, QIcon
 from OCC.Display.backend import load_backend
 load_backend('qt-pyqt5')
-from src.geometries.simple_geometry import create_box, create_prism
+from amworkflow.src.geometries.simple_geometry import create_box, create_prism
 from OCC.Display.qtDisplay import qtViewer3d
 from OCC.Core.AIS import AIS_Shape, AIS_InteractiveObject
 

@@ -1,7 +1,7 @@
 from doit.action import CmdAction
-import amworkflow.src.core.create_geometry as cg
-import amworkflow.src.constants.enums as e
-from amworkflow.src.utils.db_calib import db_calib
+import amworkflow.amworkflow.src.core.create_geometry as cg
+import amworkflow.amworkflow.src.constants.enums as e
+from amworkflow.amworkflow.src.utils.db_calib import db_calib
 # Define actions here
 def environment_init() -> bool:
     import  sys, os

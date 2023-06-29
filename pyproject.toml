@@ -1,0 +1,28 @@
+[project]
+name = "amworkflow"
+version = "0.2"
+authors = [
+    {name = "Annika Robens-Radermacher", email = "annika.robens-radermacher@bam.de"},
+]
+
+description = "Automatic workflows for AM concrete appplications"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+]
+license = {file = "LICENSE"}
+keywords = ["AM concrete", "workflow", "CAD"]
+dependencies = [
+  "fenics-dolfinx",
+  "gmsh",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/BAMresearch/amworkflow"
+"Bug Tracker" = "https://github.com/BAMresearch/amworkflow/issues"
+
+[build-system]
+requires = ["setuptools", "wheel"]

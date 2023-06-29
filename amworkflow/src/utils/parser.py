@@ -1,7 +1,7 @@
 import yaml
 import os
 import logging
-from src.constants.enums import Directory as D
+from amworkflow.src.constants.enums import Directory as D
 import numpy as np
 import flatdict
 import ruamel.yaml
