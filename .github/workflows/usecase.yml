@@ -19,7 +19,7 @@ jobs:
             with:
                 miniforge-variant: Mambaforge
                 miniforge-version: latest
-                activate-environment: fenicsxconcrete
+                activate-environment: amworkflow
                 use-mamba: true
 
           - name: Set cache date
