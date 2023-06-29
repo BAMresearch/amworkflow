@@ -1,6 +1,7 @@
 import sys
 import os
-sys.path.append("/home/yhe/Documents/amworkflow/amworkflow")
+import pathlib
+#sys.path.append("/home/yhe/Documents/amworkflow/amworkflow")
 from OCC.Core.TopoDS import TopoDS_Shape
 from src.core.workflow import BaseWorkflow
 from src.constants.data_model import WallParam, DB_WallGeometryFile
@@ -37,10 +38,10 @@ class ParamWallWorkflow(BaseWorkflow):
         model.stl_hashname = hash_name
         self.db_data_collection["geometry"].append(model.dict())
 
-yaml_dir = r"//home/yhe/Documents/amworkflow/usecases/param_wall/"
+yaml_dir = pathlib.Path(__file__).parent
 yaml_filename = "test1.yaml"
 
-p_wall = ParamWallWorkflow(yaml_dir=yaml_dir,
+p_wall = ParamWallWorkflow(yaml_dir=str(yaml_dir),
                          filename=yaml_filename,
                          data_model= WallParam, 
                          geom_db_model= GeometryFile,
