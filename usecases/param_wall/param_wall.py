@@ -3,10 +3,10 @@ import os
 import pathlib
 #sys.path.append("/home/yhe/Documents/amworkflow/amworkflow")
 from OCC.Core.TopoDS import TopoDS_Shape
-from src.core.workflow import BaseWorkflow
-from src.constants.data_model import WallParam, DB_WallGeometryFile
-from src.infrastructure.database.models.model import GeometryFile
-from src.geometries.simple_geometry import create_box
+from amworkflow.src.core.workflow import BaseWorkflow
+from amworkflow.src.constants.data_model import WallParam, DB_WallGeometryFile
+from amworkflow.src.infrastructure.database.models.model import GeometryFile
+from amworkflow.src.geometries.simple_geometry import create_box
 
 class ParamWallWorkflow(BaseWorkflow):
     def __init__(self, yaml_dir: str, filename: str, data_model: callable, geom_db_model: callable = None, geom_db_data_model: callable = None):

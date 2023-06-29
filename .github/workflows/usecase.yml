@@ -15,10 +15,6 @@ jobs:
   tests:
     runs-on: ubuntu-latest
 
-    outputs:
-      branch_coverage: ${{ steps.pytest.outputs.coverage }}
-      coverage_report: ${{ steps.pytest.outputs.report }}
-
     steps:
       - name: checkout repo content
         uses: actions/checkout@v2

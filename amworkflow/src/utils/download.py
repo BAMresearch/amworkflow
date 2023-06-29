@@ -1,6 +1,6 @@
-from src.infrastructure.database.cruds.crud import _query_data, query_multi_data
-from src.infrastructure.database.models.model import GeometryFile, XdmfFile, H5File
-from src.constants.enums import Directory as D
+from amworkflow.src.infrastructure.database.cruds.crud import _query_data, query_multi_data
+from amworkflow.src.infrastructure.database.models.model import GeometryFile, XdmfFile, H5File
+from amworkflow.src.constants.enums import Directory as D
 import shutil
 import os
 

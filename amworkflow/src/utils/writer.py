@@ -5,10 +5,10 @@ import sys
 import copy
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Extend.DataExchange import write_stl_file, write_step_file, read_stl_file
-from tests.test import path_append_check
+from amworkflow.tests.test import path_append_check
 path_append_check()
-from src.constants.enums import Directory
-from src.constants.enums import Timestamp as T
+from amworkflow.src.constants.enums import Directory
+from amworkflow.src.constants.enums import Timestamp as T
 from datetime import datetime
 import numpy as np
 import gmsh

@@ -1,8 +1,8 @@
 import os
-from src.infrastructure.database.cruds.crud import query_multi_data, delete_data
-from src.infrastructure.database.models import model
+from amworkflow.src.infrastructure.database.cruds.crud import query_multi_data, delete_data
+from amworkflow.src.infrastructure.database.models import model
 import inspect
-from src.constants.enums import InputFormat, Directory
+from amworkflow.src.constants.enums import InputFormat, Directory
 
 def db_calib():
     tables = [model.GeometryFile]

@@ -1,18 +1,18 @@
 from OCC.Core.TopoDS import TopoDS_Shape
 import yaml
-from src.constants.enums import Directory as D
-from src.constants.data_model import WallParam, DB_WallGeometryFile, DB_XdmfFile, DB_H5File
-from src.utils.parser import yaml_parser
+from amworkflow.src.constants.enums import Directory as D
+from amworkflow.src.constants.data_model import WallParam, DB_WallGeometryFile, DB_XdmfFile, DB_H5File
+from amworkflow.src.utils.parser import yaml_parser
 import gmsh
-from src.infrastructure.database.models.model import XdmfFile, H5File, FEResult, SliceFile, GCode
-from src.infrastructure.database.cruds.crud import insert_data
-from src.geometries.mesher import mesher, get_geom_pointer
-from src.utils.writer import mesh_writer
-from src.utils.permutator import simple_permutator
-from src.utils.writer import namer, stl_writer, batch_num_creator
-from tests.test import dimension_check
+from amworkflow.src.infrastructure.database.models.model import XdmfFile, H5File, FEResult, SliceFile, GCode
+from amworkflow.src.infrastructure.database.cruds.crud import insert_data
+from amworkflow.src.geometries.mesher import mesher, get_geom_pointer
+from amworkflow.src.utils.writer import mesh_writer
+from amworkflow.src.utils.permutator import simple_permutator
+from amworkflow.src.utils.writer import namer, stl_writer, batch_num_creator
+from amworkflow.tests.test import dimension_check
 import numpy as np
-from src.utils.download import downloader
+from amworkflow.src.utils.download import downloader
 import copy
 
 class BaseWorkflow(object):

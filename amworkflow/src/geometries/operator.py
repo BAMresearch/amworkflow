@@ -9,7 +9,7 @@ from OCC.Core.BOPAlgo import BOPAlgo_Builder
 from OCCUtils.Topology  import Topo
 from OCCUtils.Construct import make_face
 from OCCUtils.Construct import vec_to_dir
-from src.geometries.builder import geometry_builder
+from amworkflow.src.geometries.builder import geometry_builder
 from OCC.Core.BRepBndLib import brepbndlib_Add
 from OCC.Core.Bnd import Bnd_Box
 

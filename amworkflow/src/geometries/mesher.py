@@ -1,8 +1,8 @@
 import gmsh
 import math as m
 from OCC.Core.TopoDS import TopoDS_Shape
-from src.geometries.operator import split
-from src.geometries.operator import get_occ_bounding_box
+from amworkflow.src.geometries.operator import split
+from amworkflow.src.geometries.operator import get_occ_bounding_box
 import logging
 
 def get_geom_pointer(model: gmsh.model, shape: TopoDS_Shape) -> None:

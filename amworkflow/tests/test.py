@@ -1,4 +1,4 @@
-from src.constants.exceptions import DimensionViolationException
+from amworkflow.src.constants.exceptions import DimensionViolationException
 
 
 def dimension_check(dm_list: list):
