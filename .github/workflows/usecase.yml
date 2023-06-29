@@ -19,7 +19,7 @@ jobs:
             with:
                 miniforge-variant: Mambaforge
                 miniforge-version: latest
-                environment-file: environment.yml
+                environment-file: ../environment.yml
                 use-mamba: true
 
 #          - name: Set cache date
