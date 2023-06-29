@@ -17,11 +17,10 @@ jobs:
           - name: Setup Mambaforge
             uses: conda-incubator/setup-miniconda@v2
             with:
-              python-version: 3.6
+              python-version: 3.10
               mamba-version: "*"
               channels: conda-forge,defaults
               channel-priority: true
-              activate-environment: anaconda-client-env
 
 
 #                miniforge-variant: Mambaforge
@@ -42,7 +41,7 @@ jobs:
 #            if: steps.cache.outputs.cache-hit != 'true'
 
           - name: create environment
-            run: mamba env create -f environment.yml
+            run: ls && mamba env create -f environment.yml
 #
           - name: Install package
             run: git clone https://github.com/tpaviot/pythonocc-utils.git && pip install ./pythonocc-utils
