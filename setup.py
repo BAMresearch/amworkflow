@@ -7,6 +7,6 @@ setup(
     url='',
     license='MIT',
     author='Yuxiang He',
-    author_email='',
+    author_email='yuxiang.he@bam.de',
     description=''
 )

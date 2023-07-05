@@ -7,6 +7,7 @@ from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Extend.DataExchange import write_stl_file, write_step_file, read_stl_file
 from amworkflow.tests.test import path_append_check
 path_append_check()
+from amworkflow.src.constants.exceptions import GmshUseBeforeInitializedException
 from amworkflow.src.constants.enums import Directory
 from amworkflow.src.constants.enums import Timestamp as T
 from datetime import datetime
@@ -17,11 +18,9 @@ from mpi4py import MPI
 
 
 def stl_writer(item: any, item_name: str, linear_deflection: float = 0.001, angular_deflection: float = 0.1, output_mode = 1, store_dir: str = None) -> None:
-    # if item_name == "hex":
-    #     item_name = namer()
     match output_mode:
         case 0:
-            logging.info("Using stlAPI_Writer to output now...")
+            logging.info("Using stlAPI_Writer now...")
             stl_write = StlAPI_Writer()
             stl_write.SetASCIIMode(True)  # Set to False for binary STL output
             status = stl_write.Write(item, item_name)
@@ -52,6 +51,8 @@ def namer(name_type: str,
           ) -> str:
     if parm_title != None:
         title = [[j for j in i][0].upper() for i in parm_title]
+    if layer_param != None:
+        layer_param = str(layer_param).replace(".", "_")
     match name_type:
         case "hex":
             output = uuid.uuid4().hex
@@ -68,9 +69,9 @@ def namer(name_type: str,
         
         case "mesh":
             if is_layer_thickness:
-                output = f"MeLT_{layer_param}_" + geom_name
+                output = f"MeLT{layer_param}-" + geom_name
             else:
-                output = f"MeLN_{layer_param}_" + geom_name
+                output = f"MeLN{layer_param}-" + geom_name
             
     return output
 
@@ -88,12 +89,12 @@ def mesh_writer(item: gmsh.model, directory: str, filename: str, output_filename
     try:
         gmsh.is_initialized()
     except:
-        logging.info("Gmsh must be initialized first!")
+        raise GmshUseBeforeInitializedException()
     item.set_current(filename)
     phy_gp = item.getPhysicalGroups()
     model_name = item.get_current()
-    if format == "vtk":
-        gmsh.write(directory + filename + format)
+    if format == "vtk" or format == "msh":
+        gmsh.write(directory + filename + "." + format)
     if format == "xdmf":
         msh, cell_markers, facet_markers = gmshio.model_to_mesh(item, MPI.COMM_SELF, 0)
         msh.name = item.get_current()

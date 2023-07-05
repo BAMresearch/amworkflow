@@ -1,20 +1,22 @@
+model_profile:
+  model_name: "param_wall"
 batch_parameter:
   isbatch: True
 geometry_parameter:
   length:
-    length: 100
+    startpoint: 50
     endpoint: 180
-    num: 2
+    num: 1
   height:
-    length: 4.3
+    startpoint: 4
     endpoint: 6.6
     num: 0
   width:
-    length: 9.2
+    startpoint: 9
     endpoint: 14.2
     num: 0
   radius:
-    radius: 0
+    startpoint: 100
     endpoint: 150
     num: 0
 mesh_parameter:
@@ -23,7 +25,7 @@ mesh_parameter:
     num: 0
   layer_thickness:
     config: True
-    num: 0.3
+    num: 0.5
   mesh_size_factor: 0.1
 stl_parameter:
   linear_deflection: 0.01

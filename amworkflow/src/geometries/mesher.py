@@ -3,13 +3,14 @@ import math as m
 from OCC.Core.TopoDS import TopoDS_Shape
 from amworkflow.src.geometries.operator import split
 from amworkflow.src.geometries.operator import get_occ_bounding_box
+from amworkflow.src.constants.exceptions import GmshUseBeforeInitializedException
 import logging
 
-def get_geom_pointer(model: gmsh.model, shape: TopoDS_Shape) -> None:
+def get_geom_pointer(model: gmsh.model, shape: TopoDS_Shape) -> list:
     try:
         gmsh.is_initialized()
     except:
-        logging.info("Gmsh must be initialized first!")
+        raise GmshUseBeforeInitializedException()
     return model.occ.importShapesNativePointer(int(shape.this), highestDimOnly=True)
     
 def mesher(item: TopoDS_Shape,
@@ -20,7 +21,7 @@ def mesher(item: TopoDS_Shape,
     try:
         gmsh.is_initialized()
     except:
-        logging.info("Gmsh must be initialized first!")
+        raise GmshUseBeforeInitializedException()
     if layer_type: 
         geo = split(item=item,
             split_z=True,
@@ -36,7 +37,7 @@ def mesher(item: TopoDS_Shape,
     for layer in v:
         model.add_physical_group(3,[layer[1]], name=f"layer{layer[1]}")
         phy_gp = model.getPhysicalGroups()
-    gmsh.option.setNumber("Mesh.MeshSizeFactor", 0.1)
+    gmsh.option.setNumber("Mesh.MeshSizeFactor", size_factor)
     model.mesh.generate()
     model.mesh.remove_duplicate_nodes()
     model.mesh.remove_duplicate_elements()

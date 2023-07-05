@@ -46,6 +46,7 @@ def split(item: TopoDS_Shape,
           nx: int = None, 
           ny: int = None):
     xmin, ymin, zmin, xmax, ymax, zmax = get_occ_bounding_box(item)
+    plan_len = 1.2 * max(abs(xmin - xmax), abs(ymin - ymax))
     z = zmax - zmin
     if nz != None:
         z_list = np.linspace(0, z, nz)
@@ -55,21 +56,21 @@ def split(item: TopoDS_Shape,
     bo.AddArgument(item)
     for i in z_list:
         p1, v1 = gp_Pnt(0,0,i), gp_Vec(0, 0, -1)
-        fc1 = make_face(gp_Pln(p1, vec_to_dir(v1)), -100, 100, -100, 100)
+        fc1 = make_face(gp_Pln(p1, vec_to_dir(v1)), -plan_len, plan_len, -plan_len, plan_len)
         bo.AddArgument(fc1)
     if ny!= None:
         y = ymax - ymin
         y_list = np.linspace(0, y, ny)
         for i in y_list:
             p1, v1 = gp_Pnt(0,i,0), gp_Vec(0, 1, 0)
-            fc1 = make_face(gp_Pln(p1, vec_to_dir(v1)), -100, 100, -100, 100)
+            fc1 = make_face(gp_Pln(p1, vec_to_dir(v1)), -plan_len, plan_len, -plan_len, plan_len)
             bo.AddArgument(fc1)
     if nx != None:
         x = xmax - xmin
         x_list = np.linspace(0, x, nx)
         for i in x_list:
             p1, v1 = gp_Pnt(i,0,0), gp_Vec(1, 0, 0)
-            fc1 = make_face(gp_Pln(p1, vec_to_dir(v1)), -100, 100, -100, 100)
+            fc1 = make_face(gp_Pln(p1, vec_to_dir(v1)), -plan_len, plan_len, -plan_len, plan_len)
             bo.AddArgument(fc1)
     bo.Perform()
     top = Topo(bo.Shape())
