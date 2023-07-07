@@ -2,36 +2,34 @@ from OCC.Core.TopoDS import TopoDS_Shape
 import yaml
 import os
 from amworkflow.src.constants.enums import Directory as D
-from amworkflow.src.constants.enums import ParameterLabel as P
-from amworkflow.src.constants.data_model import WallParam, DB_WallGeometryFile, DB_XdmfFile, DB_H5File
-from amworkflow.src.utils.parser import yaml_parser
+from amworkflow.src.constants.enums import Label as L
+from amworkflow.src.utils.parser import yaml_parser, cmd_parser
 import gmsh
 from amworkflow.src.infrastructure.database.models.model import XdmfFile, H5File, FEResult, SliceFile, GCode, ModelProfile, ModelParameter
-from amworkflow.src.infrastructure.database.cruds.crud import insert_data, query_multi_data
+from amworkflow.src.infrastructure.database.cruds.crud import insert_data, query_multi_data, delete_data
 from amworkflow.src.geometries.mesher import mesher, get_geom_pointer
 from amworkflow.src.utils.writer import mesh_writer
 from amworkflow.src.utils.permutator import simple_permutator
 from amworkflow.src.utils.writer import namer, stl_writer, batch_num_creator
-from amworkflow.tests.test import dimension_check
 import numpy as np
 from amworkflow.src.utils.download import downloader
 from amworkflow.src.constants.data_model import MapParamModel
-from amworkflow.src.utils.sanity_check import path_valid_check
-import copy
+from amworkflow.src.utils.sanity_check import path_valid_check, dimension_check
 from amworkflow.src.constants.exceptions import NoDataInDatabaseException, InsufficientDataException
 from amworkflow.src.utils.reader import get_filename
+from amworkflow.src.utils.reader import step_reader
 
 class BaseWorkflow(object):
     def __init__(self, args):
-        self.args = args
-        self.yaml_dir = self.args.yaml_dir
-        self.step_dir = self.args.step_dir
+        self.raw_args = args
+        self.args = cmd_parser(args)
+        self.yaml_dir = self.raw_args.yaml_dir
+        self.step_dir = self.raw_args.step_dir
         self.yaml_parser = yaml_parser
-        self.data: dict
         self.namer = namer
-        self.model_name: str
+        self.model_name = self.raw_args.name
+        self.isbatch = self.args[L.BATCH_PARAM.value][L.IS_BATCH.value]
         self.model_hashname = self.namer(name_type="hex")
-        self.label = {}
         self.geom_pointer: int
         self.mpm = MapParamModel
         self.shape = []
@@ -45,92 +43,94 @@ class BaseWorkflow(object):
         self.start_vector = []
         self.end_vector = []
         self.num_vector = []
-        self.title = []
         self.db_data_collection = {}
+        self.db_del_collection = []
         self.batch_num = None
         self.data_init()
+        self.permutation = self.permutator()
     
     def data_init(self):
         if self.model_name != None:
-            result = query_multi_data(ModelProfile, by_name=self.model_name, column_name="model_name", target_column_name="model_name")
+            result = query_multi_data(ModelProfile, by_name=self.model_name, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
             if self.model_name in result:
-                indicator = (0,0)
+                self.indicator = (0,0)
                 if self.args.edit:
-                    indicator = (0,1)
+                    self.indicator = (0,1)
                 else:
                     if self.args.remove:
-                        indicator = (0,2)
+                        self.indicator = (0,2)
                     else:
-                        indicator = (0,3)
+                        self.indicator = (0,3)
             else:
-                indicator = (0,4)
+                self.indicator = (0,4)
         else:    
             if self.step_dir != None:
                 path_valid_check(self.step_dir, format=["stp", "step"])
-                stp_filename = get_filename(self.step_dir)
-                result = query_multi_data(ModelProfile, by_name=stp_filename, column_name="model_name", target_column_name="model_name")
-                if stp_filename in result:
-                    indicator = (1,0)
+                self.stp_filename = get_filename(self.step_dir)
+                result = query_multi_data(ModelProfile, by_name=self.stp_filename, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
+                if self.stp_filename in result:
+                    self.indicator = (1,0)
+                    if self.args.remove:
+                        self.indicator = (1,2)
                 else:
-                    indicator = (1,1)
+                    self.indicator = (1,1)
             else:
                 if self.yaml_dir != None:
                     path_valid_check(self.yaml_dir, format=["yml", "yaml"])
                     self.data = yaml_parser(self.yaml_dir)
-                    if "model_name" in self.data["model_profile"]:
-                        self.model_name = self.data["model_profile"]["model_name"]
-                        indicator = (2,0)
+                    if L.MDL_NAME.value in self.data["model_profile"]:
+                        self.model_name = self.data["model_profile"][L.MDL_NAME.value]
+                        self.indicator = (2,0)
                     else: raise InsufficientDataException()
                 else:
                     raise InsufficientDataException()
         
-        match indicator[0]:
-            case 1:
-                #TODO: read the step file stored in the database and convert it to an OCC representation.
-                match indicator[1]:
-                        case 1:
-                        #TODO: convert the file to an OCC representation and store the file and info to db.  
+        match self.indicator[0]: 
+            case 1: #read the step file stored in the database and convert it to an OCC representation.
+                self.import_model = step_reader(path=D.DATABASE_OUTPUT_FILE_PATH.value+self.stp_filename)
+                match self.indicator[1]:
+                        case 1: # Import stp file, convert the file to an OCC representation and create a new profile for imported stp file. 
+                            self.import_model = step_reader(self.step_dir)
+                            self.db_data_collection[L.MDL_PROF.value] = {L.MDL_NAME.value: self.stp_filename} 
+                        case 2: # remove selected profile and stp file, then quit
+                            #TODO remove the step file and and info in db. 
                             pass
-            case 2:
-                for lbl in self.data.keys():
-                    if lbl == "geometry_parameter":
-                        for key, item in self.data[lbl].items():
-                            self.start_vector.append(item[P.STARTPOINT.value])
-                            self.end_vector.append(item[P.ENDPOINT.value])
-                            self.num_vector.append(item[P.NUM.value])
-                            self.title.append(copy.copy(key))
-                        self.start_vector = np.array(self.start_vector)
-                        self.end_vector = np.array(self.end_vector)
-                        self.num_vector = np.array(self.num_vector)
-                        self.label[lbl] = self.title
-                    else:
-                        for key, item in self.data[lbl].items():
-                            self.label[lbl].append(key)
+            case 2: # yaml file provided
+                self.geom_data = self.data[L.GEOM_PARAM.value]
+                self.batch_data_convert(data=self.geom_data)
+                self.param_type = self.geom_data.keys()
+                self.mesh_param = self.data[L.MESH_PARAM.value]
                 
-            case 0:
+            case 0: # model_name provided
                 self.query_list = query_multi_data(table = ModelParameter,
                                     by_name= self.model_name,
-                                    column_name="model_name")
-                self.param_type = dict.fromkeys(set(rows["param_type"] for rows in self.query_list), {})
-                self.param_list = [(rows["param_name"],rows["param_type"]) for rows in self.query_list]
-                self.data = self.param_type.copy()
-                for pair in self.param_list:
-                    for p_type, p_value in self.data.items():
-                        if pair[1] == p_type:
-                            p_value[pair[0]] = None
-                match indicator[1]:
-                    case 1:
-                        #TODO: compare differences between inputs and loaded parameters, replace and add new parameters.
-                        pass
+                                    column_name=L.MDL_NAME.value)
+                self.param_type = list(set(rows[L.PARAM_TP.value] for rows in self.query_list))
+                if self.indicator[1] == 1: # edit mode. edit profile, replace the old and continue with new parameters.
+                    self.db_del_collection.append(ModelParameter,self.param_type)
+                    self.db_delete()
+                    self.param_type = self.args[L.GEOM_PARAM.value].keys()
+                    value = [{L.PARAM_NAME.value: new_param[i],
+                                  L.MDL_NAME.value: self.stp_filename} for i in range(len(self.param_type))]
+                    self.db_insert(ModelParameter, value)
+                match self.indicator[1]:
                     case 2:
-                        #TODO: remove certain model profile from database
-                        pass
-                    case 3:
-                        #TODO: do nothing, fill data into the loaded model.
-                        pass
-                    case 4:
-                        #TODO: Create a new model profile with given parameters.
-                        pass
+                        #remove certain model profile from database
+                        self.db_del_collection.append(ModelProfile, [self.model_name])
+                        self.db_delete()
+                    case 3: # do nothing, fill data into the loaded model.
+                        self.param_type = self.args[L.GEOM_PARAM.value].keys()
+                    case 4: # Create a new model profile with given parameters.
+                        self.db_data_collection[L.MDL_PROF.value] = [{L.MDL_NAME.value: self.raw_args.name}]
+                        new_param = list(self.args[L.GEOM_PARAM.value].keys())
+                        print(new_param)
+                        value = [{L.PARAM_NAME.value: new_param[i],
+                                  L.MDL_NAME.value: self.model_name} for i in range(len(new_param))]
+                        self.db_data_collection[L.MDL_PARAM.value] = value
+                        self.param_type = self.args[L.GEOM_PARAM.value].keys()
+                        self.db_insert(ModelProfile, self.db_data_collection[L.MDL_PROF.value])
+                        self.db_insert(ModelParameter, self.db_data_collection[L.MDL_PARAM.value])
+                self.batch_data_convert(data=self.args[L.GEOM_PARAM.value])
                 
     def create(self) -> None:
         '''
@@ -163,23 +163,36 @@ class BaseWorkflow(object):
         return TopoDS_Shape
     
     def geom_process(self, ind: int, param: list, name_type: str):
-        pass
+        param = self.mpm(param, self.param_type)
+        tp_geom = self.geometry_spawn(param)
+        self.shape.append(tp_geom)
+        hash_name, filename = self.item_namer(name_type=name_type, ind=ind)
+        append_data = {"batch_num" : self.batch_num,
+                       "geom_hashname" : hash_name,
+                       "filename" : filename}
+        self.db_data_collection["geometry"].append(append_data)
     
     def mesh(self):
         '''
         mesh the geom created by create()
         '''   
+        if self.indicator == (2,0):
+            data=self.mesh_param.values()
+            label=self.mesh_param.keys()
+        else:
+            data=self.args[L.MESH_PARAM.value].values()
+            label=self.args[L.MESH_PARAM.value].keys()
+        mesh_param = self.mpm(data=data, label=label)
         gmsh.initialize()
         self.db_data_collection["mesh"] = {"xdmf": [],
                                            "h5": []}
         for index, item in enumerate(self.shape):
-            mesh_param = self.data.mesh_parameter
-            is_thickness = mesh_param.layer_thickness.config
+            is_thickness = True if L.LYR_TKN != None in self.raw_args[L.LYR_TKN.value] else False
             size_factor = mesh_param.mesh_size_factor
             if is_thickness:
-                layer_param = mesh_param.layer_thickness.num
+                layer_param = mesh_param.layer_thickness
             else:
-                layer_param = mesh_param.layer_num.num
+                layer_param = mesh_param.layer_num
             model = mesher(item=item,
                    model_name=self.hashname_list[index],
                    layer_type = is_thickness,
@@ -203,8 +216,10 @@ class BaseWorkflow(object):
                 #             filename=self.hashname_list[index],
                 #             output_filename = mesh_hashname,
                 #             format="msh")
-                db_model_xdmf = DB_XdmfFile()
-                db_model_h5 = DB_H5File()
+                xdmf_label = ["xdmf_hashname", "filename", "mesh_size_factor", "layer_thickness", "layer_num", "batch_num","stl_hashname"]
+                h5_label = ["5_hashname", "filename", "batch_num"]
+                db_model_xdmf = self.mpm(xdmf_label)
+                db_model_h5 = self.mpm(h5_label)
                 db_model_xdmf.xdmf_hashname = mesh_hashname
                 db_model_h5.h5_hashname = mesh_hashname
                 db_model_h5.xdmf_hashname = mesh_hashname
@@ -220,8 +235,8 @@ class BaseWorkflow(object):
                 db_model_h5.batch_num = self.batch_num
                 xdmf_collection = self.db_data_collection["mesh"]["xdmf"]
                 h5_collection = self.db_data_collection["mesh"]["h5"]
-                xdmf_collection.append(db_model_xdmf.dict())
-                h5_collection.append(db_model_h5.dict())
+                xdmf_collection.append(db_model_xdmf.dict)
+                h5_collection.append(db_model_h5.dict)
         gmsh.finalize()
         if self.db:
             self.db_insert(XdmfFile, xdmf_collection)
@@ -249,6 +264,11 @@ class BaseWorkflow(object):
 
     def db_insert(self, db_model, data) -> None:
         insert_data(table=db_model, data=data, isbatch=self.isbatch)
+        
+    def db_delete(self) -> None:
+        for request in self.db_del_collection:
+            table = request[0]
+            delete_data(table=table, by_primary_key=request[1], isbatch=self.isbatch)
     
     def upload(self):
         for ind, item in enumerate(self.shape):
@@ -271,3 +291,12 @@ class BaseWorkflow(object):
                     batch_num=self.batch_num) + ".stl"
         self.name_list.append(filename)
         return hash_name, filename
+    
+    def batch_data_convert(self, data: dict) -> None:
+        for key, item in data.items():
+            self.start_vector.append(item[L.STARTPOINT.value])
+            self.end_vector.append(item[L.ENDPOINT.value])
+            self.num_vector.append(item[L.NUM.value])
+        self.start_vector = np.array(self.start_vector)
+        self.end_vector = np.array(self.end_vector)
+        self.num_vector = np.array(self.num_vector)

@@ -56,15 +56,15 @@ def update_data(table: callable,
     session.commit()
 
 def delete_data(table: callable,
-                by_hash: str | list,
+                by_primary_key: str | list,
                 isbatch: bool,
-                column: str | list = None) -> None:
+                ) -> None:
     session.new
     if not isbatch:
-        transaction = session.get(table, by_hash)
+        transaction = session.get(table, by_primary_key)
         session.delete(transaction)
     else:
-        for hash in by_hash:
+        for hash in by_primary_key:
             transaction = session.get(table, hash)
             session.delete(transaction)
     session.commit()

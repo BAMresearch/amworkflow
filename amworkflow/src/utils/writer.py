@@ -5,7 +5,7 @@ import sys
 import copy
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Extend.DataExchange import write_stl_file, write_step_file, read_stl_file
-from amworkflow.tests.test import path_append_check
+from amworkflow.src.utils.sanity_check import path_append_check
 path_append_check()
 from amworkflow.src.constants.exceptions import GmshUseBeforeInitializedException
 from amworkflow.src.constants.enums import Directory

@@ -16,14 +16,19 @@ class Timestamp(Enum):
     YY_MM_DD_HH_MM_SS = "%y%m%d%H%M%S"
     YYYY_MM_DD_HH_MM = "%Y%m%d%H%M"
     
-class ParameterLabel(Enum):
+class Label(Enum):
     GEOM_PARAM = "geometry_parameter"
     ENDPOINT = "endpoint"
     STARTPOINT = "startpoint"
     NUM = "num"
     BATCH_PARAM = "batch_parameter"
     IS_BATCH = "isbatch"
-    MESH_PARAM = "batch_parameter"
-    STL_PARAM = "stl_param"
+    MESH_PARAM = "mesh_parameter"
+    STL_PARAM = "stl_parameter"
     MDL_PROF = "model_profile"
     MDL_NAME = "model_name"
+    MDL_PARAM = "model_parameter"
+    PARAM_TP = "param_type"
+    PARAM_NAME = "param_name"
+    LYR_TKN = "layer_thickness"
+    LYR_NUM = "layer_num"

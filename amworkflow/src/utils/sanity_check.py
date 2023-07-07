@@ -1,4 +1,3 @@
-from amworkflow.src.constants.enums import Mapper as M
 from amworkflow.src.constants.exceptions import DimensionViolationException, NoDataInDatabaseException, InvalidFileFormatException
 import numpy as np
 import os
