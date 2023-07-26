@@ -2,11 +2,14 @@ import amworkflow.src.geometries.simple_geometry as sg
 import amworkflow.src.geometries.composite_geometry as cg
 import amworkflow.src.geometries.operator as o
 import amworkflow.src.geometries.property as p
+import amworkflow.src.geometries.mesher as m
 import amworkflow.src.utils.writer as utw
+import amworkflow.src.utils.reader as utr
 from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Wire, TopoDS_Shell, TopoDS_Solid, TopoDS_Face, TopoDS_Edge, topods_Compound
 from OCC.Core.gp import gp_Pnt, gp_Vec
 from OCC.Core.Geom import Geom_TrimmedCurve
 import numpy as np
+import gmsh
 class amWorkflow(object):
     class geom(object):
         @staticmethod
@@ -378,10 +381,24 @@ class amWorkflow(object):
             return o.hollow_carver(face, factor)
         
     class mesh(object):
+        @staticmethod
         def gmsh_switch(s: bool) -> None:
             """
             @brief
             """
+            return m.gmsh_switch(s)
+        
+        @staticmethod
+        def get_geom_pointer(model: gmsh.model, shape: TopoDS_Shape) -> list:
+            return m.get_geom_pointer(model, shape)
+            
+        @staticmethod
+        def mesher(item: TopoDS_Shape,
+           model_name: str,
+           layer_type: bool,
+           layer_param : float = None,
+           size_factor: float = 0.1) -> gmsh.model :
+            return m.mesher(item, model_name, layer_type, layer_param, size_factor)
         
     class tool(object):
         @staticmethod
@@ -398,5 +415,49 @@ class amWorkflow(object):
             """
             utw.stl_writer(item, item_name, linear_deflection, angular_deflection, output_mode, store_dir)
 
+        @staticmethod
+        def step_writer(item: any, filename: str):
+            """
+            @brief Writes a step file. This is a wrapper around write_step_file to allow a user to specify the shape of the step and a filename
+            @param item the item to write to the file
+            @param filename the filename to write the file to ( default is None
+            """
+            utw.step_writer(item, filename)
+        
+        @staticmethod
+        def namer(name_type: str,
+          dim_vector: np.ndarray = None,
+          batch_num: int = None,
+          parm_title: list = None,
+          is_layer_thickness: bool = None,
+          layer_param: float or int = None,
+          geom_name: str = None
+          ) -> str:
+            """
+            @brief Generate a name based on the type of name. It is used to generate an output name for a layer or a geometric object
+            @param name_type Type of name to generate
+            @param dim_vector Vector of dimension values ( default : None )
+            @param batch_num Number of batch to generate ( default : None )
+            @param parm_title List of parameters for the layer
+            @param is_layer_thickness True if the layer is thickness ( default : False )
+            @param layer_param Parameter of the layer ( default : None )
+            @param geom_name Name of the geometric object ( default : None )
+            @return Name of the layer or geometric object ( default : None ) - The string representation of the nam
+            """
+            return utw.namer(name_type, dim_vector, batch_num, parm_title, is_layer_thickness, layer_param, geom_name)
+        
+        @staticmethod
+        def get_filename(path: str) -> str:
+            return utr.get_filename(path)
+        
+        @staticmethod
+        def step_reader(path: str) -> TopoDS_Shape():
+            return utr.step_reader(path)
+        
+        @staticmethod
+        def stl_reader(path: str) -> TopoDS_Shape:
+            return utr.stl_reader(path)
+        
+        
     
     
