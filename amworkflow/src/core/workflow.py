@@ -1,11 +1,10 @@
 from OCC.Core.TopoDS import TopoDS_Shape
-import yaml
-import os
+import sys
 from amworkflow.src.constants.enums import Directory as D
 from amworkflow.src.constants.enums import Label as L
 from amworkflow.src.utils.parser import yaml_parser, cmd_parser
 import gmsh
-from amworkflow.src.infrastructure.database.models.model import XdmfFile, H5File, FEResult, SliceFile, GCode, ModelProfile, ModelParameter
+from amworkflow.src.infrastructure.database.models.model import XdmfFile, H5File, FEResult, SliceFile, GCode, ModelProfile, ModelParameter, GeometryFile
 from amworkflow.src.infrastructure.database.cruds.crud import insert_data, query_multi_data, delete_data
 from amworkflow.src.geometries.mesher import mesher, get_geom_pointer
 from amworkflow.src.utils.writer import mesh_writer
@@ -13,25 +12,28 @@ from amworkflow.src.utils.permutator import simple_permutator
 from amworkflow.src.utils.writer import namer, stl_writer, batch_num_creator
 import numpy as np
 from amworkflow.src.utils.download import downloader
-from amworkflow.src.constants.data_model import MapParamModel
+from amworkflow.src.constants.data_model import MapParamModel, DeepMapParamModel
 from amworkflow.src.utils.sanity_check import path_valid_check, dimension_check
 from amworkflow.src.constants.exceptions import NoDataInDatabaseException, InsufficientDataException
 from amworkflow.src.utils.reader import get_filename
-from amworkflow.src.utils.reader import step_reader
+from amworkflow.src.utils.reader import step_reader, stl_reader
+from amworkflow.src.interface.cli.cli_workflow import cli
 
 class BaseWorkflow(object):
-    def __init__(self, args):
-        self.raw_args = args
-        self.args = cmd_parser(args)
+    def __init__(self):
+        self.raw_args = cli()
+        print(self.raw_args)
+        self.mpm = MapParamModel
+        self.dmpm = DeepMapParamModel
+        self.parsed_args = cmd_parser(self.raw_args)
+        self.parsed_args_c = self.dmpm(self.parsed_args)
         self.yaml_dir = self.raw_args.yaml_dir
-        self.step_dir = self.raw_args.step_dir
+        self.import_dir = self.raw_args.import_dir
         self.yaml_parser = yaml_parser
         self.namer = namer
         self.model_name = self.raw_args.name
-        self.isbatch = self.args[L.BATCH_PARAM.value][L.IS_BATCH.value]
         self.model_hashname = self.namer(name_type="hex")
         self.geom_pointer: int
-        self.mpm = MapParamModel
         self.shape = []
         self.mesh_result = []
         self.name_list = []
@@ -45,32 +47,40 @@ class BaseWorkflow(object):
         self.num_vector = []
         self.db_data_collection = {}
         self.db_del_collection = []
-        self.batch_num = None
+        self.batch_num = self.parsed_args
+        self.isbatch = False
+        self.linear_deflect = 0.001
+        self.angular_deflect = 0.1
+        self.mesh_t = None
+        self.mesh_n = None
+        self.mesh_s = None
+        self.task_handler()
         self.data_init()
         self.permutation = self.permutator()
+        
     
-    def data_init(self):
+    def task_handler(self):
         if self.model_name != None:
             result = query_multi_data(ModelProfile, by_name=self.model_name, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
             if self.model_name in result:
                 self.indicator = (0,0)
-                if self.args.edit:
+                if self.raw_args.edit:
                     self.indicator = (0,1)
                 else:
-                    if self.args.remove:
+                    if self.raw_args.remove:
                         self.indicator = (0,2)
                     else:
                         self.indicator = (0,3)
             else:
                 self.indicator = (0,4)
         else:    
-            if self.step_dir != None:
-                path_valid_check(self.step_dir, format=["stp", "step"])
-                self.stp_filename = get_filename(self.step_dir)
-                result = query_multi_data(ModelProfile, by_name=self.stp_filename, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
-                if self.stp_filename in result:
+            if self.import_dir != None:
+                self.impt_format = path_valid_check(self.import_dir, format=["stp", "step","stl","STL"])
+                self.impt_filename = get_filename(self.import_dir)
+                result = query_multi_data(ModelProfile, by_name=self.impt_filename, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
+                if self.impt_filename in result:
                     self.indicator = (1,0)
-                    if self.args.remove:
+                    if self.parsed_args.remove:
                         self.indicator = (1,2)
                 else:
                     self.indicator = (1,1)
@@ -84,14 +94,35 @@ class BaseWorkflow(object):
                     else: raise InsufficientDataException()
                 else:
                     raise InsufficientDataException()
-        
+                
+    def data_init(self):
         match self.indicator[0]: 
             case 1: #read the step file stored in the database and convert it to an OCC representation.
-                self.import_model = step_reader(path=D.DATABASE_OUTPUT_FILE_PATH.value+self.stp_filename)
+                
+                self.linear_deflect = self.raw_args.stl_linear_deflect
+                self.angular_deflect= self.raw_args.stl_angular_deflect
+                self.mesh_t = self.raw_args.mesh_by_thickness
+                self.mesh_n = self.raw_args.mesh_by_layer
+                self.mesh_s = self.raw_args.mesh_size_factor
+                self.isbatch = self.parsed_args[L.BATCH_PARAM.value][L.IS_BATCH.value]
+                match self.impt_format.lower():
+                    case "stl":
+                        self.import_model = stl_reader(path=self.import_dir)
+                    case "stp":
+                        self.import_model = step_reader(path=self.import_dir)
+                    case "step":
+                        self.import_model = step_reader(path=D.DATABASE_OUTPUT_FILE_PATH.value+self.impt_filename)
                 match self.indicator[1]:
                         case 1: # Import stp file, convert the file to an OCC representation and create a new profile for imported stp file. 
-                            self.import_model = step_reader(self.step_dir)
-                            self.db_data_collection[L.MDL_PROF.value] = {L.MDL_NAME.value: self.stp_filename} 
+                            match self.impt_format.lower():
+                                case "stl":
+                                    self.import_model = stl_reader(path=D.DATABASE_OUTPUT_FILE_PATH.value+self.impt_filename)
+                                case "stp":
+                                    self.import_model = step_reader(path=D.DATABASE_OUTPUT_FILE_PATH.value+self.impt_filename)
+                                case "tep":
+                                    self.import_model = step_reader(path=D.DATABASE_OUTPUT_FILE_PATH.value+self.impt_filename)
+                            self.db_data_collection[L.MDL_PROF.value] = {L.MDL_NAME.value: self.impt_filename} 
+                            # self.batch_data_convert(self.parsed_args[L.GEOM_PARAM.value])
                         case 2: # remove selected profile and stp file, then quit
                             #TODO remove the step file and and info in db. 
                             pass
@@ -100,8 +131,24 @@ class BaseWorkflow(object):
                 self.batch_data_convert(data=self.geom_data)
                 self.param_type = self.geom_data.keys()
                 self.mesh_param = self.data[L.MESH_PARAM.value]
+                self.linear_deflect = self.data[L.STL_PARAM.value][L.LNR_DFT.value]
+                self.angular_deflect = self.data[L.STL_PARAM.value][L.ANG_DFT.value]
+                self.mesh_t = self.data[L.MESH_PARAM.value][L.LYR_TKN.value]
+                self.mesh_n = self.data[L.MESH_PARAM.value][L.LYR_NUM.value]
+                self.mesh_s = self.data[L.MESH_PARAM.value][L.MESH_SIZE_FACTOR.value]
+                if sum(self.num_vector) > 1:
+                    self.isbatch = True
+                    self.batch_data_convert(self.parsed_args[L.GEOM_PARAM.value])
+                else:
+                    self.isbatch = False
                 
             case 0: # model_name provided
+                self.linear_deflect = self.raw_args.stl_linear_deflect
+                self.angular_deflect= self.raw_args.stl_angular_deflect
+                self.mesh_t = self.raw_args.mesh_by_thickness
+                self.mesh_n = self.raw_args.mesh_by_layer
+                self.mesh_s = self.raw_args.mesh_size_factor
+                self.isbatch = self.parsed_args[L.BATCH_PARAM.value][L.IS_BATCH.value]
                 self.query_list = query_multi_data(table = ModelParameter,
                                     by_name= self.model_name,
                                     column_name=L.MDL_NAME.value)
@@ -109,9 +156,9 @@ class BaseWorkflow(object):
                 if self.indicator[1] == 1: # edit mode. edit profile, replace the old and continue with new parameters.
                     self.db_del_collection.append(ModelParameter,self.param_type)
                     self.db_delete()
-                    self.param_type = self.args[L.GEOM_PARAM.value].keys()
+                    self.param_type = self.parsed_args[L.GEOM_PARAM.value].keys()
                     value = [{L.PARAM_NAME.value: new_param[i],
-                                  L.MDL_NAME.value: self.stp_filename} for i in range(len(self.param_type))]
+                                  L.MDL_NAME.value: self.impt_filename} for i in range(len(self.param_type))]
                     self.db_insert(ModelParameter, value)
                 match self.indicator[1]:
                     case 2:
@@ -119,18 +166,18 @@ class BaseWorkflow(object):
                         self.db_del_collection.append(ModelProfile, [self.model_name])
                         self.db_delete()
                     case 3: # do nothing, fill data into the loaded model.
-                        self.param_type = self.args[L.GEOM_PARAM.value].keys()
+                        self.param_type = self.parsed_args[L.GEOM_PARAM.value].keys()
                     case 4: # Create a new model profile with given parameters.
                         self.db_data_collection[L.MDL_PROF.value] = [{L.MDL_NAME.value: self.raw_args.name}]
-                        new_param = list(self.args[L.GEOM_PARAM.value].keys())
+                        new_param = list(self.parsed_args[L.GEOM_PARAM.value].keys())
                         print(new_param)
                         value = [{L.PARAM_NAME.value: new_param[i],
                                   L.MDL_NAME.value: self.model_name} for i in range(len(new_param))]
                         self.db_data_collection[L.MDL_PARAM.value] = value
-                        self.param_type = self.args[L.GEOM_PARAM.value].keys()
+                        self.param_type = list(self.parsed_args[L.GEOM_PARAM.value].keys())
                         self.db_insert(ModelProfile, self.db_data_collection[L.MDL_PROF.value])
                         self.db_insert(ModelParameter, self.db_data_collection[L.MDL_PARAM.value])
-                self.batch_data_convert(data=self.args[L.GEOM_PARAM.value])
+        self.batch_data_convert(data=self.parsed_args[L.GEOM_PARAM.value])
                 
     def create(self) -> None:
         '''
@@ -151,25 +198,27 @@ class BaseWorkflow(object):
                 else:
                     self.geom_process(iter_ind, iter_perm, "dimension-batch")
         if self.db:
-            self.db_insert(db_model=self.geom_db_model, data=self.db_data_collection["geometry"])
+            self.db_insert(db_model=GeometryFile, data=self.db_data_collection["geometry"])
             for ind, item in enumerate(self.shape):
+                print(self.angular_deflect)
                 stl_writer(item=item,
                             item_name=self.hashname_list[ind] + ".stl",
-                            linear_deflection= self.data.stl_parameter.linear_deflection,
-                            angular_deflection= self.data.stl_parameter.angular_deflection)
+                            linear_deflection= self.linear_deflect,
+                            angular_deflection= self.angular_deflect)
                 
     def geometry_spawn(self, param) -> TopoDS_Shape:
         '''Define a parameterized model using PyOCC APIs here with parameters defined in the yaml file. Return one single TopoDs_shape.'''
         return TopoDS_Shape
     
     def geom_process(self, ind: int, param: list, name_type: str):
-        param = self.mpm(param, self.param_type)
+        param = self.mpm(self.param_type, param)
         tp_geom = self.geometry_spawn(param)
         self.shape.append(tp_geom)
         hash_name, filename = self.item_namer(name_type=name_type, ind=ind)
         append_data = {"batch_num" : self.batch_num,
                        "geom_hashname" : hash_name,
-                       "filename" : filename}
+                       "filename" : filename,
+                       "model_name": self.model_name}
         self.db_data_collection["geometry"].append(append_data)
     
     def mesh(self):
@@ -177,18 +226,21 @@ class BaseWorkflow(object):
         mesh the geom created by create()
         '''   
         if self.indicator == (2,0):
-            data=self.mesh_param.values()
-            label=self.mesh_param.keys()
+            data=[self.mesh_n, self.mesh_t, self.mesh_s]
+            label=list(self.mesh_param.keys())
         else:
-            data=self.args[L.MESH_PARAM.value].values()
-            label=self.args[L.MESH_PARAM.value].keys()
+            data=[self.mesh_n, self.mesh_t, self.mesh_s]
+            label=[L.LYR_NUM.value,L.LYR_TKN.value,L.MESH_SIZE_FACTOR.value]
         mesh_param = self.mpm(data=data, label=label)
+        print(mesh_param.dict)
+        print(mesh_param.layer_thickness)
+        is_thickness = True if mesh_param.layer_thickness != None else False
+        size_factor = mesh_param.mesh_size_factor
         gmsh.initialize()
         self.db_data_collection["mesh"] = {"xdmf": [],
                                            "h5": []}
         for index, item in enumerate(self.shape):
-            is_thickness = True if L.LYR_TKN != None in self.raw_args[L.LYR_TKN.value] else False
-            size_factor = mesh_param.mesh_size_factor
+            
             if is_thickness:
                 layer_param = mesh_param.layer_thickness
             else:
@@ -286,7 +338,7 @@ class BaseWorkflow(object):
         hash_name = self.namer(name_type="hex")
         self.hashname_list.append(hash_name)
         filename = self.namer(name_type=name_type,
-                    parm_title = self.title,
+                    parm_title = self.param_type,
                     dim_vector=self.permutation[ind],
                     batch_num=self.batch_num) + ".stl"
         self.name_list.append(filename)

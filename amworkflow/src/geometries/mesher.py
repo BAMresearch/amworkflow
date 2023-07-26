@@ -6,6 +6,12 @@ from amworkflow.src.geometries.operator import get_occ_bounding_box
 from amworkflow.src.constants.exceptions import GmshUseBeforeInitializedException
 import logging
 
+def gmsh_switch(s: bool) -> None:
+    if s:
+        gmsh.initialize()
+    else:
+        gmsh.finalize()
+
 def get_geom_pointer(model: gmsh.model, shape: TopoDS_Shape) -> list:
     try:
         gmsh.is_initialized()

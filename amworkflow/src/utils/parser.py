@@ -36,31 +36,22 @@ def dict_flat(input_dict: dict) -> dict:
 # data_mapper(yaml_parser(D.USECASE_PATH_PARAMWALL_PATH.value, "test1.yaml"))
 # print(args.batch)
 # print(yaml_parser(D.USECASE_PATH_PARAMWALL_PATH.value, "test1.yaml")[L.BATCH_PARAM.value][L.IS_BATCH.value])
-
 def cmd_parser(args) -> dict:
-    opt = {"name": args.name,
-           L.GEOM_PARAM.value: {}
-           }
+    opt = {}
     if args.iter_param != None:
         it_param = np.array([args.iter_param[i:i+3] for i in range(0,len(args.iter_param),3)]).T
-        print(it_param)
         print(args.geom_param)
         opt[L.BATCH_PARAM.value] = {L.IS_BATCH.value: True}
-    for ind, item in enumerate(args.geom_param):
-        opt[L.GEOM_PARAM.value][item]=  {L.STARTPOINT.value: args.geom_param_value[ind],
-                                           L.ENDPOINT.value: None,
-                                           L.NUM.value: None}
-        if ind + 1 in it_param[0]:
-            opt[L.GEOM_PARAM.value][item].update({L.ENDPOINT.value:it_param[1][ind],L.NUM.value:it_param[2][ind]})
-    if args.mesh_by_layer != None:
-        opt[L.MESH_PARAM.value] = {L.LYR_NUM.value:args.mesh_by_layer}
-    if args.mesh_by_thickness != None:
-        opt[L.MESH_PARAM.value] = {L.LYR_TKN:args.mesh_by_thickness}
-    if args.mesh_size_factor != None:
-        opt[L.MESH_PARAM.value].update({"mesh_size_factor":args.mesh_size_factor})
-    if args.stl_linear_deflect != None:
-        opt[L.STL_PARAM.value] = {"linear_deflection":args.stl_linear_deflect}
-    if args.stl_angular_deflect != None:
-        opt[L.STL_PARAM.value].update({"angular_deflection":args.stl_angular_deflect})
+    else:
+        opt[L.BATCH_PARAM.value] = {L.IS_BATCH.value: False}
+    if args.geom_param != None:
+        opt[L.GEOM_PARAM.value] = {}
+        for ind, item in enumerate(args.geom_param):
+            opt[L.GEOM_PARAM.value][item]=  {L.STARTPOINT.value: args.geom_param_value[ind],
+                                            L.ENDPOINT.value: None,
+                                            L.NUM.value: None}
+            if args.iter_param != None:
+                if ind + 1 in it_param[0]:
+                    opt[L.GEOM_PARAM.value][item].update({L.ENDPOINT.value:it_param[1][ind],L.NUM.value:it_param[2][ind]})
     return opt
     

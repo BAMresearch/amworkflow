@@ -13,7 +13,7 @@ def cli():
     parser.add_argument("-stlld", "--stl_linear_deflect", nargs="?", type=float)
     parser.add_argument("-n", "--name", nargs="?", type=str)
     parser.add_argument("-y", "--yaml_dir", nargs="?", type=str)
-    parser.add_argument("-s", "--step_dir", nargs="?", type=str)
+    parser.add_argument("-impt", "--import_dir", nargs="?", type=str)
     parser.add_argument("-e", "--edit", action="store_true")
     parser.add_argument("-rm", "--remove", action="store_true")
     args = parser.parse_args()

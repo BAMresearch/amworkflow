@@ -1,16 +1,11 @@
-import sys
-import os
-import pathlib
-from OCC.Core.TopoDS import TopoDS_Shape
 from amworkflow.src.core.workflow import BaseWorkflow
 from amworkflow.src.geometries.simple_geometry import create_box
-from amworkflow.src.interface.cli.cli_workflow import cli
 
 class ParamWallWorkflow(BaseWorkflow):
-    def __init__(self, args):
-        super().__init__(args)
+    def __init__(self):
+        super().__init__()
 
-    def geometry_spawn(self, param) -> TopoDS_Shape:
+    def geometry_spawn(self, param):
         pm = param
         box = create_box(length=pm.length,
                          width= pm.width,
@@ -19,8 +14,8 @@ class ParamWallWorkflow(BaseWorkflow):
         return box
 
 
-p_wall = ParamWallWorkflow(cli())
+p_wall = ParamWallWorkflow()
 # print(cli())
-# p_wall.create()
-# p_wall.mesh()
-# p_wall.download()
+p_wall.create()
+p_wall.mesh()
+p_wall.download()

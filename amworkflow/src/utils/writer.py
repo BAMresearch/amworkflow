@@ -18,12 +18,23 @@ from mpi4py import MPI
 
 
 def stl_writer(item: any, item_name: str, linear_deflection: float = 0.001, angular_deflection: float = 0.1, output_mode = 1, store_dir: str = None) -> None:
+    """
+     @brief Write OCC to STL file. This function is used to write a file to the database. The file is written to a file named item_name. 
+     @param item the item to be written to the file.
+     @param item_name the name of the item. It is used to generate the file name.
+     @param linear_deflection the linear deflection factor.
+     @param angular_deflection the angular deflection factor.
+     @param output_mode for using different api in occ.
+     @param store_dir the directory to store the file in.
+     @return None if success else error code ( 1 is returned if error ). In case of error it is possible to raise an exception
+    """
     match output_mode:
         case 0:
             logging.info("Using stlAPI_Writer now...")
             stl_write = StlAPI_Writer()
             stl_write.SetASCIIMode(True)  # Set to False for binary STL output
             status = stl_write.Write(item, item_name)
+            # if status is set to true then the status is not done.
             if status:
                 logging.info("Done!")
         case 1:
@@ -38,6 +49,11 @@ def stl_writer(item: any, item_name: str, linear_deflection: float = 0.001, angu
             )
 
 def step_writer(item: any, filename: str):
+    """
+     @brief Writes a step file. This is a wrapper around write_step_file to allow a user to specify the shape of the step and a filename
+     @param item the item to write to the file
+     @param filename the filename to write the file to ( default is None
+    """
     result = write_step_file(a_shape= item,
                              filename= filename)
 
@@ -49,8 +65,21 @@ def namer(name_type: str,
           layer_param: float or int = None,
           geom_name: str = None
           ) -> str:
+    """
+           @brief Generate a name based on the type of name. It is used to generate an output name for a layer or a geometric object
+           @param name_type Type of name to generate
+           @param dim_vector Vector of dimension values ( default : None )
+           @param batch_num Number of batch to generate ( default : None )
+           @param parm_title List of parameters for the layer
+           @param is_layer_thickness True if the layer is thickness ( default : False )
+           @param layer_param Parameter of the layer ( default : None )
+           @param geom_name Name of the geometric object ( default : None )
+           @return Name of the layer or geometric object ( default : None ) - The string representation of the nam
+          """
+    # Title of the parameter list.
     if parm_title != None:
         title = [[j for j in i][0].upper() for i in parm_title]
+    # Replace. with _.
     if layer_param != None:
         layer_param = str(layer_param).replace(".", "_")
     match name_type:
@@ -68,6 +97,7 @@ def namer(name_type: str,
             output = "-".join([title[i] + repl_vector[i] for i in range(len(title))]) + "-" + str(batch_num)
         
         case "mesh":
+            # The layer thickness layer.
             if is_layer_thickness:
                 output = f"MeLT{layer_param}-" + geom_name
             else:
@@ -78,14 +108,33 @@ def namer(name_type: str,
 # print(namer("dimension", np.array([33.2, 22.44, 55.3, 66.8])))
 
 def batch_num_creator():
+        """
+         @brief Create batch number for current date and time. It is used to determine how many batches are created in one batch.
+         @return datetime. datetime date and time in YYYYMMDDHHMMSS format with format'%Y%m%d
+        """
         return datetime.now().strftime(T.YY_MM_DD_HH_MM_SS.value)
 
 def vtk_writer(item: any,
                dirname:  str,
                filename: str) -> None:
+    """
+    @brief Write a VTK file. This is a wrapper around the : py : func : ` ~voxel. write ` function that prepends the dirname and filename to the file name.
+    @param item The item to write. It must be a
+    @param dirname The directory to write the file to
+    @param filename The filename to write to
+    @return True if the write was successful False otherwise. >>> import numpy as np >>> vtk_writer = np. fromfile ( " test. vtk "
+    """
     item.write(dirname + filename)
 
 def mesh_writer(item: gmsh.model, directory: str, filename: str, output_filename: str, format: str):
+    """
+     @brief Writes mesh to file. This function is used to write meshes to file. The format is determined by the value of the format parameter
+     @param item gmsh. model object that contains the model
+     @param directory directory where the file is located. It is the root of the file
+     @param filename name of the file to be written
+     @param output_filename name of the file to be written
+     @param format format of the file to be written. Valid values are vtk msh
+    """
     try:
         gmsh.is_initialized()
     except:
@@ -93,8 +142,10 @@ def mesh_writer(item: gmsh.model, directory: str, filename: str, output_filename
     item.set_current(filename)
     phy_gp = item.getPhysicalGroups()
     model_name = item.get_current()
+    # Write the format to the file.
     if format == "vtk" or format == "msh":
         gmsh.write(directory + filename + "." + format)
+    # Create a mesh file for the current model.
     if format == "xdmf":
         msh, cell_markers, facet_markers = gmshio.model_to_mesh(item, MPI.COMM_SELF, 0)
         msh.name = item.get_current()

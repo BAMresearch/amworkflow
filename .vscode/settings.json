@@ -2,5 +2,8 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.python"
     },
-    "python.formatting.provider": "none"
+    "python.formatting.provider": "none",
+    "docify.commentService.docstringFormat": "Doxygen",
+    "docify.translateService.docstringFormat": "Doxygen",
+    "docify.commentService.sidePanelReviewMode": true
 }

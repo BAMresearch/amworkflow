@@ -7,3 +7,4 @@ def mesh_visualizer():
         gmsh.is_initialized()
     except:
         raise GmshUseBeforeInitializedException()
+    gmsh.fltk.run()

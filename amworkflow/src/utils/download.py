@@ -22,14 +22,14 @@ def downloader(batch_num: int | str = None,
         except Exception as e:
             print(f"Unexpected error occurred: {e}")
     if batch_num != None:
-        result = query_multi_data(GeometryFile, str(batch_num))
+        result = query_multi_data(GeometryFile, str(batch_num), "batch_num")
         new_path = D.USECASE_PATH_PARAMWALL_PATH.value + batch_num + "/"
         if not os.path.exists(new_path):
                 os.mkdir(new_path)
         for row in result:
-            _result = row[0].__dict__
+            _result = row
             filename = _result["filename"]
-            hash_name = _result["stl_hashname"]
+            hash_name = _result["geom_hashname"]
             copyer(src_file= file_lib + hash_name + ".stl",
                    dest_file= new_path + filename)
             db_list = [XdmfFile, H5File]
