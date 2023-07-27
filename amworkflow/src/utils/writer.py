@@ -5,8 +5,7 @@ import sys
 import copy
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Extend.DataExchange import write_stl_file, write_step_file, read_stl_file
-from amworkflow.src.utils.sanity_check import path_append_check
-path_append_check()
+from amworkflow.src.utils.sanity_check import path_valid_check
 from amworkflow.src.constants.exceptions import GmshUseBeforeInitializedException
 from amworkflow.src.constants.enums import Directory
 from amworkflow.src.constants.enums import Timestamp as T
@@ -15,7 +14,6 @@ import numpy as np
 import gmsh
 from dolfinx.io import XDMFFile, gmshio
 from mpi4py import MPI
-
 
 def stl_writer(item: any, item_name: str, linear_deflection: float = 0.001, angular_deflection: float = 0.1, output_mode = 1, store_dir: str = None) -> None:
     """
@@ -38,7 +36,7 @@ def stl_writer(item: any, item_name: str, linear_deflection: float = 0.001, angu
             if status:
                 logging.info("Done!")
         case 1:
-            stl_output_dir = Directory.DATABASE_OUTPUT_FILE_PATH.value
+            stl_output_dir = store_dir
             try:
                 os.path.isdir(stl_output_dir)
             except:
@@ -156,3 +154,12 @@ def mesh_writer(item: gmsh.model, directory: str, filename: str, output_filename
             file.write_meshtags(cell_markers)
             msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
             file.write_meshtags(facet_markers)
+
+def mk_dir(dirname:str, folder_name: str):
+    print(dirname)
+    if os.path.isdir(dirname) == False:
+        raise AssertionError("wrong path provided")
+    newdir = dirname + "/" + folder_name
+    if not os.path.exists(newdir):
+        os.mkdir(newdir)
+    return newdir

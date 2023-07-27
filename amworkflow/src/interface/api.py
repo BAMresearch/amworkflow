@@ -10,7 +10,27 @@ from OCC.Core.gp import gp_Pnt, gp_Vec
 from OCC.Core.Geom import Geom_TrimmedCurve
 import numpy as np
 import gmsh
+from amworkflow.src.interface.cli.cli_workflow import cli
+import amworkflow.src.infrastructure.database.engine.config as CG
+import os
+import sys
 class amWorkflow(object):
+    class engine(object):
+        @staticmethod
+        def amworkflow(arg):
+            args = cli()
+            newdir = utw.mk_dir(os.path.dirname(os.path.realpath(__file__)), "test_nd")
+            CG.DB_DIR = newdir
+            from amworkflow.src.core.workflow import BaseWorkflow
+            flow = BaseWorkflow(args = args)
+            def inner_decorator(func):
+                def wrapped(*args, **kwargs):
+                    print('before function')
+                    flow.geometry_spawn = func
+                    print('after function')
+                wrapped()
+                return wrapped
+            return inner_decorator
     class geom(object):
         @staticmethod
         def create_box(length: float, 

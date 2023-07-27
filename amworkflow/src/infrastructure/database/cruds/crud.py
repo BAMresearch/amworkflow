@@ -1,7 +1,9 @@
 from uuid import uuid4
-from amworkflow.src.infrastructure.database.Engine.engine import session
+from amworkflow.src.infrastructure.database.models.model import Base
+from amworkflow.src.infrastructure.database.engine.engine import session
 from sqlalchemy import insert
 from sqlalchemy.sql.expression import select
+
 
 def insert_data(table: callable,
                 data: dict, 

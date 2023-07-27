@@ -1,7 +1,3 @@
-from sqlalchemy import create_engine
-from amworkflow.src.constants.enums import Directory as D
-engine = create_engine("sqlite+pysqlite:////" + D.DATABASE_FILE_PATH.value + r'amworkflow.db', echo=True)
-
 from typing import List
 from typing import Optional
 from sqlalchemy import ForeignKey

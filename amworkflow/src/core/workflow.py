@@ -1,13 +1,15 @@
 from OCC.Core.TopoDS import TopoDS_Shape
 import sys
+import os
 from amworkflow.src.constants.enums import Directory as D
 from amworkflow.src.constants.enums import Label as L
 from amworkflow.src.utils.parser import yaml_parser, cmd_parser
 import gmsh
+import amworkflow.src.infrastructure.database.engine.config as CG
 from amworkflow.src.infrastructure.database.models.model import XdmfFile, H5File, FEResult, SliceFile, GCode, ModelProfile, ModelParameter, GeometryFile
 from amworkflow.src.infrastructure.database.cruds.crud import insert_data, query_multi_data, delete_data
-from amworkflow.src.geometries.mesher import mesher, get_geom_pointer
-from amworkflow.src.utils.writer import mesh_writer
+from amworkflow.src.geometries.mesher import mesher
+from amworkflow.src.utils.writer import mesh_writer, mk_dir
 from amworkflow.src.utils.permutator import simple_permutator
 from amworkflow.src.utils.writer import namer, stl_writer, batch_num_creator
 import numpy as np
@@ -18,11 +20,14 @@ from amworkflow.src.constants.exceptions import NoDataInDatabaseException, Insuf
 from amworkflow.src.utils.reader import get_filename
 from amworkflow.src.utils.reader import step_reader, stl_reader
 from amworkflow.src.interface.cli.cli_workflow import cli
+DB_FILES_DIR = ""
 
 class BaseWorkflow(object):
-    def __init__(self):
-        self.raw_args = cli()
+    def __init__(self, args):
+        self.raw_args = args
+        self.geometry_spawn: callable
         print(self.raw_args)
+        print(os.getcwd())
         self.mpm = MapParamModel
         self.dmpm = DeepMapParamModel
         self.parsed_args = cmd_parser(self.raw_args)
@@ -54,46 +59,9 @@ class BaseWorkflow(object):
         self.mesh_t = None
         self.mesh_n = None
         self.mesh_s = None
-        self.task_handler()
+        self.indicator = task_handler(args=self.raw_args)
         self.data_init()
         self.permutation = self.permutator()
-        
-    
-    def task_handler(self):
-        if self.model_name != None:
-            result = query_multi_data(ModelProfile, by_name=self.model_name, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
-            if self.model_name in result:
-                self.indicator = (0,0)
-                if self.raw_args.edit:
-                    self.indicator = (0,1)
-                else:
-                    if self.raw_args.remove:
-                        self.indicator = (0,2)
-                    else:
-                        self.indicator = (0,3)
-            else:
-                self.indicator = (0,4)
-        else:    
-            if self.import_dir != None:
-                self.impt_format = path_valid_check(self.import_dir, format=["stp", "step","stl","STL"])
-                self.impt_filename = get_filename(self.import_dir)
-                result = query_multi_data(ModelProfile, by_name=self.impt_filename, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
-                if self.impt_filename in result:
-                    self.indicator = (1,0)
-                    if self.parsed_args.remove:
-                        self.indicator = (1,2)
-                else:
-                    self.indicator = (1,1)
-            else:
-                if self.yaml_dir != None:
-                    path_valid_check(self.yaml_dir, format=["yml", "yaml"])
-                    self.data = yaml_parser(self.yaml_dir)
-                    if L.MDL_NAME.value in self.data["model_profile"]:
-                        self.model_name = self.data["model_profile"][L.MDL_NAME.value]
-                        self.indicator = (2,0)
-                    else: raise InsufficientDataException()
-                else:
-                    raise InsufficientDataException()
                 
     def data_init(self):
         match self.indicator[0]: 
@@ -127,6 +95,10 @@ class BaseWorkflow(object):
                             #TODO remove the step file and and info in db. 
                             pass
             case 2: # yaml file provided
+                self.data = yaml_parser(self.yaml_dir)
+                if L.MDL_NAME.value in self.data["model_profile"]:
+                    self.model_name = self.data["model_profile"][L.MDL_NAME.value]
+                else: raise InsufficientDataException()
                 self.geom_data = self.data[L.GEOM_PARAM.value]
                 self.batch_data_convert(data=self.geom_data)
                 self.param_type = self.geom_data.keys()
@@ -204,11 +176,8 @@ class BaseWorkflow(object):
                 stl_writer(item=item,
                             item_name=self.hashname_list[ind] + ".stl",
                             linear_deflection= self.linear_deflect,
-                            angular_deflection= self.angular_deflect)
-                
-    def geometry_spawn(self, param) -> TopoDS_Shape:
-        '''Define a parameterized model using PyOCC APIs here with parameters defined in the yaml file. Return one single TopoDs_shape.'''
-        return TopoDS_Shape
+                            angular_deflection= self.angular_deflect,
+                            store_dir=DB_FILES_DIR)
     
     def geom_process(self, ind: int, param: list, name_type: str):
         param = self.mpm(self.param_type, param)
@@ -259,7 +228,7 @@ class BaseWorkflow(object):
             self.mesh_name_list.append(mesh_name)
             if self.db:
                 mesh_writer(item = model, 
-                            directory=D.DATABASE_OUTPUT_FILE_PATH.value, 
+                            directory=DB_FILES_DIR, 
                             filename=self.hashname_list[index],
                             output_filename = mesh_hashname,
                             format="xdmf")
@@ -352,3 +321,39 @@ class BaseWorkflow(object):
         self.start_vector = np.array(self.start_vector)
         self.end_vector = np.array(self.end_vector)
         self.num_vector = np.array(self.num_vector)
+    
+    def create_database_engine(self):
+        pass
+
+def task_handler(args):
+    if args.model_name != None:
+        result = query_multi_data(ModelProfile, by_name=args.model_name, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
+        if args.model_name in result:
+            indicator = (0,0)
+            if args.edit:
+                indicator = (0,1)
+            else:
+                if args.remove:
+                    indicator = (0,2)
+                else:
+                    indicator = (0,3)
+        else:
+            indicator = (0,4)
+    else:    
+        if args.import_dir != None:
+            args.impt_format = path_valid_check(args.import_dir, format=["stp", "step","stl","STL"])
+            args.impt_filename = get_filename(args.import_dir)
+            result = query_multi_data(ModelProfile, by_name=args.impt_filename, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
+            if args.impt_filename in result:
+                indicator = (1,0)
+                if args.remove:
+                    indicator = (1,2)
+            else:
+                indicator = (1,1)
+        else:
+            if args.yaml_dir != None:
+                path_valid_check(args.yaml_dir, format=["yml", "yaml"])
+                indicator = (2,0)
+            else:
+                raise InsufficientDataException()
+    return indicator
