@@ -28,4 +28,18 @@ to the root directory and then
 ```pip install ./pythonocc-utils```
 
 ## How to use
-Doit command not available for now. Testing the codes by running /usecases/param_wall/param_wall.py. Results are stored first in /amworkflow/src/infrastructure/database/files/output_files with hashcode names and then downloaded with human-readable names under the specific usecase folder.
+This is by far the most user-friendly version. To create a new workflow, simply do:
+```python
+from amworkflow.src.interface.api import amWorkflow as aw
+@aw.engine.amworkflow
+def geometry_spawn(pm):
+    box = aw.geom.create_box(length=pm.length,
+                        width= pm.width,
+                        height=pm.height,
+                        radius=pm.radius)
+    return box
+```
+The function name *geometry_spawn* and form parameter *pm* are only examples and it is fully up to you.
+
+The *BaseWorkflow* is still under heavy modification hence not working for now.
+
