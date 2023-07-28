@@ -39,7 +39,9 @@ def geometry_spawn(pm):
                         radius=pm.radius)
     return box
 ```
-The function name *geometry_spawn* and form parameter *pm* are only examples and it is fully up to you.
+The function name *geometry_spawn* and form parameter *pm* are only examples, however it is recommended to stick with these names in case of overwriting functions in the *Baseworkflow*. 
 
-The *BaseWorkflow* is still under heavy modification hence not working for now.
+TODO: builtin functions in the future updates will have "_" before their names to avoid such conflict.
+
+FIXME: The *BaseWorkflow* is still under heavy modification hence not working for now.
 
