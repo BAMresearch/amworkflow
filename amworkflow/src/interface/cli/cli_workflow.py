@@ -1,6 +1,4 @@
 import argparse
-from amworkflow.src.utils.parser import cmd_parser
-# from amworkflow.src.core.workflow import BaseWorkflow
 def cli():
     parser = argparse.ArgumentParser()
     parser.add_argument("-gp", "--geom_param", nargs="+")
@@ -16,6 +14,7 @@ def cli():
     parser.add_argument("-impt", "--import_dir", nargs="?", type=str)
     parser.add_argument("-e", "--edit", action="store_true")
     parser.add_argument("-rm", "--remove", action="store_true")
+    parser.add_argument("-f", "--file", nargs="?", type=str)
     args = parser.parse_args()
     return args
 

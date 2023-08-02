@@ -48,7 +48,7 @@ def path_append_check():
         sys.path.append(op.dirname(op.dirname(op.dirname(op.dirname(__file__)))))
         sys.path.append(op.dirname(op.dirname(__file__)))
 
-def path_valid_check(path: str, format: list) -> bool:
+def path_valid_check(path: str, format: list = None) -> bool:
     """
      @brief Check if path is valid and return file name if not raise InvalidFileFormatException. This is used to check if file can be read from file system
      @param path path to file or directory
@@ -56,14 +56,21 @@ def path_valid_check(path: str, format: list) -> bool:
      @return filename's extension or False if file is not in format ( no extension ) or file is not in
     """
     split_result = path.rsplit("/", 1)
-    # Split the result of a split command.
+        # split_formt = split_result[]
+        # Split the result of a split command.
     if len(split_result) > 1:
         dir_path, filename = split_result
-    # if dir_path is not a directory
     if os.path.isdir(dir_path) == False:
         raise AssertionError("wrong path provided")
-    # If filename is not in format raise InvalidFileFormatException item filename
-    if (filename[-3:] not in format) and (filename[-4:] not in format):
-        raise InvalidFileFormatException(item=filename[-4:])
+    if format != None:
+        
+        fmt = filename.rsplit(".",1)[1]
+        # if dir_path is not a directory
+        
+        # If filename is not in format raise InvalidFileFormatException item filename
+        if fmt not in format:
+            raise InvalidFileFormatException(item=fmt)
+        else:
+            return fmt
     else:
-        return filename[-3:]
+        return True

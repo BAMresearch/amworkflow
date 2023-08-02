@@ -3,6 +3,7 @@ import uuid
 import os
 import sys
 import copy
+import shutil
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Extend.DataExchange import write_stl_file, write_step_file, read_stl_file
 from amworkflow.src.utils.sanity_check import path_valid_check
@@ -156,10 +157,18 @@ def mesh_writer(item: gmsh.model, directory: str, filename: str, output_filename
             file.write_meshtags(facet_markers)
 
 def mk_dir(dirname:str, folder_name: str):
-    print(dirname)
     if os.path.isdir(dirname) == False:
         raise AssertionError("wrong path provided")
     newdir = dirname + "/" + folder_name
     if not os.path.exists(newdir):
         os.mkdir(newdir)
     return newdir
+
+def file_copy(path1: str, path2: str) -> bool:
+    path_valid_check(path1)
+    path_valid_check(path2)
+    try:
+        shutil.copy(path1, path2)
+        return True
+    except:
+        return False

@@ -5,32 +5,58 @@ import amworkflow.src.geometries.property as p
 import amworkflow.src.geometries.mesher as m
 import amworkflow.src.utils.writer as utw
 import amworkflow.src.utils.reader as utr
+import amworkflow.src.infrastructure.database.cruds.crud as cr
 from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Wire, TopoDS_Shell, TopoDS_Solid, TopoDS_Face, TopoDS_Edge, topods_Compound
 from OCC.Core.gp import gp_Pnt, gp_Vec
 from OCC.Core.Geom import Geom_TrimmedCurve
 import numpy as np
 import gmsh
 from amworkflow.src.interface.cli.cli_workflow import cli
-import amworkflow.src.infrastructure.database.engine.config as CG
+from amworkflow.src.constants.data_model import DeepMapParamModel
+import amworkflow.src.infrastructure.database.engine.config as cfg
 import os
 import sys
+import inspect
+import pandas as pd
+
 class amWorkflow(object):
     class engine(object):
         @staticmethod
-        def amworkflow(arg):
-            args = cli()
-            newdir = utw.mk_dir(os.path.dirname(os.path.realpath(__file__)), "test_nd")
-            CG.DB_DIR = newdir
-            from amworkflow.src.core.workflow import BaseWorkflow
+        def amworkflow(mode: str = "production"):
+            args = DeepMapParamModel(cli().__dict__)
+            args.mode = mode
+            caller_frame = inspect.stack()[1]
+            caller_fullpath = caller_frame.filename
+            dbdir = utw.mk_dir(os.path.dirname(caller_fullpath), "db")
+            args.import_file_dir = utw.mk_dir(dbdir, "imports")
+            args.db_opt_dir = utw.mk_dir(os.path.dirname(caller_fullpath), "output")
+            args.db_file_dir = utw.mk_dir(dbdir, "files")
+            cfg.DB_DIR = dbdir
+            from amworkflow.src.core._workflow import BaseWorkflow
             flow = BaseWorkflow(args = args)
             def inner_decorator(func):
                 def wrapped(*args, **kwargs):
-                    print('before function')
                     flow.geometry_spawn = func
-                    print('after function')
                 wrapped()
                 return wrapped
             return inner_decorator
+    class db(object):
+        @staticmethod
+        def query_data(table: str, by_name: str = None, column_name: str = None, only_for_column: str = None) -> pd.DataFrame:
+            return cr.query_multi_data(table=table, by_name=by_name, column_name=column_name, target_column_name=only_for_column)
+        
+        @staticmethod
+        def delete_data(table: str, prim_ky: str | list, isbatch: bool = False) -> None:
+            return cr.delete_data(table=table, by_primary_key=prim_ky, isbatch=isbatch)
+        
+        @staticmethod
+        def update_data(table: str, by_name: str | list, on_column: str, db_value: int | str | float | bool, isbatch: bool = False):
+            return cr.update_data(table=table, by_name=by_name, target_column=on_column, db_value=db_value, isbatch=isbatch)
+        
+        @staticmethod
+        def insert_data(table: str, data: dict, isbatch: bool = False) -> None:
+            return cr.insert_data(table=table, data=data, isbatch=isbatch)
+        
     class geom(object):
         @staticmethod
         def create_box(length: float, 
@@ -338,9 +364,9 @@ class amWorkflow(object):
         @staticmethod
         def geom_copy(item: TopoDS_Shape):
             """
-            @brief Copy a geometry to a new shape. This is a wrapper around BRepBuilderAPI_Copy and can be used to create a copy of a geometry without having to re - create the geometry in the same way.
+            @brief Copy a geometry to a db shape. This is a wrapper around BRepBuilderAPI_Copy and can be used to create a copy of a geometry without having to re - create the geometry in the same way.
             @param item Geometry to be copied.
-            @return New geometry that is a copy of the input geometry.
+            @return db geometry that is a copy of the input geometry.
             """
             return o.geom_copy(item)
         
@@ -422,7 +448,7 @@ class amWorkflow(object):
         
     class tool(object):
         @staticmethod
-        def stl_writer(item: any, item_name: str, linear_deflection: float = 0.001, angular_deflection: float = 0.1, output_mode = 1, store_dir: str = None) -> None:
+        def write_stl(item: any, item_name: str, linear_deflection: float = 0.001, angular_deflection: float = 0.1, output_mode = 1, store_dir: str = None) -> None:
             """
             @brief Write OCC to STL file. This function is used to write a file to the database. The file is written to a file named item_name. 
             @param item the item to be written to the file.
@@ -436,7 +462,7 @@ class amWorkflow(object):
             utw.stl_writer(item, item_name, linear_deflection, angular_deflection, output_mode, store_dir)
 
         @staticmethod
-        def step_writer(item: any, filename: str):
+        def write_step(item: any, filename: str):
             """
             @brief Writes a step file. This is a wrapper around write_step_file to allow a user to specify the shape of the step and a filename
             @param item the item to write to the file
@@ -471,12 +497,20 @@ class amWorkflow(object):
             return utr.get_filename(path)
         
         @staticmethod
-        def step_reader(path: str) -> TopoDS_Shape():
+        def read_step(path: str) -> TopoDS_Shape():
             return utr.step_reader(path)
         
         @staticmethod
-        def stl_reader(path: str) -> TopoDS_Shape:
+        def read_stl(path: str) -> TopoDS_Shape:
             return utr.stl_reader(path)
+        
+        @staticmethod
+        def upload(source: str, destination: str) -> bool:
+            return utw.file_copy(path1=source, path2=destination)
+        
+        @staticmethod
+        def get_md5(source: str) -> str:
+            return utr.get_file_md5(path=source)
         
         
     

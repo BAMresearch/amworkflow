@@ -1,3 +1,5 @@
+import sys
+import inspect
 from typing import List
 from typing import Optional
 from sqlalchemy import ForeignKey
@@ -5,6 +7,10 @@ from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from amworkflow.src.constants.enums import Timestamp as T
 from datetime import datetime
+
+current_module = sys.modules[__name__]
+db_list = {}
+
 class Base(DeclarativeBase):
     pass
 
@@ -88,13 +94,14 @@ class ModelProfile(Base):
     created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
     ModelParameter = relationship("ModelParameter", cascade="all, delete", back_populates="ModelProfile")
     GeometryFile = relationship("GeometryFile", cascade="all, delete", back_populates="ModelProfile")
+    imported_file_id: Mapped[str] = mapped_column(ForeignKey('ImportedFile.md5_id', ondelete="CASCADE"), nullable=True)
+    ImportedFile = relationship("ImportedFile", back_populates="ModelProfile")
 
 class ModelParameter(Base):
     __tablename__ = "ModelParameter"
     param_name: Mapped[str] = mapped_column(nullable=False, primary_key=True)
     model_name: Mapped[str] = mapped_column(ForeignKey('ModelProfile.model_name', ondelete="CASCADE"))
     ModelProfile = relationship("ModelProfile", back_populates="ModelParameter")
-    param_type: Mapped[str] = mapped_column(ForeignKey('ParameterType.type_name', ondelete="CASCADE"))
 
 class ParameterValue(Base):
     __tablename__ = "ParameterValue"
@@ -103,9 +110,9 @@ class ParameterValue(Base):
     geom_hashname: Mapped[str] = mapped_column(ForeignKey('GeometryFile.geom_hashname', ondelete="CASCADE"))
     param_value: Mapped[float] = mapped_column(nullable=True)
     
-class ParameterType(Base):
-    __tablename__ = "ParameterType"
-    type_name: Mapped[str] = mapped_column(nullable=False, primary_key=True)
+# class ParameterType(Base):
+#     __tablename__ = "ParameterType"
+#     type_name: Mapped[str] = mapped_column(nullable=False, primary_key=True)
 
 class IterationParameter(Base):
     __tablename__ = "IterationParameter"
@@ -115,6 +122,13 @@ class IterationParameter(Base):
     parameter_name: Mapped[str] = mapped_column(ForeignKey('ModelParameter.param_name', ondelete="CASCADE"))
     iter_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
     
-    
-    
+class ImportedFile(Base):
+    __tablename__ = "ImportedFile"
+    filename:  Mapped[str] = mapped_column(nullable=False)
+    md5_id: Mapped[str] = mapped_column(nullable=False, primary_key=True)
+    ModelProfile = relationship("ModelProfile", cascade="all, delete", back_populates="ImportedFile")
+
+for name, obj in inspect.getmembers(current_module):
+        if inspect.isclass(obj):
+            db_list.update({name: obj})
 

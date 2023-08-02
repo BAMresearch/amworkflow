@@ -66,30 +66,24 @@ class BaseWorkflow(object):
     def data_init(self):
         match self.indicator[0]: 
             case 1: #read the step file stored in the database and convert it to an OCC representation.
-                
                 self.linear_deflect = self.raw_args.stl_linear_deflect
                 self.angular_deflect= self.raw_args.stl_angular_deflect
                 self.mesh_t = self.raw_args.mesh_by_thickness
                 self.mesh_n = self.raw_args.mesh_by_layer
                 self.mesh_s = self.raw_args.mesh_size_factor
                 self.isbatch = self.parsed_args[L.BATCH_PARAM.value][L.IS_BATCH.value]
-                match self.impt_format.lower():
+                impt_format = path_valid_check(self.raw_args.import_dir, format=["stp", "step","stl","STL"])
+                impt_filename = get_filename(self.raw_args.import_dir)
+                match impt_format.lower():
                     case "stl":
                         self.import_model = stl_reader(path=self.import_dir)
                     case "stp":
                         self.import_model = step_reader(path=self.import_dir)
                     case "step":
-                        self.import_model = step_reader(path=D.DATABASE_OUTPUT_FILE_PATH.value+self.impt_filename)
+                        self.import_model = step_reader(path=D.DATABASE_OUTPUT_FILE_PATH.value+impt_filename)
                 match self.indicator[1]:
-                        case 1: # Import stp file, convert the file to an OCC representation and create a new profile for imported stp file. 
-                            match self.impt_format.lower():
-                                case "stl":
-                                    self.import_model = stl_reader(path=D.DATABASE_OUTPUT_FILE_PATH.value+self.impt_filename)
-                                case "stp":
-                                    self.import_model = step_reader(path=D.DATABASE_OUTPUT_FILE_PATH.value+self.impt_filename)
-                                case "tep":
-                                    self.import_model = step_reader(path=D.DATABASE_OUTPUT_FILE_PATH.value+self.impt_filename)
-                            self.db_data_collection[L.MDL_PROF.value] = {L.MDL_NAME.value: self.impt_filename} 
+                        case 1: # Import file, convert the file to an OCC representation and create a new profile for imported file. 
+                            self.db_data_collection[L.MDL_PROF.value] = {L.MDL_NAME.value: impt_filename} 
                             # self.batch_data_convert(self.parsed_args[L.GEOM_PARAM.value])
                         case 2: # remove selected profile and stp file, then quit
                             #TODO remove the step file and and info in db. 
@@ -326,9 +320,9 @@ class BaseWorkflow(object):
         pass
 
 def task_handler(args):
-    if args.model_name != None:
-        result = query_multi_data(ModelProfile, by_name=args.model_name, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
-        if args.model_name in result:
+    if args.name != None:
+        result = query_multi_data(ModelProfile, by_name=args.name, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
+        if args.name in result:
             indicator = (0,0)
             if args.edit:
                 indicator = (0,1)
@@ -341,10 +335,10 @@ def task_handler(args):
             indicator = (0,4)
     else:    
         if args.import_dir != None:
-            args.impt_format = path_valid_check(args.import_dir, format=["stp", "step","stl","STL"])
-            args.impt_filename = get_filename(args.import_dir)
-            result = query_multi_data(ModelProfile, by_name=args.impt_filename, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
-            if args.impt_filename in result:
+            impt_format = path_valid_check(args.import_dir, format=["stp", "step","stl","STL"])
+            impt_filename = get_filename(args.import_dir)
+            result = query_multi_data(ModelProfile, by_name=impt_filename, column_name=L.MDL_NAME.value, target_column_name=L.MDL_NAME.value)
+            if impt_filename in result:
                 indicator = (1,0)
                 if args.remove:
                     indicator = (1,2)

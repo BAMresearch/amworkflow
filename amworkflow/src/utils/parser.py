@@ -24,26 +24,11 @@ def yaml_parser(dir: str) -> dict:
 def dict_flat(input_dict: dict) -> dict:
     return flatdict.FlatDict(input_dict)
 
-# parser = argparse.ArgumentParser(description='amworkflow.')
-# parser.add_argument("batch",
-#                     metavar='b',
-#                     type = bool,
-#                     help='Batch mode. True for creating multiple geometries',
-#                     default= True)
-# parser.add_argument("usecase",
-#                     )
-# args = parser.parse_args()
-# data_mapper(yaml_parser(D.USECASE_PATH_PARAMWALL_PATH.value, "test1.yaml"))
-# print(args.batch)
-# print(yaml_parser(D.USECASE_PATH_PARAMWALL_PATH.value, "test1.yaml")[L.BATCH_PARAM.value][L.IS_BATCH.value])
-def cmd_parser(args) -> dict:
-    opt = {}
+def geom_param_parser(args) -> dict:
+    opt = {L.BATCH_PARAM.value: {L.IS_BATCH.value: True}}
     if args.iter_param != None:
-        it_param = np.array([args.iter_param[i:i+3] for i in range(0,len(args.iter_param),3)]).T
-        print(args.geom_param)
         opt[L.BATCH_PARAM.value] = {L.IS_BATCH.value: True}
-    else:
-        opt[L.BATCH_PARAM.value] = {L.IS_BATCH.value: False}
+        it_param = np.array([args.iter_param[i:i+3] for i in range(0,len(args.iter_param),3)]).T
     if args.geom_param != None:
         opt[L.GEOM_PARAM.value] = {}
         for ind, item in enumerate(args.geom_param):
@@ -52,6 +37,7 @@ def cmd_parser(args) -> dict:
                                             L.NUM.value: None}
             if args.iter_param != None:
                 if ind + 1 in it_param[0]:
+                    ind = np.where(it_param[0] == ind + 1)[0][0]
                     opt[L.GEOM_PARAM.value][item].update({L.ENDPOINT.value:it_param[1][ind],L.NUM.value:it_param[2][ind]})
-    return opt
+        return opt
     
