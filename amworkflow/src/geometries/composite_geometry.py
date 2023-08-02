@@ -2,11 +2,6 @@ from amworkflow.src.geometries.simple_geometry import create_edge, create_wire, 
 from amworkflow.src.geometries.operator import reverse, geom_copy, translate, rotate_face, fuser, hollow_carver, cutter3D
 from OCC.Core.gp import gp_Pnt
 import numpy as np
-from amworkflow.src.utils.writer import stl_writer, step_writer
-from amworkflow.src.geometries.builder import geometry_builder
-from amworkflow.src.geometries.mesher import get_geom_pointer
-import gmsh
-from amworkflow.src.utils.visualizer import mesh_visualizer
 from OCC.Core.TopoDS import TopoDS_Face, TopoDS_Shell
 from amworkflow.src.geometries.property import get_face_center_of_mass
 from amworkflow.src.geometries.builder import sewer

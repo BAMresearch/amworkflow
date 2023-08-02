@@ -342,7 +342,6 @@ dependencies:
   - zstd=1.5.5=hc292b87_0
   - pip:
     - altair==5.0.1
-    - amworkflow==0.3
     - anyio==3.7.0
     - argon2-cffi==21.3.0
     - argon2-cffi-bindings==21.2.0
@@ -397,7 +396,6 @@ dependencies:
     - notebook==6.5.4
     - notebook-shim==0.2.3
     - numpy-stl==3.0.1
-    - occutils==0.1.dev0
     - overrides==7.3.1
     - pandocfilters==1.5.0
     - panel==1.2.1

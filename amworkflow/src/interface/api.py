@@ -28,6 +28,7 @@ class amWorkflow(object):
             caller_frame = inspect.stack()[1]
             caller_fullpath = caller_frame.filename
             dbdir = utw.mk_dir(os.path.dirname(caller_fullpath), "db")
+            args.db_dir = dbdir
             args.import_file_dir = utw.mk_dir(dbdir, "imports")
             args.db_opt_dir = utw.mk_dir(os.path.dirname(caller_fullpath), "output")
             args.db_file_dir = utw.mk_dir(dbdir, "files")
@@ -46,16 +47,24 @@ class amWorkflow(object):
             return cr.query_multi_data(table=table, by_name=by_name, column_name=column_name, target_column_name=only_for_column)
         
         @staticmethod
-        def delete_data(table: str, prim_ky: str | list, isbatch: bool = False) -> None:
-            return cr.delete_data(table=table, by_primary_key=prim_ky, isbatch=isbatch)
+        def query_data_obj(table: str, by_name: str, column_name: str):
+            return cr.query_data_object(table=table, by_name=by_name,column_name=column_name)
         
         @staticmethod
-        def update_data(table: str, by_name: str | list, on_column: str, db_value: int | str | float | bool, isbatch: bool = False):
-            return cr.update_data(table=table, by_name=by_name, target_column=on_column, db_value=db_value, isbatch=isbatch)
+        def delete_data(table: str, prim_ky: str | list = None, by_name: str = None, column_name: str = None, isbatch: bool = False) -> None:
+            return cr.delete_data(table=table, by_primary_key=prim_ky, by_name=by_name, column_name=column_name, isbatch=isbatch)
+        
+        @staticmethod
+        def update_data(table: str, by_name: str | list, on_column: str, new_value: int | str | float | bool, isbatch: bool = False):
+            return cr.update_data(table=table, by_name=by_name, target_column=on_column, new_value=new_value, isbatch=isbatch)
         
         @staticmethod
         def insert_data(table: str, data: dict, isbatch: bool = False) -> None:
             return cr.insert_data(table=table, data=data, isbatch=isbatch)
+        
+        @staticmethod
+        def have_data_in_db(table: str, column_name, dataset: list, filter_by: str = None, search_column: str = None) -> bool | list:
+            return utr.having_data(table=table, column_name=column_name,dataset=dataset, filter=filter_by, search_column=search_column)
         
     class geom(object):
         @staticmethod
@@ -218,7 +227,7 @@ class amWorkflow(object):
             @param thickness thickness of the wall of the triangle
             @return a hollowed triangle face.
             """
-            return cg.isoceles_triangle_maker(bbox_len, bbox_wid, thickness, float)
+            return cg.isoceles_triangle_maker(bbox_len, bbox_wid, thickness)
         
         @staticmethod
         def create_sym_hexagon1_infill(total_len: float, total_wid:float, height:float, th: float) :
@@ -511,6 +520,11 @@ class amWorkflow(object):
         @staticmethod
         def get_md5(source: str) -> str:
             return utr.get_file_md5(path=source)
+        
+        @staticmethod
+        def mk_newdir(dirname:str, folder_name: str):
+            return utw.mk_dir(dirname= dirname, folder_name=folder_name)
+        
         
         
     

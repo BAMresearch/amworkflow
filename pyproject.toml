@@ -3,6 +3,7 @@ name = "amworkflow"
 version = "0.4"
 authors = [
     {name = "Annika Robens-Radermacher", email = "annika.robens-radermacher@bam.de"},
+    {name = "Yuxiang He", email = "yuxiang.he@bam.de"}
 ]
 
 description = "Automatic workflows for AM concrete appplications"
@@ -18,6 +19,8 @@ keywords = ["AM concrete", "workflow", "CAD"]
 dependencies = [
   "fenics-dolfinx",
   "gmsh",
+  "sqlalchemy",
+  "streamlit"
 ]
 
 [project.urls]

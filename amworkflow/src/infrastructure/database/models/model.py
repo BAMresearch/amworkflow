@@ -3,7 +3,7 @@ import inspect
 from typing import List
 from typing import Optional
 from sqlalchemy import ForeignKey
-from sqlalchemy import String
+from sqlalchemy import String, Column, Integer
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from amworkflow.src.constants.enums import Timestamp as T
 from datetime import datetime
@@ -92,16 +92,27 @@ class ModelProfile(Base):
     __tablename__ = "ModelProfile"
     model_name: Mapped[str] = mapped_column(nullable=False, primary_key=True)
     created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
-    ModelParameter = relationship("ModelParameter", cascade="all, delete", back_populates="ModelProfile")
     GeometryFile = relationship("GeometryFile", cascade="all, delete", back_populates="ModelProfile")
     imported_file_id: Mapped[str] = mapped_column(ForeignKey('ImportedFile.md5_id', ondelete="CASCADE"), nullable=True)
     ImportedFile = relationship("ImportedFile", back_populates="ModelProfile")
+    ParameterToProfile = relationship("ParameterToProfile", cascade="all, delete", back_populates="ModelProfile")
 
 class ModelParameter(Base):
     __tablename__ = "ModelParameter"
     param_name: Mapped[str] = mapped_column(nullable=False, primary_key=True)
+    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
+    ParameterToProfile = relationship("ParameterToProfile", cascade="all, delete", back_populates="ModelParameter")
+
+class ParameterToProfile(Base):
+    __tablename__ = "ParameterToProfile"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    param_name: Mapped[str] = mapped_column(ForeignKey('ModelParameter.param_name', ondelete="CASCADE"),nullable=False)
     model_name: Mapped[str] = mapped_column(ForeignKey('ModelProfile.model_name', ondelete="CASCADE"))
-    ModelProfile = relationship("ModelProfile", back_populates="ModelParameter")
+    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
+    # model_parameter = relationship("ModelParameter", foreign_keys=[param_name])
+    # profile_name = relationship("ModelProfile", foreign_keys=[model_name])
+    ModelParameter = relationship("ModelParameter", back_populates="ParameterToProfile")
+    ModelProfile = relationship("ModelProfile", back_populates="ParameterToProfile")
 
 class ParameterValue(Base):
     __tablename__ = "ParameterValue"
@@ -114,13 +125,13 @@ class ParameterValue(Base):
 #     __tablename__ = "ParameterType"
 #     type_name: Mapped[str] = mapped_column(nullable=False, primary_key=True)
 
-class IterationParameter(Base):
-    __tablename__ = "IterationParameter"
-    endpoint: Mapped[float] = mapped_column(nullable=True)
-    num: Mapped[int] = mapped_column(nullable=True, default=0)
-    geom_hashname: Mapped[str] = mapped_column(ForeignKey('GeometryFile.geom_hashname', ondelete="CASCADE"))
-    parameter_name: Mapped[str] = mapped_column(ForeignKey('ModelParameter.param_name', ondelete="CASCADE"))
-    iter_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
+# class IterationParameter(Base):
+#     __tablename__ = "IterationParameter"
+#     endpoint: Mapped[float] = mapped_column(nullable=True)
+#     num: Mapped[int] = mapped_column(nullable=True, default=0)
+#     geom_hashname: Mapped[str] = mapped_column(ForeignKey('GeometryFile.geom_hashname', ondelete="CASCADE"))
+#     parameter_name: Mapped[str] = mapped_column(ForeignKey('ModelParameter.param_name', ondelete="CASCADE"))
+#     iter_hashname: Mapped[str] = mapped_column(String(32), nullable=False, primary_key=True)
     
 class ImportedFile(Base):
     __tablename__ = "ImportedFile"

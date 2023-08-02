@@ -29,7 +29,7 @@ def query_data_object(table: str,
     if type(table) is str:
         table = db_list[table]
     column = getattr(table, column_name)
-    exec_result = session.execute(select(table).filter(column == by_name)).scalar_one()
+    exec_result = session.execute(select(table).filter(column == by_name)).all()
     return exec_result
 
 def query_multi_data(table: str,
@@ -55,8 +55,8 @@ def query_multi_data(table: str,
             dd.pop("_sa_instance_state", None)
     if target_column_name == None:
         result = pd.DataFrame(result)
-    elif len(result) != 0:
-        result = result[0]
+    # elif len(result) != 0:
+    #     result = result[0]
     return result
 
 def update_data(table: str,
@@ -68,7 +68,7 @@ def update_data(table: str,
     session.new
     table = db_list[table]
     if not isbatch:
-        transaction = query_data_object(table, by_name, column_name= target_column )
+        transaction = query_data_object(table, by_name, column_name= target_column )[0][0]
         setattr(transaction, target_column, new_value)
     else:
         for name in by_name:
@@ -77,18 +77,27 @@ def update_data(table: str,
     session.commit()
 
 def delete_data(table: str,
-                by_primary_key: str | list,
-                isbatch: bool,
+                by_primary_key: str | list = None,
+                by_name: str = None,
+                column_name: str = None,
+                isbatch: bool = False,
                 ) -> None:
     from amworkflow.src.infrastructure.database.engine.engine import session
     session.new
     table = db_list[table]
     if not isbatch:
-        transaction = session.get(table, by_primary_key)
-        session.delete(transaction)
+        if by_name == None:
+            transaction = session.get(table, by_primary_key)
+            session.delete(transaction)
+        else:
+            query = query_data_object(table=table, by_name=by_name, column_name=column_name)
+            transaction = [v[0] for v in query]
+            for t in transaction:
+                session.delete(t)
+        
     else:
-        for hash in by_primary_key:
-            transaction = session.get(table, hash)
+        for item in by_primary_key:
+            transaction = session.get(table, item)
             session.delete(transaction)
     session.commit()
 

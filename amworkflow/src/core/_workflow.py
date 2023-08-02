@@ -34,28 +34,38 @@ class BaseWorkflow(object):
                 md5 = aw.tool.get_md5(self.args.import_dir)
                 impt_filename = aw.db.query_data("ImportedFile", by_name=md5, column_name="md5_id", only_for_column="filename")
                 mdl_name = aw.db.query_data("ModelProfile", by_name=md5, column_name="imported_file_id", only_for_column="model_name")
-                print(mdl_name)
-                print(impt_filename)
                 impt_format = path_valid_check(self.args.import_dir, format=["stp", "step","stl","STL"])
                 if impt_format in ["stl","STL"]:
                     self.import_fl = aw.tool.read_stl(self.args.import_file_dir + "/" + impt_filename)
                 else:
                     self.import_fl = aw.tool.read_step(self.args.import_file_dir + "/" + impt_filename)
                 match self.indicator[1]:
-                        case 1: # Import file, convert the file to an OCC representation and create a new profile for imported file. 
-                            if impt_format in ["stl","STL"]:
-                                self.import_fl = aw.tool.read_stl(self.args.import_dir)
-                            else:
-                                self.import_fl = aw.tool.read_step(self.args.import_dir)
-                            
-                        case 2: # remove selected profile and stp file, then quit
-                            #TODO remove the step file and and info in db. 
-                            aw.db.delete_data("ImportedFile", md5)
+                    case 1: # Import file, convert the file to an OCC representation and create a new profile for imported file. 
+                        if impt_format in ["stl","STL"]:
+                            self.import_fl = aw.tool.read_stl(self.args.import_dir)
+                        else:
+                            self.import_fl = aw.tool.read_step(self.args.import_dir)
+                        
+                    case 2: # remove selected profile and stp file, then quit 
+                        aw.db.delete_data("ImportedFile", md5)
             case 2: # yaml file provided
                 pass
                 
             case 0: # model_name provided
                 match self.indicator[1]:
+                    case 1: #edit selected model
+                        have_data, diff_new, diff_old, query = aw.db.have_data_in_db("ParameterToProfile", "param_name", self.args.geom_param, filter_by=self.args.name, search_column="model_name")
+                        if have_data:
+                            print("No new parameters given, quitting...")
+                        else:
+                            for item in diff_old:
+                                aw.db.delete_data("ParameterToProfile",by_name = item, column_name="param_name")
+                            for item in diff_new:
+                                aw.db.insert_data("ModelParameter", {"param_name": item})
+                                aw.db.insert_data("ParameterToProfile", {
+                                    "param_name": item,
+                                    "model_name": self.args.name})
+                            
                     case 2:
                         #remove certain model profile from database
                         query_mdl_pfl = aw.db.query_data("ModelProfile", by_name=self.args.name, column_name="model_name")
@@ -65,22 +75,37 @@ class BaseWorkflow(object):
                         else:
                             aw.db.delete_data("ModelProfile", prim_ky=self.args.name)
                     case 0: # do nothing, fill data into the loaded model.
-                        pass
+                        query = aw.db.query_data("ParameterToProfile", by_name=self.args.name, column_name="model_name", only_for_column="param_name")
+                        if (self.args.geom_param == None) and (self.args.geom_param_value == None):
+                            print(f"Parameter(s) of model {self.args.name}: {query}")
+                        if (self.args.geom_param == None) and (self.args.geom_param_value != None):
+                            # TODO: using result in query and value from args.
+                            pass
                     case 3: # Create a new model profile with given parameters.
                         aw.db.insert_data("ModelProfile", {"model_name": self.args.name})
                         if self.args.geom_param != None:
-                            input = {"model_name": self.args.name}
+                            input_data = {}
+                            input_data2 = {}
                             collect = []
+                            collect2 = []
+                            have_data, diff,_,_ = aw.db.have_data_in_db("ModelParameter", "param_name", self.args.geom_param)
+                            if not have_data:
+                                for param in diff:
+                                    input_data.update({"param_name": param})
+                                    collect.append(copy.copy(input_data))
+                                aw.db.insert_data("ModelParameter", collect, True)
                             for param in self.args.geom_param:
-                                print(param)
-                                input.update({"param_name": param})
-                                collect.append(copy.copy(input))
-                            aw.db.insert_data("ModelParameter", collect, True)
+                                input_data2.update({"param_name": param,
+                                                    "model_name": self.args.name})
+                                collect2.append(copy.copy(input_data2))
+                            aw.db.insert_data("ParameterToProfile", collect2, True)
+                            
             case 3: # Draft mode.
-                pass
+                # temp_dir = aw.tool.mk_newdir(self.args.db_dir, "temp")
+                
  
     def geom_param_handler(self):
-        if self.args.geom_param != None:
+        if (self.args.geom_param != None) and (self.args.geom_param_value != None):
             data = geom_param_parser(self.args)
             data.update({L.MESH_PARAM.value: {
                 L.MESH_SIZE_FACTOR:self.args.mesh_size_factor, 
