@@ -1,8 +1,8 @@
 import numpy as np
 from amworkflow.src.constants.exceptions import DimensionInconsistencyException
-st_pt = np.array([10, 8, 6, 4])
-nd_pt = np.array([None, None, 10, None])
-num = np.array([None, None, 5, None])
+# st_pt = np.array([10, 8, 6, 4])
+# nd_pt = np.array([None, None, 10, None])
+# num = np.array([None, None, 5, None])
 def simple_permutator(start_point: np.ndarray,
                       end_point: np.ndarray,
                       num: np.ndarray,
@@ -32,6 +32,6 @@ def simple_permutator(start_point: np.ndarray,
     p_with_label = {"label": label, "permutation": re_by_label}
     return p_with_label, result
 
-print(simple_permutator(start_point=st_pt,
-end_point=nd_pt,
-num= num, label=["length","width", "height", "curve"])[0])
+# print(simple_permutator(start_point=st_pt,
+# end_point=nd_pt,
+# num= num, label=["length","width", "height", "curve"])[0])

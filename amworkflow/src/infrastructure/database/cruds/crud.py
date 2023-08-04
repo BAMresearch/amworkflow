@@ -62,6 +62,7 @@ def query_multi_data(table: str,
 def update_data(table: str,
                 by_name: str | list,
                 target_column: str,
+                edit_column: str,
                 new_value: int | str | float | bool,
                 isbatch: bool) -> None:
     from amworkflow.src.infrastructure.database.engine.engine import session
@@ -69,11 +70,11 @@ def update_data(table: str,
     table = db_list[table]
     if not isbatch:
         transaction = query_data_object(table, by_name, column_name= target_column )[0][0]
-        setattr(transaction, target_column, new_value)
+        setattr(transaction, edit_column, new_value)
     else:
         for name in by_name:
             transaction = query_data_object(table, name, target_column)
-            setattr(transaction, target_column, new_value)
+            setattr(transaction, edit_column, new_value)
     session.commit()
 
 def delete_data(table: str,

@@ -37,13 +37,19 @@ def stl_writer(item: any, item_name: str, linear_deflection: float = 0.001, angu
             if status:
                 logging.info("Done!")
         case 1:
+            if linear_deflection is None:
+                linear_deflection = 0.001
+            if angular_deflection is None:
+                angular_deflection = 0.1
+            if item_name[-3:].lower() != "stl":
+                item_name += ".stl"
             stl_output_dir = store_dir
             try:
                 os.path.isdir(stl_output_dir)
             except:
                 raise AssertionError("wrong path provided")
             write_stl_file(item,
-                           stl_output_dir+item_name, mode="binary", linear_deflection = linear_deflection, 
+                           os.path.join(stl_output_dir, item_name), mode="binary", linear_deflection = linear_deflection, 
                            angular_deflection = angular_deflection,
             )
 
@@ -53,7 +59,7 @@ def step_writer(item: any, filename: str):
      @param item the item to write to the file
      @param filename the filename to write the file to ( default is None
     """
-    result = write_step_file(a_shape= item,
+    write_step_file(a_shape= item,
                              filename= filename)
 
 def namer(name_type: str,
@@ -106,9 +112,9 @@ def namer(name_type: str,
 
 # print(namer("dimension", np.array([33.2, 22.44, 55.3, 66.8])))
 
-def batch_num_creator():
+def task_id_creator():
         """
-         @brief Create batch number for current date and time. It is used to determine how many batches are created in one batch.
+         @brief Create task id for current date and time. It is used to determine how many batches are created in one batch.
          @return datetime. datetime date and time in YYYYMMDDHHMMSS format with format'%Y%m%d
         """
         return datetime.now().strftime(T.YY_MM_DD_HH_MM_SS.value)

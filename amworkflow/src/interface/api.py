@@ -38,6 +38,7 @@ class amWorkflow(object):
             def inner_decorator(func):
                 def wrapped(*args, **kwargs):
                     flow.geometry_spawn = func
+                    flow.create()
                 wrapped()
                 return wrapped
             return inner_decorator
@@ -55,8 +56,8 @@ class amWorkflow(object):
             return cr.delete_data(table=table, by_primary_key=prim_ky, by_name=by_name, column_name=column_name, isbatch=isbatch)
         
         @staticmethod
-        def update_data(table: str, by_name: str | list, on_column: str, new_value: int | str | float | bool, isbatch: bool = False):
-            return cr.update_data(table=table, by_name=by_name, target_column=on_column, new_value=new_value, isbatch=isbatch)
+        def update_data(table: str, by_name: str | list, on_column: str, edit_column: str, new_value: int | str | float | bool, isbatch: bool = False):
+            return cr.update_data(table=table, by_name=by_name, target_column=on_column, new_value=new_value, isbatch=isbatch, edit_column=edit_column)
         
         @staticmethod
         def insert_data(table: str, data: dict, isbatch: bool = False) -> None:

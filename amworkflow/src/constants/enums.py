@@ -35,3 +35,4 @@ class Label(Enum):
     PARAM_NAME = "param_name"
     LYR_TKN = "layer_thickness"
     LYR_NUM = "layer_num"
+    IMP_DIR = "import_dir"
