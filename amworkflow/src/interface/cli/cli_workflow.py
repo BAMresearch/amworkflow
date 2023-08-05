@@ -15,6 +15,9 @@ def cli():
     parser.add_argument("-e", "--edit", action="store_true")
     parser.add_argument("-rm", "--remove", action="store_true")
     parser.add_argument("-f", "--file", nargs="?", type=str)
+    parser.add_argument("-msh", "--gen_msh", action="store_true")
+    parser.add_argument("-vtk", "--gen_vtk", action="store_true")
+    parser.add_argument("-stp", "--gen_stp", action="store_true")
     args = parser.parse_args()
     return args
 

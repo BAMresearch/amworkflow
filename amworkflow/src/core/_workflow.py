@@ -8,8 +8,9 @@ from amworkflow.src.utils.permutator import simple_permutator
 from amworkflow.src.constants.exceptions import NoDataInDatabaseException, InsufficientDataException
 from amworkflow.src.interface.api import amWorkflow as aw
 from amworkflow.src.utils.writer import task_id_creator
-#pip lib dependencies
+#3rd party lib dependencies
 import numpy as np
+import gmsh
 #built-in dependencies
 import copy
 import subprocess
@@ -29,8 +30,11 @@ class BaseWorkflow(object):
         # data
         self.geom_data = []
         self.pm = 0
+        self.mdl = 0
         self.task_id = task_id_creator()
+        self.task_dir = ""
         self.db_data_collect = {"geometry":[],
+                                "occ": [],
                                 "mesh":[]}
         #main
         self.sequence()
@@ -66,7 +70,7 @@ class BaseWorkflow(object):
         aw.db.insert_data("GeometryFile", self.db_data_collect["geometry"], True)
     def process_geometry(self, param: list):
         pm = MapParamModel(self.args.geom_param, param)
-        stl = self.geometry_spawn(pm)
+        occ = self.geometry_spawn(pm)
         hex = aw.tool.namer("hex")
         name = aw.tool.namer("dimension-batch", param, self.task_id, self.args.geom_param)
         data_in = {"filename": name,
@@ -75,11 +79,65 @@ class BaseWorkflow(object):
                    "linear_deflection": self.args.stl_linear_deflect,
                    "angular_deflection": self.args.stl_angular_deflect,
                    "is_imported": self.isimport,
-                   "task_id": self.task_id}
-        task_dir = aw.tool.mk_newdir(self.args.db_file_dir, self.task_id)
-        aw.tool.write_stl(stl, hex, self.args.stl_linear_deflect, self.args.stl_angular_deflect, store_dir=task_dir)
+                   "task_id": self.task_id,
+                   "stp": self.args.gen_stp}
+        self.task_dir = aw.tool.mk_newdir(self.args.db_file_dir, self.task_id)
+        aw.tool.write_stl(occ, hex, self.args.stl_linear_deflect, self.args.stl_angular_deflect, store_dir=self.task_dir)
+        if self.args.gen_stp:
+            aw.tool.write_step(occ, hex, self.task_dir)
         self.db_data_collect["geometry"].append(copy.copy(data_in))
-
+        self.db_data_collect["occ"].append(occ)
+        
+    def mesh(self):
+        is_thickness = True if self.args.mesh_by_thickness is not None else False
+        size_factor = self.args.mesh_size_factor
+        gmsh.initialize()
+        g_info = self.db_data_collect["geometry"]
+        for index, item in enumerate(self.db_data_collect["occ"]):
+            if is_thickness:
+                layer_param = self.args.mesh_by_thickness
+            else:
+                layer_param = self.args.mesh_by_layer
+            model = aw.mesh.mesher(item=item,
+                   model_name=g_info[index]["geom_hashname"],
+                   layer_type = is_thickness,
+                   layer_param=layer_param,
+                   size_factor=size_factor)
+            mesh_hashname = aw.tool.namer(name_type="hex")
+            mesh_name = aw.tool.namer(name_type="mesh",
+                                   is_layer_thickness=True,
+                                   layer_param= layer_param,
+                                   geom_name=g_info[index]["filename"])
+            aw.tool.write_mesh(item = model, 
+                        directory=self.task_dir, 
+                        modelname=g_info[index]["geom_hashname"],
+                        output_filename = mesh_hashname,
+                        format="xdmf")
+            if self.args.gen_msh:
+                aw.tool.write_mesh(item = model, 
+                        directory=self.task_dir, 
+                        modelname=g_info[index]["geom_hashname"],
+                        output_filename = mesh_hashname,
+                        format="msh")
+            if self.args.gen_vtk:
+                aw.tool.write_mesh(item = model, 
+                        directory=self.task_dir, 
+                        modelname=g_info[index]["geom_hashname"],
+                        output_filename = mesh_hashname,
+                        format="vtk")    
+            data_in = {"mesh_hashname":mesh_hashname,
+                       "mesh_size_factor": self.args.mesh_size_factor,
+                       "layer_thickness": self.args.mesh_by_thickness,
+                       "layer_num": self.args.mesh_by_layer,
+                       "task_id": self.task_id,
+                       "geom_hashname": g_info[index]["filename"],
+                       "msh": self.args.gen_msh,
+                       "vtk": self.args.gen_vtk,
+                       "filename": mesh_name}
+            self.db_data_collect["mesh"].append(copy.copy(data_in))
+        aw.db.insert_data("MeshFile",self.db_data_collect["mesh"], True)
+        gmsh.finalize()
+        
     def data_init(self):
         if self.args.stl_linear_deflect is None:
             self.args.stl_linear_deflect = 0.01
@@ -95,6 +153,7 @@ class BaseWorkflow(object):
                     self.import_fl = aw.tool.read_stl(self.args.import_file_dir + "/" + impt_filename)
                 else:
                     self.import_fl = aw.tool.read_step(self.args.import_file_dir + "/" + impt_filename)
+                # if self.args.geom_param
                 match self.indicator[1]:
                     case 1: # Import file, convert the file to an OCC representation and create a new profile for imported file. 
                         if impt_format in ["stl","STL"]:
@@ -112,7 +171,9 @@ class BaseWorkflow(object):
             case 0: # model_name provided
                 match self.indicator[1]:
                     case 1: #edit selected model
-                        have_data, diff_new, diff_old, query = aw.db.have_data_in_db("ParameterToProfile", "param_name", self.args.geom_param, filter_by=self.args.name, search_column="model_name")
+                        have_data, diff_new, diff_old, query = aw.db.have_data_in_db("ParameterToProfile", "param_name", self.args.geom_param, filter_by=self.args.name, search_column="model_name", search_column2="param_status", filter_by2=1)
+                        new_p = []
+                        active_p = []
                         if have_data:
                             print("No new parameters given, quitting...")
                         else:
@@ -122,10 +183,19 @@ class BaseWorkflow(object):
                                 q = aw.db.query_data("ModelParameter", by_name=item, column_name="param_name")
                                 if q.empty:
                                     aw.db.insert_data("ModelParameter", {"param_name": item})
-                                aw.db.insert_data("ParameterToProfile", {
+                                    aw.db.insert_data("ParameterToProfile", {
                                     "param_name": item,
                                     "model_name": self.args.name,
                                     "param_status": True})
+                                    new_p.append(item)
+                                else:
+                                    ex_name = q["param_name"][0]
+                                    aw.db.update_data("ParameterToProfile", ex_name,"param_name","param_status", True )
+                                    active_p.append(item)
+                            print(f"""Deactivate parameter(s):{diff_old} \nActivate parameter(s): {active_p+new_p} \nAdd new parameter(s): {new_p}""")        
+                                    
+                        if self.args.geom_param_value is not None:
+                            self.indicator = (0,1,1)
                             
                     case 2:
                         #remove certain model profile from database
@@ -135,13 +205,14 @@ class BaseWorkflow(object):
                             aw.db.delete_data("ImportedFile", prim_ky=q_md5)
                         else:
                             aw.db.delete_data("ModelProfile", prim_ky=self.args.name)
+                        print(f"model {self.args.name} has been removed successfully.")
                     case 0: # do nothing, fill data into the loaded model.
-                        query = aw.db.query_data("ParameterToProfile", by_name=self.args.name, column_name="model_name", only_for_column="param_name")
+                        query = aw.db.query_data("ParameterToProfile", by_name=self.args.name, column_name="model_name", only_for_column="param_name", snd_column_name="param_status", snd_by_name=1)
                         if (self.args.geom_param is None) and (self.args.geom_param_value is None):
-                            print(f"Parameter(s) of model {self.args.name}: {query}")
-                        if (self.args.geom_param is None) and (self.args.geom_param_value is not None):
-                            # TODO: using result in query and value from args.
-                            pass
+                            print(f"Activated Parameter(s) of model {self.args.name}: {query}")
+                        if self.args.geom_param_value is not None:
+                            self.indicator = (0,0,1)
+                            self.args.geom_param = query
                     case 3: # Create a new model profile with given parameters.
                         aw.db.insert_data("ModelProfile", {"model_name": self.args.name})
                         if self.args.geom_param is not None:
@@ -192,9 +263,9 @@ class BaseWorkflow(object):
                 if self.args.name != None:
                     result = aw.db.query_data("ModelProfile", by_name=self.args.name, column_name=L.MDL_NAME.value, only_for_column=L.MDL_NAME.value)
                     if self.args.name in result:
-                        indicator = (0,0,1)
+                        indicator = (0,0,0)
                         if self.args.edit:
-                            indicator = (0,1,1)
+                            indicator = (0,1,0)
                         elif self.args.remove:
                             indicator = (0,2,0)   
                     elif self.args.import_dir != None:
@@ -204,7 +275,7 @@ class BaseWorkflow(object):
                         md5 = aw.tool.get_md5(self.args.import_dir)
                         result = aw.db.query_data("ImportedFile", by_name=md5, column_name="md5_id")
                         if not result.empty:
-                            indicator = (1,0,1)
+                            indicator = (1,0,0)
                             q_filename = result.filename[0]
                             print(f"Got same file {q_filename} in db, using existing file now...")
                             impt_filename = q_filename
@@ -214,9 +285,11 @@ class BaseWorkflow(object):
                             aw.db.insert_data("ImportedFile",{"filename": impt_filename, "md5_id": md5})
                             aw.db.insert_data("ModelProfile", {"model_name": self.args.name,"imported_file_id": md5})
                             aw.tool.upload(self.args.import_dir, self.args.import_file_dir)
-                            indicator = (1,1,1)
+                            indicator = (1,1,0)
                     elif self.args.geom_param is not None:
                         indicator = (0,3,0)
+                        if self.args.geom_param_value is not None:
+                            indicator = (0,3,1)
                     else:
                         raise InsufficientDataException()
                 # elif self.args.yaml_dir is not None:

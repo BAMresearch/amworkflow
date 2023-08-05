@@ -6,7 +6,6 @@ import copy
 import shutil
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Extend.DataExchange import write_stl_file, write_step_file, read_stl_file
-from amworkflow.src.utils.sanity_check import path_valid_check
 from amworkflow.src.constants.exceptions import GmshUseBeforeInitializedException
 from amworkflow.src.constants.enums import Directory
 from amworkflow.src.constants.enums import Timestamp as T
@@ -53,18 +52,25 @@ def stl_writer(item: any, item_name: str, linear_deflection: float = 0.001, angu
                            angular_deflection = angular_deflection,
             )
 
-def step_writer(item: any, filename: str):
+def step_writer(item: any, filename: str, directory: str):
     """
      @brief Writes a step file. This is a wrapper around write_step_file to allow a user to specify the shape of the step and a filename
      @param item the item to write to the file
      @param filename the filename to write the file to ( default is None
     """
+    try:
+        os.path.isdir(directory)
+    except:
+        raise AssertionError("wrong path provided")
+    if filename[-3:].lower() not in ["stl","stp", "tep"]:
+        filename += ".stp"
+    path = os.path.join(directory, filename)
     write_step_file(a_shape= item,
-                             filename= filename)
+                             filename= path)
 
 def namer(name_type: str,
           dim_vector: np.ndarray = None,
-          batch_num: int = None,
+          task_id: int = None,
           parm_title: list = None,
           is_layer_thickness: bool = None,
           layer_param: float or int = None,
@@ -74,7 +80,7 @@ def namer(name_type: str,
            @brief Generate a name based on the type of name. It is used to generate an output name for a layer or a geometric object
            @param name_type Type of name to generate
            @param dim_vector Vector of dimension values ( default : None )
-           @param batch_num Number of batch to generate ( default : None )
+           @param task_id id of task to generate ( default : None )
            @param parm_title List of parameters for the layer
            @param is_layer_thickness True if the layer is thickness ( default : False )
            @param layer_param Parameter of the layer ( default : None )
@@ -99,7 +105,7 @@ def namer(name_type: str,
         case "dimension-batch":
             dim_vector = [round(i, 3) for i in dim_vector]
             repl_vector = [str(i).replace(".", "_") for i in dim_vector]
-            output = "-".join([title[i] + repl_vector[i] for i in range(len(title))]) + "-" + str(batch_num)
+            output = "-".join([title[i] + repl_vector[i] for i in range(len(title))]) + "-" + str(task_id)
         
         case "mesh":
             # The layer thickness layer.
@@ -131,12 +137,12 @@ def vtk_writer(item: any,
     """
     item.write(dirname + filename)
 
-def mesh_writer(item: gmsh.model, directory: str, filename: str, output_filename: str, format: str):
+def mesh_writer(item: gmsh.model, directory: str, modelname: str, output_filename: str, format: str):
     """
      @brief Writes mesh to file. This function is used to write meshes to file. The format is determined by the value of the format parameter
      @param item gmsh. model object that contains the model
      @param directory directory where the file is located. It is the root of the file
-     @param filename name of the file to be written
+     @param modelname name of the gmsh model to be written
      @param output_filename name of the file to be written
      @param format format of the file to be written. Valid values are vtk msh
     """
@@ -144,19 +150,23 @@ def mesh_writer(item: gmsh.model, directory: str, filename: str, output_filename
         gmsh.is_initialized()
     except:
         raise GmshUseBeforeInitializedException()
-    item.set_current(filename)
+    item.set_current(modelname)
     phy_gp = item.getPhysicalGroups()
     model_name = item.get_current()
     # Write the format to the file.
     if format == "vtk" or format == "msh":
-        gmsh.write(directory + filename + "." + format)
+        name_with_f = output_filename + "." + format 
+        new_dir = os.path.join(directory, name_with_f)
+        gmsh.write(new_dir)
     # Create a mesh file for the current model.
     if format == "xdmf":
         msh, cell_markers, facet_markers = gmshio.model_to_mesh(item, MPI.COMM_SELF, 0)
         msh.name = item.get_current()
         cell_markers.name = f"{msh.name}_cells"
         facet_markers.name = f"{msh.name}_facets"
-        with XDMFFile(msh.comm, directory + f"{output_filename}.xdmf", "w") as file:
+        name_with_f = output_filename + ".xdmf"
+        new_dir = os.path.join(directory, name_with_f)
+        with XDMFFile(msh.comm, new_dir, "w") as file:
             file.write_mesh(msh)
             file.write_meshtags(cell_markers)
             msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
@@ -170,11 +180,6 @@ def mk_dir(dirname:str, folder_name: str):
         os.mkdir(newdir)
     return newdir
 
-def file_copy(path1: str, path2: str) -> bool:
-    path_valid_check(path1)
-    path_valid_check(path2)
-    try:
-        shutil.copy(path1, path2)
-        return True
-    except:
-        return False
+
+def convert_to_datetime(datetime_str):
+    return datetime.strptime(datetime_str, "%Y%m%d%H%M%S")

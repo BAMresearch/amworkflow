@@ -35,16 +35,26 @@ def query_data_object(table: str,
 def query_multi_data(table: str,
                      by_name: str = None,
                      column_name: str = None,
+                     snd_by_name: str = None,
+                     snd_column_name: str = None,
                      target_column_name: str = None,):
     from amworkflow.src.infrastructure.database.engine.engine import session
     session.new
     table = db_list[table]
     if by_name != None:
         column = getattr(table, column_name)
+        if snd_column_name is not None:
+            column2 = getattr(table, snd_column_name)
         if target_column_name != None:
-            result = [i.__dict__[target_column_name] for i in session.query(table).filter(column == by_name).all()]
+            if snd_by_name != None:
+                result = [i.__dict__[target_column_name] for i in session.query(table).filter(column == by_name, column2 == snd_by_name).all()]
+            else:
+                result = [i.__dict__[target_column_name] for i in session.query(table).filter(column == by_name).all()]
         else:
-            result = [i.__dict__ for i in session.query(table).filter(column == by_name).all()]
+            if snd_by_name is not None:
+                result = [i.__dict__ for i in session.query(table).filter(column == by_name, column2 == snd_by_name).all()]
+            else:
+                result = [i.__dict__ for i in session.query(table).filter(column == by_name).all()]
             for dd in result:
                 dd.pop("_sa_instance_state", None)
         

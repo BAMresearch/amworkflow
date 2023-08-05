@@ -38,14 +38,17 @@ class amWorkflow(object):
             def inner_decorator(func):
                 def wrapped(*args, **kwargs):
                     flow.geometry_spawn = func
-                    flow.create()
+                    i = flow.indicator
+                    if i[2] == 1:
+                        flow.create()
+                        flow.mesh()
                 wrapped()
                 return wrapped
             return inner_decorator
     class db(object):
         @staticmethod
-        def query_data(table: str, by_name: str = None, column_name: str = None, only_for_column: str = None) -> pd.DataFrame:
-            return cr.query_multi_data(table=table, by_name=by_name, column_name=column_name, target_column_name=only_for_column)
+        def query_data(table: str, by_name: str = None, column_name: str = None, snd_by_name: str = None, snd_column_name: str = None, only_for_column: str = None) -> pd.DataFrame:
+            return cr.query_multi_data(table=table, by_name=by_name, column_name=column_name, target_column_name=only_for_column, snd_by_name=snd_by_name, snd_column_name=snd_column_name)
         
         @staticmethod
         def query_data_obj(table: str, by_name: str, column_name: str):
@@ -64,8 +67,8 @@ class amWorkflow(object):
             return cr.insert_data(table=table, data=data, isbatch=isbatch)
         
         @staticmethod
-        def have_data_in_db(table: str, column_name, dataset: list, filter_by: str = None, search_column: str = None) -> bool | list:
-            return utr.having_data(table=table, column_name=column_name,dataset=dataset, filter=filter_by, search_column=search_column)
+        def have_data_in_db(table: str, column_name, dataset: list, filter_by: str = None, search_column: str = None, filter_by2: str = None, search_column2: str = None) -> bool | list:
+            return utr.having_data(table=table, column_name=column_name,dataset=dataset, filter=filter_by, search_column=search_column, filter2=filter_by2, search_column2=search_column2)
         
     class geom(object):
         @staticmethod
@@ -472,13 +475,13 @@ class amWorkflow(object):
             utw.stl_writer(item, item_name, linear_deflection, angular_deflection, output_mode, store_dir)
 
         @staticmethod
-        def write_step(item: any, filename: str):
+        def write_step(item: any, filename: str, directory: str):
             """
             @brief Writes a step file. This is a wrapper around write_step_file to allow a user to specify the shape of the step and a filename
             @param item the item to write to the file
             @param filename the filename to write the file to ( default is None
             """
-            utw.step_writer(item, filename)
+            utw.step_writer(item, filename, directory)
         
         @staticmethod
         def namer(name_type: str,
@@ -525,6 +528,18 @@ class amWorkflow(object):
         @staticmethod
         def mk_newdir(dirname:str, folder_name: str):
             return utw.mk_dir(dirname= dirname, folder_name=folder_name)
+        
+        @staticmethod
+        def write_mesh(item: gmsh.model, directory: str, modelname: str, output_filename: str, format: str):
+            """
+            @brief Writes mesh to file. This function is used to write meshes to file. The format is determined by the value of the format parameter
+            @param item gmsh. model object that contains the model
+            @param directory directory where the file is located. It is the root of the file
+            @param modelname name of the gmsh model to be written
+            @param output_filename name of the file to be written
+            @param format format of the file to be written. Valid values are vtk msh
+            """
+            utw.mesh_writer(item=item, directory=directory, modelname=modelname, format=format, output_filename=output_filename)
         
         
         
