@@ -3,9 +3,11 @@ import amworkflow.src.geometries.composite_geometry as cg
 import amworkflow.src.geometries.operator as o
 import amworkflow.src.geometries.property as p
 import amworkflow.src.geometries.mesher as m
+import amworkflow.src.geometries.builder as b
 import amworkflow.src.utils.writer as utw
 import amworkflow.src.utils.reader as utr
 import amworkflow.src.infrastructure.database.cruds.crud as cr
+import amworkflow.src.utils.db_io as dio
 from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Wire, TopoDS_Shell, TopoDS_Solid, TopoDS_Face, TopoDS_Edge, topods_Compound
 from OCC.Core.gp import gp_Pnt, gp_Vec
 from OCC.Core.Geom import Geom_TrimmedCurve
@@ -39,8 +41,9 @@ class amWorkflow(object):
                 def wrapped(*args, **kwargs):
                     flow.geometry_spawn = func
                     i = flow.indicator
-                    if i[2] == 1:
+                    if (i[4] == 1) or flow.onlyimport:
                         flow.create()
+                    if flow.cmesh:
                         flow.mesh()
                 wrapped()
                 return wrapped
@@ -71,6 +74,25 @@ class amWorkflow(object):
             return utr.having_data(table=table, column_name=column_name,dataset=dataset, filter=filter_by, search_column=search_column, filter2=filter_by2, search_column2=search_column2)
         
     class geom(object):
+        @staticmethod
+        def geometry_builder(*args) -> topods_Compound:
+            return b.geometry_builder(*args)
+        
+        @staticmethod
+        def sew(*component) -> TopoDS_Shape:
+            return b.sewer(*component)
+        
+        @staticmethod
+        def make_solid(item: TopoDS_Shape) -> TopoDS_Shape:
+            return b.solid_maker(item=item)
+        @staticmethod
+        def pnt(x: float, y:float, z:float) -> gp_Pnt:
+            return gp_Pnt(x, y, z)
+        
+        @staticmethod
+        def create_face(wire: TopoDS_Wire) -> TopoDS_Face:
+            return sg.create_face(wire=wire)
+        
         @staticmethod
         def create_box(length: float, 
                width: float, 
@@ -260,13 +282,13 @@ class amWorkflow(object):
             return cg.create_wall_by_points(pts, th, isclose, height,debug, output)
         
         @staticmethod
-        def get_face_center_of_mass(face: TopoDS_Face, gp_pnt: bool = False) -> tuple:
+        def get_face_center_of_mass(face: TopoDS_Face, gp_pnt: bool = False) -> tuple | gp_Pnt:
             """
             @brief Get the center of mass of a TopoDS_Face. This is useful for determining the center of mass of a face or to get the centre of mass of an object's surface.
             @param face TopoDS_Face to get the center of mass of
             @param gp_pnt If True return an gp_Pnt object otherwise a tuple of coordinates.
             """
-            return p.get_face_center_of_mass(face, gp_Pnt)
+            return p.get_face_center_of_mass(face, gp_pnt)
         
         @staticmethod
         def get_face_area(face: TopoDS_Face) -> float:
@@ -366,13 +388,14 @@ class amWorkflow(object):
             return o.translate(item, vector)
         
         @staticmethod
-        def reverse(item:TopoDS_Shape) -> None:
+        def reverse(item:TopoDS_Shape) -> TopoDS_Shape:
             """
             @brief Reverse the shape.
             @param item The item to reverse.
             @return The reversed item
             """
             o.reverse(item)
+            return item
             
         @staticmethod
         def geom_copy(item: TopoDS_Shape):
@@ -519,7 +542,7 @@ class amWorkflow(object):
         
         @staticmethod
         def upload(source: str, destination: str) -> bool:
-            return utw.file_copy(path1=source, path2=destination)
+            return dio.file_copy(path1=source, path2=destination)
         
         @staticmethod
         def get_md5(source: str) -> str:
@@ -540,6 +563,10 @@ class amWorkflow(object):
             @param format format of the file to be written. Valid values are vtk msh
             """
             utw.mesh_writer(item=item, directory=directory, modelname=modelname, format=format, output_filename=output_filename)
+            
+        @staticmethod
+        def is_md5(string: str) -> bool:
+            return utr.is_md5_hash(s=string)
         
         
         

@@ -12,6 +12,7 @@ def cli():
     parser.add_argument("-n", "--name", nargs="?", type=str)
     parser.add_argument("-y", "--yaml_dir", nargs="?", type=str)
     parser.add_argument("-impt", "--import_dir", nargs="?", type=str)
+    parser.add_argument("-rp", "--replace", nargs="?", type=str)
     parser.add_argument("-e", "--edit", action="store_true")
     parser.add_argument("-rm", "--remove", action="store_true")
     parser.add_argument("-f", "--file", nargs="?", type=str)

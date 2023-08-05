@@ -24,14 +24,13 @@ class GeometryFile(Base):
     angular_deflection: Mapped[float] = mapped_column(nullable=True)
     created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
     is_imported: Mapped[bool] = mapped_column(default=False)
-    task_id: Mapped[str] = mapped_column(nullable=True)
-    stl: Mapped[bool] = mapped_column(nullable=False, default=True)
-    stp: Mapped[bool] = mapped_column(nullable=False, default=False)
+    task_id: Mapped[str] = mapped_column(ForeignKey("Task.task_id", ondelete="CASCADE"))
     SliceFile = relationship("SliceFile", cascade="all, delete", back_populates="GeometryFile")
     MeshFile = relationship("MeshFile", cascade="all, delete", back_populates="GeometryFile")
     GCode = relationship("GCode", cascade="all, delete", back_populates="GeometryFile")
     FEResult = relationship("FEResult", cascade="all, delete", back_populates="GeometryFile")
     ModelProfile = relationship("ModelProfile", back_populates="GeometryFile")
+    Task = relationship("Task", back_populates = "GeometryFile")
     
 
 class SliceFile(Base):
@@ -55,13 +54,10 @@ class MeshFile(Base):
     layer_thickness: Mapped[float] = mapped_column(nullable=True)
     layer_num: Mapped[int] = mapped_column(nullable=True)
     created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
-    task_id: Mapped[str] = mapped_column(nullable=True)
+    task_id: Mapped[str] = mapped_column(ForeignKey("Task.task_id", ondelete="CASCADE"))
     geom_hashname = mapped_column(ForeignKey('GeometryFile.geom_hashname', ondelete="CASCADE"))
-    xdmf: Mapped[bool] = mapped_column(nullable=False, default=True)
-    h5: Mapped[bool] = mapped_column(nullable=False, default = True)
-    msh: Mapped[bool] = mapped_column(nullable=False, default=False)
-    vtk: Mapped[bool] = mapped_column(nullable=False, default=False)
     GeometryFile = relationship("GeometryFile", back_populates="MeshFile")
+    Task = relationship("Task", back_populates = "MeshFile")
     
 class GCode(Base):
     __tablename__ = "GCode"
@@ -91,6 +87,7 @@ class ModelProfile(Base):
     imported_file_id: Mapped[str] = mapped_column(ForeignKey('ImportedFile.md5_id', ondelete="CASCADE"), nullable=True)
     ImportedFile = relationship("ImportedFile", back_populates="ModelProfile")
     ParameterToProfile = relationship("ParameterToProfile", cascade="all, delete", back_populates="ModelProfile")
+    Task = relationship("Task", back_populates="ModelProfile", cascade="all, delete")
 
 class ModelParameter(Base):
     __tablename__ = "ModelParameter"
@@ -134,6 +131,21 @@ class ImportedFile(Base):
     filename:  Mapped[str] = mapped_column(nullable=False)
     md5_id: Mapped[str] = mapped_column(nullable=False, primary_key=True)
     ModelProfile = relationship("ModelProfile", cascade="all, delete", back_populates="ImportedFile")
+    
+class Task(Base):
+    __tablename__ = "Task"
+    task_id: Mapped[str] = mapped_column(nullable=False, primary_key=True)
+    model_name: Mapped[str] = mapped_column(ForeignKey('ModelProfile.model_name', ondelete="CASCADE"))
+    stl: Mapped[bool] = mapped_column(default=True)
+    stp: Mapped[bool] = mapped_column(default=False)
+    xdmf: Mapped[bool] = mapped_column(default=False)
+    h5: Mapped[bool] = mapped_column(default=False)
+    vtk: Mapped[bool] = mapped_column(default=False)
+    msh: Mapped[bool] = mapped_column(default=False)
+    ModelProfile = relationship("ModelProfile", back_populates="Task")
+    MeshFile = relationship("MeshFile", back_populates="Task", cascade="all, delete")
+    GeometryFile = relationship("GeometryFile", back_populates="Task", cascade="all, delete")
+    
 
 for name, obj in inspect.getmembers(current_module):
         if inspect.isclass(obj):

@@ -43,4 +43,4 @@ prism = reverse(cutter3D(prism, cutter))
 #sew the prism, the bottom face and the imported model together
 output = geometry_builder([prism, btm_face, imp])
 #output the model.
-stl_writer(output, "cutt.stl")
+# stl_writer(output, "cutt.stl")

@@ -13,7 +13,7 @@ from amworkflow.src.utils.writer import mesh_writer, mk_dir
 from amworkflow.src.utils.permutator import simple_permutator
 from amworkflow.src.utils.writer import namer, stl_writer, batch_num_creator
 import numpy as np
-from amworkflow.src.utils.download import downloader
+from amworkflow.src.utils.db_io import downloader
 from amworkflow.src.constants.data_model import MapParamModel, DeepMapParamModel
 from amworkflow.src.utils.sanity_check import path_valid_check, dimension_check
 from amworkflow.src.constants.exceptions import NoDataInDatabaseException, InsufficientDataException

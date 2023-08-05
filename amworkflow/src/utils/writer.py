@@ -113,6 +113,8 @@ def namer(name_type: str,
                 output = f"MeLT{layer_param}-" + geom_name
             else:
                 output = f"MeLN{layer_param}-" + geom_name
+        case "only_import":
+            output = geom_name + "_" + task_id
             
     return output
 

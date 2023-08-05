@@ -5,6 +5,7 @@ import hashlib
 import logging
 from amworkflow.src.infrastructure.database.cruds.crud import query_multi_data
 import pandas as pd
+import re
 
 
 def get_filename(path: str) -> str:
@@ -50,3 +51,9 @@ def having_data(table: str, column_name: str, dataset: list, search_column: str 
         return True, 0, 0, 0
     else:
         return False, diff, diff2, query_list
+
+
+
+def is_md5_hash(s):
+    md5_pattern = r"^[a-fA-F0-9]{32}$"
+    return re.match(md5_pattern, s) is not None

@@ -12,35 +12,43 @@ from amworkflow.src.utils.writer import task_id_creator
 import numpy as np
 import gmsh
 #built-in dependencies
+import os
 import copy
 import subprocess
 from multiprocessing import Pipe, Process
 
 class BaseWorkflow(object):
     def __init__(self, args):
+        #base
         self.args = args
         self.geometry_spawn: callable
-        #signals
-        self.indicator = self.task_handler()
-        self.nodb = False
-        self.isbatch = False
-        self.isimport = False
-        print(self.indicator)
-        self.init_signal = self.data_init()
         # data
         self.geom_data = []
         self.pm = 0
         self.mdl = 0
-        self.task_id = task_id_creator()
+        self.md5 = ""
+        self.impt_filename = ""
+        self.impt_format = ""
         self.task_dir = ""
+        self.import_fl = None
         self.db_data_collect = {"geometry":[],
                                 "occ": [],
                                 "mesh":[]}
+        #signals
+        self.indicator = self.task_handler()
+        self.isbatch = False
+        self.isimport = False
+        self.onlyimport = False
+        self.cmesh = False
+        print(self.indicator)
+        self.init_signal = self.data_init()
+        
         #main
+        self.task_id = task_id_creator()
+        aw.db.insert_data("Task", {"task_id": self.task_id,
+                                   "model_name": self.args.name})
         self.sequence()
-        
-        
-        
+
     def sequence(self):
         match self.init_signal:
             case 1:
@@ -53,34 +61,46 @@ class BaseWorkflow(object):
                 # self.create()
     
     def create(self) -> None:
-        if self.isbatch:
-            start_vec = np.array(self.args.geom_param_value)
-            is_start_vector = False
-            for iter_ind, iter_perm in enumerate(self.geom_data):
-                if (np.linalg.norm(iter_perm - start_vec) == 0):
-                    if is_start_vector == False:
-                        self.process_geometry(param = iter_perm)
-                        is_start_vector = True
-                    else:
-                        pass
-                else:
-                    self.process_geometry(iter_perm)
+        if self.init_signal == 2:
+            self.process_geometry(param=[])
         else:
-            self.process_geometry(param=self.args.geom_param_value)
+            if self.isbatch:
+                start_vec = np.array(self.args.geom_param_value)
+                is_start_vector = False
+                for iter_ind, iter_perm in enumerate(self.geom_data):
+                    if (np.linalg.norm(iter_perm - start_vec) == 0):
+                        if is_start_vector == False:
+                            self.process_geometry(param = iter_perm)
+                            is_start_vector = True
+                        else:
+                            pass
+                    else:
+                        self.process_geometry(iter_perm)
+            else:
+                self.process_geometry(param=self.args.geom_param_value)
         aw.db.insert_data("GeometryFile", self.db_data_collect["geometry"], True)
+        if self.args.gen_stp:
+            aw.db.update_data("Task", self.task_id, "task_id", "stp", True)
     def process_geometry(self, param: list):
-        pm = MapParamModel(self.args.geom_param, param)
-        occ = self.geometry_spawn(pm)
-        hex = aw.tool.namer("hex")
-        name = aw.tool.namer("dimension-batch", param, self.task_id, self.args.geom_param)
+        if self.init_signal == 2:
+            pm = DeepMapParamModel({})
+            pm.imported_model = self.import_fl
+            occ = self.geometry_spawn(pm)
+            hex = aw.tool.namer("hex")
+            name = aw.tool.namer("only_import", param, self.task_id, geom_name=self.args.name)
+        else:
+            pm = MapParamModel(self.args.geom_param, param)
+            pm.imported_model = self.import_fl
+            occ = self.geometry_spawn(pm)
+            hex = aw.tool.namer("hex")
+            name = aw.tool.namer("dimension-batch", param, self.task_id, self.args.geom_param)
         data_in = {"filename": name,
                    "geom_hashname": hex,
                    "model_name": self.args.name,
                    "linear_deflection": self.args.stl_linear_deflect,
                    "angular_deflection": self.args.stl_angular_deflect,
                    "is_imported": self.isimport,
-                   "task_id": self.task_id,
-                   "stp": self.args.gen_stp}
+                   "task_id": self.task_id}
         self.task_dir = aw.tool.mk_newdir(self.args.db_file_dir, self.task_id)
         aw.tool.write_stl(occ, hex, self.args.stl_linear_deflect, self.args.stl_angular_deflect, store_dir=self.task_dir)
         if self.args.gen_stp:
@@ -131,11 +151,15 @@ class BaseWorkflow(object):
                        "layer_num": self.args.mesh_by_layer,
                        "task_id": self.task_id,
                        "geom_hashname": g_info[index]["filename"],
-                       "msh": self.args.gen_msh,
-                       "vtk": self.args.gen_vtk,
                        "filename": mesh_name}
             self.db_data_collect["mesh"].append(copy.copy(data_in))
         aw.db.insert_data("MeshFile",self.db_data_collect["mesh"], True)
+        aw.db.update_data("Task", self.task_id, "task_id", "xdmf", True)
+        aw.db.update_data("Task", self.task_id, "task_id", "h5", True)
+        if self.args.gen_msh:
+            aw.db.update_data("Task", self.task_id, "task_id", "msh", True)
+        if self.args.gen_vtk:
+            aw.db.update_data("Task", self.task_id, "task_id", "vtk", True)
         gmsh.finalize()
         
     def data_init(self):
@@ -143,31 +167,40 @@ class BaseWorkflow(object):
             self.args.stl_linear_deflect = 0.01
         if self.args.stl_angular_deflect is None:
             self.args.stl_angular_deflect = 0.1 
-        match self.indicator[0]: 
+        if ((self.args.mesh_by_layer is not None) or (self.args.mesh_by_thickness is not None)) and (self.args.mesh_size_factor is not None):
+            self.cmesh == True
+        match self.indicator[2]: 
             case 1: #read the imported file stored in the database and convert it to an OCC representation.
-                md5 = aw.tool.get_md5(self.args.import_dir)
-                impt_filename = aw.db.query_data("ImportedFile", by_name=md5, column_name="md5_id", only_for_column="filename")
-                mdl_name = aw.db.query_data("ModelProfile", by_name=md5, column_name="imported_file_id", only_for_column="model_name")
-                impt_format = path_valid_check(self.args.import_dir, format=["stp", "step","stl","STL"])
-                if impt_format in ["stl","STL"]:
-                    self.import_fl = aw.tool.read_stl(self.args.import_file_dir + "/" + impt_filename)
-                else:
-                    self.import_fl = aw.tool.read_step(self.args.import_file_dir + "/" + impt_filename)
+                
                 # if self.args.geom_param
-                match self.indicator[1]:
+                match self.indicator[3]:
+                    case 0: # got the same file in db.
+                        self.load_geom_file()
+            
                     case 1: # Import file, convert the file to an OCC representation and create a new profile for imported file. 
-                        if impt_format in ["stl","STL"]:
-                            self.import_fl = aw.tool.read_stl(self.args.import_dir)
-                        else:
-                            self.import_fl = aw.tool.read_step(self.args.import_dir)
+                        self.load_geom_file()
                         
-                    case 2: # remove selected profile and stp file, then quit 
-                        aw.db.delete_data("ImportedFile", md5)
+                    case 2: # remove selected profile and geom file, then quit 
+                        aw.db.delete_data("ImportedFile", self.md5)
+                        print(f"File {self.impt_filename}, ID {self.md5} \nin db has been removed successfully...")
+            case 0:
+                match self.indicator[3]:
+                    case 1:
+                        # load stored file into workflow
+                        query_md5 = aw.db.query_data("ModelProfile", self.args.name, "model_name", only_for_column="imported_file_id")
+                        self.md5 = query_md5[0]
+                        query_f = aw.db.query_data("ImportedFile", self.md5, "md5_id", only_for_column="filename")
+                        self.impt_filename = query_f[0]
+                        self.load_geom_file()
+                        
+                    case 2:
+                        # replace geom file from selected profile.
+                        aw.db.update_data("ModelProfile", self.args.name, "model_name", "imported_file_id", self.md5)
             # case 2: # yaml file provided
             #     # self.data = DeepMapParamModel(yaml_parser(self.args.yaml_dir))
             #     data = DeepMapParamModel(yaml_parser(self.args.yaml_dir))
             #     return data
-                
+        match self.indicator[0]:
             case 0: # model_name provided
                 match self.indicator[1]:
                     case 1: #edit selected model
@@ -195,7 +228,7 @@ class BaseWorkflow(object):
                             print(f"""Deactivate parameter(s):{diff_old} \nActivate parameter(s): {active_p+new_p} \nAdd new parameter(s): {new_p}""")        
                                     
                         if self.args.geom_param_value is not None:
-                            self.indicator = (0,1,1)
+                            self.indicator[4] = 1
                             
                     case 2:
                         #remove certain model profile from database
@@ -208,13 +241,18 @@ class BaseWorkflow(object):
                         print(f"model {self.args.name} has been removed successfully.")
                     case 0: # do nothing, fill data into the loaded model.
                         query = aw.db.query_data("ParameterToProfile", by_name=self.args.name, column_name="model_name", only_for_column="param_name", snd_column_name="param_status", snd_by_name=1)
-                        if (self.args.geom_param is None) and (self.args.geom_param_value is None):
+                        if (self.args.geom_param is None) and (self.args.geom_param_value is None) and (self.args.import_dir is None):
                             print(f"Activated Parameter(s) of model {self.args.name}: {query}")
                         if self.args.geom_param_value is not None:
-                            self.indicator = (0,0,1)
+                            self.indicator[4] = 1
                             self.args.geom_param = query
+                        if self.args.import_dir is not None:
+                            path_valid_check(self.args.import_dir)
+                            
                     case 3: # Create a new model profile with given parameters.
-                        aw.db.insert_data("ModelProfile", {"model_name": self.args.name})
+                        query_m = aw.db.query_data("ModelProfile", self.args.name, "model_name")
+                        if query_m.empty:
+                            aw.db.insert_data("ModelProfile", {"model_name": self.args.name})
                         if self.args.geom_param is not None:
                             input_data = {}
                             input_data2 = {}
@@ -235,8 +273,13 @@ class BaseWorkflow(object):
             case 3: # Draft mode.
                 # temp_dir = aw.tool.mk_newdir(self.args.db_dir, "temp")
                 pass
-        if (self.indicator[2] == 1) and (self.args.geom_param_value is not None) and (self.args.geom_param is not None):
+            
+        if (self.indicator[4] == 1) and (self.args.geom_param_value is not None) and (self.args.geom_param is not None):
             return 0
+        elif ((self.indicator[0:2] == [0,4]) or (self.indicator[0:2] == [0,0])) and ((self.indicator[2:4] == [1,0]) or (self.indicator[2:4] == [1,1])):
+            self.onlyimport = True
+            self.load_geom_file()
+            return 2
         else:
             return 1
             
@@ -252,44 +295,65 @@ class BaseWorkflow(object):
             return self.args.geom_param_value
     
     def task_handler(self):
-        indicator = (0,0,0)
+        indicator = [0,0,0,0,0]
         match self.args.mode:
             case "draft":
-                indicator = (3,0,0)
+                indicator[0] = 3 #[3,0,0,0,0]
             case "production":
                 if self.args.yaml_dir is not None:
                     path_valid_check(self.args.yaml_dir, format=["yml", "yaml"])
                     self.args = yaml_parser(self.args.yaml_dir)
                 if self.args.name != None:
-                    result = aw.db.query_data("ModelProfile", by_name=self.args.name, column_name=L.MDL_NAME.value, only_for_column=L.MDL_NAME.value)
-                    if self.args.name in result:
-                        indicator = (0,0,0)
+                    result = aw.db.query_data("ModelProfile", by_name=self.args.name, column_name=L.MDL_NAME.value)
+                    if not result.empty:
+                        #indicator = [0,0,0,0,0]
+                        if result.loc[result["model_name"] == self.args.name, 'imported_file_id'].values[0] is not None:
+                            indicator[2:4] = [0,1] #[0,0,0,1,0]
+                            if self.args.replace is not None:
+                                if os.path.isdir(os.path.dirname(self.args.replace)):
+                                    self.args.import_dir = self.args.replace
+                                else:
+                                    if aw.tool.is_md5(self.args.replace):
+                                        indicator[3] = 2 #[0,0,0,2,0]
+                                    else:
+                                        print(f"Got {self.args.replace}")
+                                        raise Exception("Replace: Neither a md5 ID or a file path provided.")
                         if self.args.edit:
-                            indicator = (0,1,0)
+                            indicator[1] = 1 #[0,1,0,0,0]
                         elif self.args.remove:
-                            indicator = (0,2,0)   
-                    elif self.args.import_dir != None:
-                        impt_format = path_valid_check(self.args.import_dir, format=["stp", "step","stl","STL"])
-                        self.isimport = True
-                        impt_filename = aw.tool.get_filename(self.args.import_dir)
-                        md5 = aw.tool.get_md5(self.args.import_dir)
-                        result = aw.db.query_data("ImportedFile", by_name=md5, column_name="md5_id")
-                        if not result.empty:
-                            indicator = (1,0,0)
-                            q_filename = result.filename[0]
-                            print(f"Got same file {q_filename} in db, using existing file now...")
-                            impt_filename = q_filename
-                            if self.args.remove:
-                                indicator = (1,2,0)
-                        else:
-                            aw.db.insert_data("ImportedFile",{"filename": impt_filename, "md5_id": md5})
-                            aw.db.insert_data("ModelProfile", {"model_name": self.args.name,"imported_file_id": md5})
-                            aw.tool.upload(self.args.import_dir, self.args.import_file_dir)
-                            indicator = (1,1,0)
+                            indicator[1] = 2 #[0,2,0,0,0]
                     elif self.args.geom_param is not None:
-                        indicator = (0,3,0)
+                        indicator[1] = 3 #[0,3,0,0,0]
                         if self.args.geom_param_value is not None:
-                            indicator = (0,3,1)
+                            indicator[4] = 1 #[0,3,0,0,1]
+                    else:
+                        indicator[1] = 4 #[0,4,0,0,0]
+                    if self.args.import_dir != None:
+                        indicator[2] = 1
+                        self.impt_format = path_valid_check(self.args.import_dir, format=["stp", "step","stl","STL"])
+                        self.isimport = True
+                        self.impt_filename = aw.tool.get_filename(self.args.import_dir)
+                        self.md5 = aw.tool.get_md5(self.args.import_dir)
+                        result = aw.db.query_data("ImportedFile", by_name=self.md5, column_name="md5_id")
+                        if not result.empty:
+                            q_filename = result.filename[0]
+                            self.impt_filename = q_filename
+                            if self.args.remove:
+                                indicator[3] = 2
+                            else:
+                                indicator[3] = 0
+                                print(f"Got same file {q_filename} in db, using existing file now...")
+                        else:
+                            indicator[3] = 1
+                            aw.tool.upload(self.args.import_dir, self.args.import_file_dir)
+                            aw.db.insert_data("ImportedFile",{"filename": self.impt_filename, "md5_id": self.md5})
+                            print("Im here")
+                            if (indicator[0:2] != [0,3]) and (indicator[0:2] != [0,4]) and (indicator[0] == 0):
+                                aw.db.update_data("ModelProfile",self.args.name, "model_name", "imported_file_id", self.md5)
+                            else:
+                                aw.db.insert_data("ModelProfile", {"model_name": self.args.name,"imported_file_id": self.md5})
+                                
+                                
                     else:
                         raise InsufficientDataException()
                 # elif self.args.yaml_dir is not None:
@@ -297,3 +361,10 @@ class BaseWorkflow(object):
                 else:
                     raise InsufficientDataException()
         return indicator
+    def load_geom_file(self):
+        if self.impt_format in ["stl","STL"]:
+            self.import_fl = aw.tool.read_stl(self.args.import_file_dir + "/" + self.impt_filename)
+        else:
+            self.import_fl = aw.tool.read_step(self.args.import_file_dir + "/" + self.impt_filename)
+    
+    
