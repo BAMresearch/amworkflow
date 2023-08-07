@@ -1,6 +1,6 @@
 [project]
 name = "amworkflow"
-version = "0.4"
+version = "1.0"
 authors = [
     {name = "Annika Robens-Radermacher", email = "annika.robens-radermacher@bam.de"},
     {name = "Yuxiang He", email = "yuxiang.he@bam.de"}

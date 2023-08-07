@@ -22,7 +22,7 @@ class GeometryFile(Base):
     model_name: Mapped[str] = mapped_column(ForeignKey('ModelProfile.model_name', ondelete="CASCADE"))
     linear_deflection: Mapped[float] = mapped_column(nullable=True)
     angular_deflection: Mapped[float] = mapped_column(nullable=True)
-    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
+    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now().replace(microsecond=0))
     is_imported: Mapped[bool] = mapped_column(default=False)
     task_id: Mapped[str] = mapped_column(ForeignKey("Task.task_id", ondelete="CASCADE"))
     SliceFile = relationship("SliceFile", cascade="all, delete", back_populates="GeometryFile")
@@ -53,7 +53,7 @@ class MeshFile(Base):
     mesh_size_factor: Mapped[float] = mapped_column(nullable=False)
     layer_thickness: Mapped[float] = mapped_column(nullable=True)
     layer_num: Mapped[int] = mapped_column(nullable=True)
-    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
+    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now().replace(microsecond=0))
     task_id: Mapped[str] = mapped_column(ForeignKey("Task.task_id", ondelete="CASCADE"))
     geom_hashname = mapped_column(ForeignKey('GeometryFile.geom_hashname', ondelete="CASCADE"))
     GeometryFile = relationship("GeometryFile", back_populates="MeshFile")
@@ -82,7 +82,7 @@ class FEResult(Base):
 class ModelProfile(Base):
     __tablename__ = "ModelProfile"
     model_name: Mapped[str] = mapped_column(nullable=False, primary_key=True)
-    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
+    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now().replace(microsecond=0))
     GeometryFile = relationship("GeometryFile", cascade="all, delete", back_populates="ModelProfile")
     imported_file_id: Mapped[str] = mapped_column(ForeignKey('ImportedFile.md5_id', ondelete="CASCADE"), nullable=True)
     ImportedFile = relationship("ImportedFile", back_populates="ModelProfile")
@@ -92,7 +92,7 @@ class ModelProfile(Base):
 class ModelParameter(Base):
     __tablename__ = "ModelParameter"
     param_name: Mapped[str] = mapped_column(nullable=False, primary_key=True)
-    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
+    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now().replace(microsecond=0))
     ParameterToProfile = relationship("ParameterToProfile", cascade="all, delete", back_populates="ModelParameter")
 
 class ParameterToProfile(Base):
@@ -101,7 +101,7 @@ class ParameterToProfile(Base):
     param_name: Mapped[str] = mapped_column(ForeignKey('ModelParameter.param_name', ondelete="CASCADE"),nullable=False,primary_key=True)
     model_name: Mapped[str] = mapped_column(ForeignKey('ModelProfile.model_name', ondelete="CASCADE"), primary_key=True)
     param_status: Mapped[bool] = mapped_column(nullable=False, default=True)
-    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now)
+    created_date: Mapped[datetime] = mapped_column(nullable=False, default=datetime.now().replace(microsecond=0))
     # model_parameter = relationship("ModelParameter", foreign_keys=[param_name])
     # profile_name = relationship("ModelProfile", foreign_keys=[model_name])
     ModelParameter = relationship("ModelParameter", back_populates="ParameterToProfile")

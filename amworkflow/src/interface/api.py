@@ -35,7 +35,7 @@ class amWorkflow(object):
             args.db_opt_dir = utw.mk_dir(os.path.dirname(caller_fullpath), "output")
             args.db_file_dir = utw.mk_dir(dbdir, "files")
             cfg.DB_DIR = dbdir
-            from amworkflow.src.core._workflow import BaseWorkflow
+            from amworkflow.src.core.workflow import BaseWorkflow
             flow = BaseWorkflow(args = args)
             def inner_decorator(func):
                 def wrapped(*args, **kwargs):
@@ -72,6 +72,10 @@ class amWorkflow(object):
         @staticmethod
         def have_data_in_db(table: str, column_name, dataset: list, filter_by: str = None, search_column: str = None, filter_by2: str = None, search_column2: str = None) -> bool | list:
             return utr.having_data(table=table, column_name=column_name,dataset=dataset, filter=filter_by, search_column=search_column, filter2=filter_by2, search_column2=search_column2)
+        
+        @staticmethod
+        def query_join_data(table: str, join_column: str, table1: str,  join_column1:str, table2: str = None, join_column2:str = None, filter0: str = None, filter1: str = None, filter2: str = None, on_column_tb: str = None, on_column_tb1: str = None, on_column_tb2: str = None):
+            return cr.query_join_tables(table=table, join_column=join_column, table1=table1, join_column1=join_column1, table2=table2, filter0=filter0, filter1=filter1, filter2=filter2, on_column_tb=on_column_tb, on_column_tb1=on_column_tb1, on_column_tb2=on_column_tb2)
         
     class geom(object):
         @staticmethod

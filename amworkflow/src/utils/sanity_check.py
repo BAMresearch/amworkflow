@@ -63,7 +63,6 @@ def path_valid_check(path: str, format: list = None) -> bool:
     if os.path.isdir(dir_path) == False:
         raise AssertionError("wrong path provided")
     if format != None:
-        
         fmt = filename.rsplit(".",1)[1]
         # if dir_path is not a directory
         

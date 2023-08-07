@@ -8,3 +8,9 @@ def mesh_visualizer():
     except:
         raise GmshUseBeforeInitializedException()
     gmsh.fltk.run()
+    
+def color_background(value):
+    if value:
+        return 'background-color: green'
+    # else:
+    #     return 'background-color: blue'

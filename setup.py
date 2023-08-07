@@ -3,7 +3,7 @@ import os
 path_to_am = os.getcwd()
 setup(
     name='amworkflow',
-    version='0.4',
+    version='1.0',
     packages=['amworkflow.src', 'amworkflow.tests'],
     install_requires=[f"OCCUtils-0.1.dev0 @ file://localhost/{path_to_am}/amworkflow/dependencies/OCCUtils-0.1.dev0-py3-none-any.whl"],
     package_data={
