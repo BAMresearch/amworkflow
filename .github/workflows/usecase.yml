@@ -43,7 +43,7 @@ jobs:
         run: git clone https://github.com/tpaviot/pythonocc-utils.git && pip install ./pythonocc-utils
 
       - name: Install amworkflow
-        run: pip install .
+        run: python -m pip install .
 
       - name: Run test_am4
         shell: bash -l {0} #new shell
