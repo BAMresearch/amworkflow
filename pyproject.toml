@@ -28,3 +28,6 @@ dependencies = [
 
 [build-system]
 requires = ["setuptools", "wheel"]
+
+[tool.setuptools]
+packages = ["amworkflow"]
