@@ -1,9 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='amworkflow',
     version='1.0',
-    packages=['amworkflow.src', 'amworkflow.tests', 'amworkflow.src.interface.api'],
+    packages=find_packages(),
     url='',
     license='MIT',
     author='Yuxiang He',
