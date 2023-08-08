@@ -19,8 +19,7 @@ keywords = ["AM concrete", "workflow", "CAD"]
 dependencies = [
   "fenics-dolfinx",
   "gmsh",
-  "sqlalchemy",
-  "streamlit"
+  "sqlalchemy"
 ]
 
 [project.urls]
