@@ -32,20 +32,20 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: "/usr/share/miniconda3/envs/amworkflow"
-          key: conda-${{ hashFiles('environment.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+          key: conda-${{ hashFiles('environment.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
       - name: Update environment
-        run: mamba env update -n amworkflow -f environment.yaml
+        run: mamba env update -n amworkflow -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Install package
         run: git clone https://github.com/tpaviot/pythonocc-utils.git && pip install ./pythonocc-utils
 
-      - name: Run param_wall
+      - name: Run test_am4
         shell: bash -l {0} #new shell
         run: |
-          python usecases/param_wall/param_wall.py
+          python usecases/test_am4/am4.py -n p_wall -gp length width height radius -gpv 1 2 3 10
 
 
 

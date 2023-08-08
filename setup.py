@@ -12,7 +12,7 @@ setup(
     },
     url='',
     license='MIT',
-    author='Yuxiang He',
+    author='Yuxiang He'
     author_email='yuxiang.he@bam.de',
     description=''
 )
