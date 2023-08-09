@@ -348,7 +348,6 @@ dependencies:
   - pip:
     - alabaster==0.7.13
     - altair==5.0.1
-    - amworkflow==0.4
     - anyio==3.7.0
     - argon2-cffi==21.3.0
     - argon2-cffi-bindings==21.2.0
@@ -487,4 +486,3 @@ dependencies:
     - websockets==11.0.3
     - widgetsnbextension==3.6.4
     - xyzservices==2023.7.0
-prefix: /home/yuxiang/anaconda3/envs/amworkflow
