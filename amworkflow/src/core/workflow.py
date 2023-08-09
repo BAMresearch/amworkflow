@@ -229,7 +229,7 @@ class BaseWorkflow(object):
                                     ex_name = q["param_name"][0]
                                     aw.db.update_data("ParameterToProfile", ex_name,"param_name","param_status", True )
                                     active_p.append(item)
-                            print(f"""Deactivate parameter(s):{diff_old} \nActivate parameter(s): {active_p+new_p} \nAdd new parameter(s): {new_p}""")        
+                            print(f"""\033[1mDeactivate parameter(s)\033[0m:{diff_old} \n\033[1mActivate parameter(s)\033[0m: {active_p+new_p} \n\033[1mAdd new parameter(s)\033[0m: {new_p}""")        
                                     
                         if self.args.geom_param_value is not None:
                             self.indicator[4] = 1
@@ -247,7 +247,7 @@ class BaseWorkflow(object):
                         query = aw.db.query_data("ParameterToProfile", by_name=self.args.name, column_name="model_name", only_for_column="param_name", snd_column_name="param_status", snd_by_name=1)
                         if (self.args.geom_param is None) and (self.args.geom_param_value is None) and (self.args.import_dir is None):
                             if self.md5 is None:
-                                print(f"Activated Parameter(s) of model {self.args.name}: {query}")
+                                print(f"\033[1mActivated Parameter(s) of model {self.args.name}:\033[0m {query}")
                         if self.args.geom_param_value is not None:
                             self.indicator[4] = 1
                             self.args.geom_param = query

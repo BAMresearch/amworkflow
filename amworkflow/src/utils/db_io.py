@@ -61,7 +61,7 @@ def downloader(file_dir: str,
                     dest_p2 = os.path.join(dest_m,row.filename+".h5")
                     copyer(file_p, dest_p)
                     copyer(file_p2, dest_p2)
-            print(f"\033[1mTask{t_id} Downloaded successfully.\033[0m")
+            print(f"\033[1mTask {t_id} Downloaded successfully.\033[0m")
     if time_range is not None:
         st = convert_to_datetime(time_range[0])
         nd = convert_to_datetime(time_range[1])
