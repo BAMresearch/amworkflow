@@ -45,6 +45,8 @@ class amWorkflow(object):
                         flow.create()
                     if flow.cmesh:
                         flow.mesh()
+                    if flow.pcs_indicator[0] == 1:
+                        flow.auto_download()
                 wrapped()
                 return wrapped
             return inner_decorator
@@ -571,6 +573,15 @@ class amWorkflow(object):
         @staticmethod
         def is_md5(string: str) -> bool:
             return utr.is_md5_hash(s=string)
+        
+        @staticmethod
+        def download(file_dir: str = None,
+               output_dir: str = None,
+               task_id: int | str = None,
+               time_range: list = None,
+               org: bool = True):
+            
+            return dio.downloader(file_dir=file_dir, output_dir=output_dir, task_id=task_id, time_range=time_range, org=org)
         
         
         

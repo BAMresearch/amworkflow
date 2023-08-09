@@ -38,6 +38,7 @@ class BaseWorkflow(object):
             [0,0,0,1,0],
             [0,4,1,1,0]
         ]
+        self.pcs_indicator = [0,0,0]
         #signals
         self.indicator = self.task_handler()
         self.isbatch = False
@@ -85,6 +86,7 @@ class BaseWorkflow(object):
         aw.db.insert_data("GeometryFile", self.db_data_collect["geometry"], True)
         if self.args.gen_stp:
             aw.db.update_data("Task", self.task_id, "task_id", "stp", True)
+        self.pcs_indicator[0] = 1
             
     def process_geometry(self, param: list):
         if self.init_signal == 2:
@@ -167,6 +169,7 @@ class BaseWorkflow(object):
         if self.args.gen_vtk:
             aw.db.update_data("Task", self.task_id, "task_id", "vtk", True)
         gmsh.finalize()
+        self.pcs_indicator[1] = 1
         
     def data_init(self):
         if self.args.stl_linear_deflect is None:
@@ -273,8 +276,15 @@ class BaseWorkflow(object):
                             aw.db.insert_data("ParameterToProfile", collect2, True)
                             
             case 3: # Draft mode.
-                # temp_dir = aw.tool.mk_newdir(self.args.db_dir, "temp")
                 pass
+            
+            case 4: # Download files:
+                if len(self.args.download) == 1:
+                    #TODO download files from one task or all tasks.
+                    aw.tool.download(file_dir=self.args.db_file_dir, output_dir=self.args.db_opt_dir, task_id=self.args.download[0])
+                elif len(self.args.download) == 2:
+                    #TODO download files from several tasks
+                    aw.tool.download(file_dir=self.args.db_file_dir, output_dir=self.args.db_opt_dir, time_range=[self.args.download[0], self.args.download[1]])
             
         if (self.indicator[4] == 1) and (self.args.geom_param_value is not None) and (self.args.geom_param is not None):
             return 0
@@ -302,86 +312,89 @@ class BaseWorkflow(object):
             case "draft":
                 indicator[0] = 3 #[3,0,0,0,0]
             case "production":
-                if self.args.yaml_dir is not None:
-                    path_valid_check(self.args.yaml_dir, format=["yml", "yaml"])
-                    self.args = yaml_parser(self.args.yaml_dir)
-                if self.args.name != None:
-                    result = aw.db.query_data("ModelProfile", by_name=self.args.name, column_name=L.MDL_NAME.value)
-                    if not result.empty:
-                        #indicator = [0,0,0,0,0]
-                        self.md5 = result.imported_file_id[0]
-                        query_f = aw.db.query_data("ImportedFile", by_name=self.md5, column_name="md5_id")
-                        if self.md5 is not None:
-                            indicator[2:4] = [0,1] #[0,0,0,1,0]
-                            query_f = aw.db.query_data("ImportedFile", by_name=self.md5, column_name="md5_id")
-                            self.impt_filename = query_f.filename[0]
-                            self.impt_format = path_valid_check(os.path.join(self.args.import_file_dir, self.impt_filename), format=["stp", "step","stl","STL"])
-                            if self.args.replace is not None:
-                                if os.path.isdir(os.path.dirname(self.args.replace)):
-                                    self.args.import_dir = self.args.replace
-                                else:
-                                    if aw.tool.is_md5(self.args.replace):
-                                        indicator[3] = 2 #[0,0,0,2,0]
-                                    else:
-                                        print(f"Got {self.args.replace}")
-                                        raise Exception("Replace: Neither a md5 ID or a file path provided.")
-                        if self.args.edit:
-                            indicator[1] = 1 #[0,1,0,0,0]
-                        elif self.args.remove:
-                            indicator[1] = 2 #[0,2,0,0,0]
-                    elif self.args.geom_param is not None:
-                        indicator[1] = 3 #[0,3,0,0,0]
-                        if self.args.geom_param_value is not None:
-                            indicator[4] = 1 #[0,3,0,0,1]
-                    else:
-                        indicator[1] = 4 #[0,4,0,0,0]
-                    if self.args.import_dir != None:
-                        indicator[2] = 1
-                        self.impt_format = path_valid_check(self.args.import_dir, format=["stp", "step","stl","STL"])
-                        self.isimport = True
-                        self.impt_filename = aw.tool.get_filename(self.args.import_dir)
-                        self.md5 = aw.tool.get_md5(self.args.import_dir)
-                        result = aw.db.query_data("ImportedFile", by_name=self.md5, column_name="md5_id")
-                        if not result.empty:
-                            q_filename = result.filename[0]
-                            self.impt_filename = q_filename
-                            if self.args.remove:
-                                indicator[3] = 2
-                            else:
-                                indicator[3] = 0
-                                print(f"Got same file {q_filename} in db, using existing file now...")
-                        else:
-                            indicator[3] = 1
-                            aw.tool.upload(self.args.import_dir, self.args.import_file_dir)
-                            aw.db.insert_data("ImportedFile",{"filename": self.impt_filename, "md5_id": self.md5})
-                            if (indicator[0:2] != [0,3]) and (indicator[0:2] != [0,4]) and (indicator[0] == 0):
-                                #profile info exists while a file needs to be imported.
-                                aw.db.update_data("ModelProfile",self.args.name, "model_name", "imported_file_id", self.md5)
-                            else:
-                                aw.db.insert_data("ModelProfile", {"model_name": self.args.name,"imported_file_id": self.md5})
-                    # elif (indicator[0:2] == [0,4]) and result.loc["imported_file_id"][0] is not None:
-                    #     self.md5 = result.loc["imported_file_id"][0]
-                    #     query_f = aw.db.query_data("ImportedFile", by_name=self.md5, column_name="md5_id")
-                    #     if not query_f.empty:
-                    #         q_filename = query_f.filename[0]
-                    #         self.impt_filename = q_filename
-                                
-                    # else:
-                    #     raise InsufficientDataException()
-                # elif self.args.yaml_dir is not None:
-                #     indicator = (2,0,0)
+                if self.args.download is not None:
+                    indicator[0] = 4
                 else:
-                    q0 = aw.db.query_data("ParameterToProfile")
-                    q1 = aw.db.query_data("ModelParameter")
-                    q2 = aw.db.query_data("ModelProfile")
-                    q3 = aw.db.query_data("Task")
-                    q4 = aw.db.query_data("ImportedFile")
-                    if not q2.empty:
-                        print(f"\033[1mModel Profile\033[0m:\n{q2}\n\033[1mModel Parameters\033[0m:\n{q1}\n\033[1mParameter Properties\033[0m:\n{q0}\n\033[1mImported Files\033[0m:\n{q4}\n\033[1mTask\033[0m:\n{q3}")
+                    if self.args.yaml_dir is not None:
+                        path_valid_check(self.args.yaml_dir, format=["yml", "yaml"])
+                        self.args = yaml_parser(self.args.yaml_dir)
+                    if self.args.name != None:
+                        result = aw.db.query_data("ModelProfile", by_name=self.args.name, column_name=L.MDL_NAME.value)
+                        if not result.empty:
+                            #indicator = [0,0,0,0,0]
+                            self.md5 = result.imported_file_id[0]
+                            query_f = aw.db.query_data("ImportedFile", by_name=self.md5, column_name="md5_id")
+                            if self.md5 is not None:
+                                indicator[2:4] = [0,1] #[0,0,0,1,0]
+                                query_f = aw.db.query_data("ImportedFile", by_name=self.md5, column_name="md5_id")
+                                self.impt_filename = query_f.filename[0]
+                                self.impt_format = path_valid_check(os.path.join(self.args.import_file_dir, self.impt_filename), format=["stp", "step","stl","STL"])
+                                if self.args.replace is not None:
+                                    if os.path.isdir(os.path.dirname(self.args.replace)):
+                                        self.args.import_dir = self.args.replace
+                                    else:
+                                        if aw.tool.is_md5(self.args.replace):
+                                            indicator[3] = 2 #[0,0,0,2,0]
+                                        else:
+                                            print(f"Got {self.args.replace}")
+                                            raise Exception("Replace: Neither a md5 ID or a file path provided.")
+                            if self.args.edit:
+                                indicator[1] = 1 #[0,1,0,0,0]
+                            elif self.args.remove:
+                                indicator[1] = 2 #[0,2,0,0,0]
+                        elif self.args.geom_param is not None:
+                            indicator[1] = 3 #[0,3,0,0,0]
+                            if self.args.geom_param_value is not None:
+                                indicator[4] = 1 #[0,3,0,0,1]
+                        else:
+                            indicator[1] = 4 #[0,4,0,0,0]
+                        if self.args.import_dir != None:
+                            indicator[2] = 1
+                            self.impt_format = path_valid_check(self.args.import_dir, format=["stp", "step","stl","STL"])
+                            self.isimport = True
+                            self.impt_filename = aw.tool.get_filename(self.args.import_dir)
+                            self.md5 = aw.tool.get_md5(self.args.import_dir)
+                            result = aw.db.query_data("ImportedFile", by_name=self.md5, column_name="md5_id")
+                            if not result.empty:
+                                q_filename = result.filename[0]
+                                self.impt_filename = q_filename
+                                if self.args.remove:
+                                    indicator[3] = 2
+                                else:
+                                    indicator[3] = 0
+                                    print(f"Got same file {q_filename} in db, using existing file now...")
+                            else:
+                                indicator[3] = 1
+                                aw.tool.upload(self.args.import_dir, self.args.import_file_dir)
+                                aw.db.insert_data("ImportedFile",{"filename": self.impt_filename, "md5_id": self.md5})
+                                if (indicator[0:2] != [0,3]) and (indicator[0:2] != [0,4]) and (indicator[0] == 0):
+                                    #profile info exists while a file needs to be imported.
+                                    aw.db.update_data("ModelProfile",self.args.name, "model_name", "imported_file_id", self.md5)
+                                else:
+                                    aw.db.insert_data("ModelProfile", {"model_name": self.args.name,"imported_file_id": self.md5})
+                        # elif (indicator[0:2] == [0,4]) and result.loc["imported_file_id"][0] is not None:
+                        #     self.md5 = result.loc["imported_file_id"][0]
+                        #     query_f = aw.db.query_data("ImportedFile", by_name=self.md5, column_name="md5_id")
+                        #     if not query_f.empty:
+                        #         q_filename = query_f.filename[0]
+                        #         self.impt_filename = q_filename
+                                    
+                        # else:
+                        #     raise InsufficientDataException()
+                    # elif self.args.yaml_dir is not None:
+                    #     indicator = (2,0,0)
                     else:
-                        print("No model profile found.")
+                        q0 = aw.db.query_data("ParameterToProfile")
+                        q1 = aw.db.query_data("ModelParameter")
+                        q2 = aw.db.query_data("ModelProfile")
+                        q3 = aw.db.query_data("Task")
+                        q4 = aw.db.query_data("ImportedFile")
+                        if not q2.empty:
+                            print(f"\033[1mModel Profile\033[0m:\n{q2}\n\033[1mModel Parameters\033[0m:\n{q1}\n\033[1mParameter Properties\033[0m:\n{q0}\n\033[1mImported Files\033[0m:\n{q4}\n\033[1mTask\033[0m:\n{q3}")
+                        else:
+                            print("No model profile found.")
 
-                    # raise InsufficientDataException()
+                        # raise InsufficientDataException()
         return indicator
     
     def load_geom_file(self):
@@ -389,4 +402,10 @@ class BaseWorkflow(object):
             self.import_fl = aw.tool.read_stl(self.args.import_file_dir + "/" + self.impt_filename)
         else:
             self.import_fl = aw.tool.read_step(self.args.import_file_dir + "/" + self.impt_filename)
+            
+    def auto_download(self):
+        if self.pcs_indicator[0] == 1:
+            aw.tool.download(file_dir=self.args.db_file_dir, output_dir=self.args.db_opt_dir, task_id=self.task_id)
+        else:
+            print(f"\033[1mGeometries Creation seems not working properly, downloading abort.\033[0m")
 

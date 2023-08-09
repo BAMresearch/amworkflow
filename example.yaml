@@ -1,0 +1,29 @@
+model_profile:
+  model_name: "param_wall"
+  import_dir: 
+geometry_parameter:
+  length:
+    startpoint: 50
+    endpoint: 180
+    num: 1
+  height:
+    startpoint: 4
+    endpoint: 6.6
+    num: 0
+  width:
+    startpoint: 9
+    endpoint: 14.2
+    num: 0
+  radius:
+    startpoint: 100
+    endpoint: 150
+    num: 0
+mesh_parameter:
+  layer_num: 2
+  layer_thickness:
+  mesh_size_factor: 0.1
+stl_parameter:
+  linear_deflection: 0.01
+  angular_deflection: 0.5
+
+  

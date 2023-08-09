@@ -19,6 +19,7 @@ def cli():
     parser.add_argument("-msh", "--gen_msh", action="store_true")
     parser.add_argument("-vtk", "--gen_vtk", action="store_true")
     parser.add_argument("-stp", "--gen_stp", action="store_true")
+    parser.add_argument("-dl", "--download", nargs="+", type=str)
     args = parser.parse_args()
     return args
 

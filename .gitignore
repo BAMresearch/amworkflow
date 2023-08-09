@@ -181,10 +181,5 @@ test_main
 pythonocc-utils
 
 #db_files
-/amworkflow/src/infrastructure/database/files
-
-#downloaded_files
-usecases/param_wall
-!usecases/param_wall/dodo.py
-!usecases/param_wall/test1.py
-!usecases/param_wall/param_wall.py
+usecases/*/db/
+usecases/*/output/

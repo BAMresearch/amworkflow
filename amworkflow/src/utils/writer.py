@@ -183,5 +183,23 @@ def mk_dir(dirname:str, folder_name: str):
     return newdir
 
 
-def convert_to_datetime(datetime_str):
-    return datetime.strptime(datetime_str, "%Y%m%d%H%M%S")
+def convert_to_datetime(time_str):
+    #YYMMDDHHMMSS
+    # Determine the number of missing characters
+    missing_chars = 12 - len(time_str)
+    
+    # Fill in the missing parts according to the rules
+    if missing_chars >= 10:  # Year is missing
+        time_str += "0101000000"
+    elif missing_chars >= 8:  # Month is missing
+        time_str += "01000000"
+    elif missing_chars >= 6:  # Day is missing
+        time_str += "000000"
+    elif missing_chars >= 4:  # Hour is missing
+        time_str += "0000"
+    elif missing_chars >= 2:  # Minute is missing
+        time_str += "00"
+    
+    # Parse the formatted time string using the desired format
+    dt = datetime.strptime(time_str, T.YY_MM_DD_HH_MM_SS.value)
+    return dt
