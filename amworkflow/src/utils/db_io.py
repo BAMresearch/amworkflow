@@ -96,3 +96,29 @@ def file_copy(path1: str, path2: str) -> bool:
         return True
     except:
         return False
+    
+def delete_dir(dir_p: str):
+    file_l = os.listdir(dir_p)
+    if len(file_l) == 0:
+        os.rmdir(dir_p)
+    else:
+        shutil.rmtree(dir_p)
+
+def file_delete(dir_path: str, filename: str = None, operate: str = None, op_list: list = None):
+    path_valid_check(dir_path)
+    if filename is not None:
+        file_p = os.path.join(dir_path, filename)
+        if os.path.isfile(file_p):
+            os.remove(file_p)
+        else:
+            print(f"{file_p} not invalid.")
+    if operate is not None:
+        if operate == "all":
+           delete_dir(dir_path)
+        elif operate == "list":
+            for item in op_list:
+                p = os.path.join(dir_path, item)
+                if os.path.isfile(p):
+                    os.remove(p)
+                elif os.path.isdir(p):
+                    delete_dir(p)
