@@ -26,14 +26,26 @@ This repository contains a module for creating automated workflows in the contex
 After creating the environment using conda, one library have to be installed mannually since neither Pypi nor Conda has the distribution.
 
 ```git clone https://github.com/tpaviot/pythonocc-utils.git```
+activate the environment if you did not:
+```bash
+conda activate amworkflow
+```
 
 to the root directory and then
 
 ```pip install ./pythonocc-utils```
 
-## How to use
+Last step, install amworkflow locally:
+```bash
+pip install .
+```
+
+Then you are good to go.
+
+## Get started
+This is a simple tutorial which get you familiar with the way of interacting with amworkflow. 
 1. Create a new folder in /usecase, for example test_am4, as maybe created already.
-2. Create a new script am4.py.
+2. Create a new script am4.py. (Also maybe in the folder now.)
 3. simply do:
     ```python
     from amworkflow.src.interface.api import amWorkflow as aw
