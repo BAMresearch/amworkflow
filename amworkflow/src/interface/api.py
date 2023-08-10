@@ -575,7 +575,6 @@ class amWorkflow(object):
             return utr.is_md5_hash(s=string)
         
         @staticmethod
-<<<<<<< Updated upstream
         def download(file_dir: str = None,
                output_dir: str = None,
                task_id: int | str = None,
@@ -584,10 +583,8 @@ class amWorkflow(object):
             
             return dio.downloader(file_dir=file_dir, output_dir=output_dir, task_id=task_id, time_range=time_range, org=org)
         
-=======
         def delete(dir_path: str, filename: str = None, operate: str = None, op_list: list = None):
             dio.file_delete(dir_path=dir_path, filename=filename, operate=operate, op_list=op_list)
->>>>>>> Stashed changes
         
         
     
