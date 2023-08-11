@@ -28,6 +28,7 @@ def geom_spn(pm):
     #create the bottom of the basement
     btm_wire = aw.geom.create_wire_by_points(pts)
     btm_face = aw.geom.reverse(aw.geom.create_face(btm_wire))
+    # btm_face = aw.geom.create_face(btm_wire)
     #create a cutter for trimming the prism.
     cutter = aw.geom.create_prism(aw.geom.scale(btm_face, aw.geom.get_face_center_of_mass(btm_face,True),1.2),[0,0,-15],True)
     prism = aw.geom.reverse(aw.geom.cutter3D(prism, cutter))

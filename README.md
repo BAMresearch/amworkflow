@@ -26,8 +26,8 @@ Then you are good to go.
 
 ## Get started
 This is a simple tutorial which get you familiar with the way of interacting with amworkflow. 
-1. Create a new folder in /usecase, for example test_am4, as maybe created already.
-2. Create a new script am4.py. (Also maybe in the folder now.)
+1. Create a new folder in /usecase, for example test_am4.
+2. Create a new script am4.py. (You may also find it in examples/test_am4.)
 3. simply do:
     ```python
     from amworkflow.src.interface.api import amWorkflow as aw
@@ -140,7 +140,7 @@ This is a simple tutorial which get you familiar with the way of interacting wit
     ```
 
 6. What if you need more parameters or different parameters?
-    amorkflow support changing parameters by adding a param_status in the db. In this example, let's change our parameter *radius* to *radius_1* and add a new parameter *length_0*. To achieve that, firstly you need to change parameters in the am4.py:
+    amorkflow supports changing parameters by adding a param_status in the db. In this example, let's change our parameter *radius* to *radius_1* and add a new parameter *length_0*. To achieve that, firstly you need to change parameters in the am4.py:
     ```python
     from amworkflow.src.interface.api import amWorkflow as aw
     @aw.engine.amworkflow()

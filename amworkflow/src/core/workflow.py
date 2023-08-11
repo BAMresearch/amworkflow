@@ -238,12 +238,12 @@ class BaseWorkflow(object):
                         #remove certain model profile from database
                         query_mdl_pfl = aw.db.query_data("ModelProfile", by_name=self.args.name, column_name="model_name")
                         q_md5 = query_mdl_pfl.imported_file_id[0]
+                        query_tk = aw.db.query_data("Task", self.args.name, "model_name").task_id.to_list()
+                        aw.tool.delete(dir_path=self.args.db_file_dir, operate="list", op_list=query_tk)
                         if q_md5 != None:
                             aw.db.delete_data("ImportedFile", prim_ky=q_md5)
                         else:
                             aw.db.delete_data("ModelProfile", prim_ky=self.args.name)
-                        query_tk = aw.db.query_data("Task", self.args.name, "model_name").task_id.to_list()
-                        aw.tool.delete(dir_path=self.args.db_file_dir, operate="list", op_list=query_tk)
                         print(f"model {self.args.name} has been removed successfully.")
                     case 0: # do nothing, fill data into the loaded model.
                         query = aw.db.query_data("ParameterToProfile", by_name=self.args.name, column_name="model_name", only_for_column="param_name", snd_column_name="param_status", snd_by_name=1)

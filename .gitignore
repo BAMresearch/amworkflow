@@ -166,7 +166,7 @@ freecad_appimage
 amworkflow/__pycache__
 
 # Code examples from occ-repo and written for premitive tests
-examples
+# examples
 
 # Doit temp files
 *.doit.*
@@ -181,5 +181,9 @@ test_main
 pythonocc-utils
 
 #db_files
-usecases/*/db/
-usecases/*/output/
+examples/*/db/
+examples/*/output/
+
+# usecases
+usecases/*
+!usecases/readme.md
