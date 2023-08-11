@@ -69,9 +69,7 @@ def downloader(file_dir: str,
         t_id_l = [convert_to_datetime(i) for i in query_t]
         filtered = [i for i in t_id_l if i <= nd and i > st]
         filtered_s = [i.strftime(T.YY_MM_DD_HH_MM_SS.value) for i in filtered]
-        print(filtered_s)
         for tk in filtered_s:
-            print(tk)
             worker(tk)
     if task_id is not None:
         if task_id == "all":

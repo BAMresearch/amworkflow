@@ -1,3 +1,5 @@
+![icon](pics/icon.PNG)
+
 ## Conda
 ```conda env create -f environment.yml```
 
