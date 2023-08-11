@@ -1,4 +1,4 @@
-![icon](pics/icon.png)
+<p align="center"><img src="pics/icon.png" alt="icon" width="288.2095" height="85"></p>
 
 ## Conda
 ```conda env create -f environment.yml```
