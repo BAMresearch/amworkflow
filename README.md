@@ -38,14 +38,18 @@ First we need to create a new usecase. The easist way would be just type:
 ```bash
 doit new_case -n am4
 ```
-in your console, where *am4* is an example of your use-case name. then fill the code for creating a box into the function *geometry_spawn(pm)*:
+in your console, where *am4* is an example of your use-case name.
+
+You may find a new folder under /usecases which contains a python script, sharing the same name with the folder, and a function *geometry_spawn(pm)* already created in it.
+
+Fill the code for creating a box into the function *geometry_spawn(pm)*:
 ```python
 box = aw.geom.create_box(length=pm.length,
                         width= pm.width,
                         height=pm.height,
                         radius=pm.radius)
 ```
-and don't forget to return **box**. You always need to return your parametric model at the end.
+Don't forget to return **box**. You always need to return your parametric model at the end.
 
 Alternatively, 
 
