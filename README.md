@@ -32,19 +32,20 @@ Alternatively,
 Then you are good to go.
 
 ## Get started
-This is a simple tutorial which get you familiar with the way of interacting with amworkflow. 
+This is a simple tutorial which will get you familiar with the way of interacting with amworkflow. 
 
-The easist way is just type:
+First we need to create a new usecase. The easist way would be just type:
 ```bash
-doit new_case -n test_am4
+doit new_case -n am4
 ```
-in your console, where *test_am4* is an example of your use-case name. then fill the code for creating a box into the function *geometry_spawn(pm)*:
+in your console, where *am4* is an example of your use-case name. then fill the code for creating a box into the function *geometry_spawn(pm)*:
 ```python
 box = aw.geom.create_box(length=pm.length,
                         width= pm.width,
                         height=pm.height,
                         radius=pm.radius)
 ```
+and don't forget to return **box**. You always need to return your parametric model at the end.
 
 Alternatively, 
 
@@ -65,7 +66,7 @@ Alternatively,
 
 4. In your terminal move to the directory:
     ```bash
-    cd usecases/test_am4
+    cd usecases/am4
     ```
     Then run:
     ```bash
