@@ -6,7 +6,7 @@ from amworkflow.src.utils.parser import geom_param_parser, yaml_parser, batch_da
 from amworkflow.src.utils.sanity_check import path_valid_check, dimension_check
 from amworkflow.src.utils.permutator import simple_permutator
 from amworkflow.src.constants.exceptions import NoDataInDatabaseException, InsufficientDataException
-from amworkflow.src.interface.api import amWorkflow as aw
+from amworkflow.api import amWorkflow as aw
 from amworkflow.src.utils.writer import task_id_creator
 #3rd party lib dependencies
 import numpy as np

@@ -220,10 +220,10 @@ class amWorkflow(object):
             @param a2 1xN numpy array
             @return the bisector vector
             """
-            return sg.angle_of_two_arrays(a1, a2)
+            return sg.angular_bisector(a1, a2)
 
         @staticmethod
-        def regular_polygon_maker(side_num: int,
+        def make_regular_polygon(side_num: int,
                     side_len: float,
                     rotate: float = None,
                     bound: bool = False) -> TopoDS_Face or TopoDS_Wire:
@@ -238,7 +238,7 @@ class amWorkflow(object):
             return cg.polygon_maker(side_num, side_len, rotate, bound)
         
         @staticmethod
-        def hexagon_multiplier(side_num: int, side_len: float, iter_num: int, wall: float, center: gp_Pnt = None) -> TopoDS_Face:
+        def multiply_hexagon(side_num: int, side_len: float, iter_num: int, wall: float, center: gp_Pnt = None) -> TopoDS_Face:
             """
             @brief Creates a hexagon with multiplier. This is an iterative approach to the topological sorting algorithm.
             @param side_num Number of sides in the hexagon.
@@ -251,7 +251,7 @@ class amWorkflow(object):
             return cg.hexagon_multiplier(side_num, side_len, iter_num, wall, center)
         
         @staticmethod
-        def isoceles_triangle_maker(bbox_len:float, bbox_wid: float, thickness: float = None) -> TopoDS_Face:
+        def make_isoceles_triangle(bbox_len:float, bbox_wid: float, thickness: float = None) -> TopoDS_Face:
             """
             @brief (Having problem with wall thickness now.) Create isoceles triangulation. This is a function to create isoceles triangulation of a bounding box and its widest corner
             @param bbox_len length of bounding box of the triangle
@@ -433,7 +433,7 @@ class amWorkflow(object):
             @param ny Number of sub - shapes in the y - direction.
             @return a compound of sub-shapes
             """
-            return o.split(item, layer_thickness, split_x, split_y, split_z, nx, ny)
+            return o.split(item=item, nz=nz, layer_thickness=layer_thickness, split_x=split_x, split_y=split_y, split_z=split_z, nx=nx, ny=ny)
         
         @staticmethod
         def intersector(item: TopoDS_Shape,
@@ -560,13 +560,12 @@ class amWorkflow(object):
         
         @staticmethod
         def write_mesh(item: gmsh.model, directory: str, modelname: str, output_filename: str, format: str):
-            """
-            @brief Writes mesh to file. This function is used to write meshes to file. The format is determined by the value of the format parameter
-            @param item gmsh. model object that contains the model
-            @param directory directory where the file is located. It is the root of the file
-            @param modelname name of the gmsh model to be written
-            @param output_filename name of the file to be written
-            @param format format of the file to be written. Valid values are vtk msh
+            """Writes mesh to file. This function is used to write meshes to file. The format is determined by the value of the format parameter
+            :param item: gmsh. model object that contains the model
+            :param directory: directory where the file is located. It is the root of the file
+            :param modelname: name of the gmsh model to be written
+            :param output_filename: name of the file to be written
+            :param format: format of the file to be written. Valid values are vtk msh
             """
             utw.mesh_writer(item=item, directory=directory, modelname=modelname, format=format, output_filename=output_filename)
             
@@ -583,6 +582,7 @@ class amWorkflow(object):
             
             return dio.downloader(file_dir=file_dir, output_dir=output_dir, task_id=task_id, time_range=time_range, org=org)
         
+        @staticmethod
         def delete(dir_path: str, filename: str = None, operate: str = None, op_list: list = None):
             dio.file_delete(dir_path=dir_path, filename=filename, operate=operate, op_list=op_list)
         
