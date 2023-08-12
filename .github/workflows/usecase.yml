@@ -48,7 +48,7 @@ jobs:
       - name: Run test_am4
         shell: bash -l {0} #new shell
         run: |
-          python usecases/test_am4/am4.py -n p_wall -gp length width height radius -gpv 1 2 3 10
+          python examples/test_am4/am4.py -n p_wall -gp length width height radius -gpv 1 2 3 10
 
 
 
