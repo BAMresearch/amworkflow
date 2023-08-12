@@ -4,10 +4,6 @@
 ```conda env create -f environment.yml```
 
 ## Installation
-After creating the environment using conda, one library have to be installed mannually since neither Pypi nor Conda has the distribution.
-```bash
-git clone https://github.com/tpaviot/pythonocc-utils.git
-```
 activate the environment if you did not:
 ```bash
 conda activate amworkflow
@@ -16,32 +12,56 @@ conda activate amworkflow
 to the root directory and then
 
 ```bash
-pip install ./pythonocc-utils
+doit install
 ```
-
-Last step, install amworkflow locally:
-```bash
-python -m pip install .
-```
+Alternatively,
+* you can do it manually:
+    First clone the required lib:
+    ```bash
+    git clone https://github.com/tpaviot/pythonocc-utils.git
+    ```
+    Install it:
+    ```bash
+    pip install ./pythonocc-utils
+    ```
+    Last step, install amworkflow locally:
+    ```bash
+    python -m pip install .
+    ```
 
 Then you are good to go.
 
 ## Get started
 This is a simple tutorial which get you familiar with the way of interacting with amworkflow. 
-1. Create a new folder in /usecase, for example test_am4.
-2. Create a new script am4.py. (You may also find it in examples/test_am4.)
-3. simply do:
-    ```python
-    from amworkflow.api import amWorkflow as aw
-    @aw.engine.amworkflow
-    def geometry_spawn(pm):
-        box = aw.geom.create_box(length=pm.length,
-                            width= pm.width,
-                            height=pm.height,
-                            radius=pm.radius)
-        return box
-    ```
-    The function name *geometry_spawn* and form parameter *pm* are only examples, however it is recommended to stick with these names in case of overwriting functions in the *Baseworkflow*. 
+
+The easist way is just type:
+```bash
+doit new_case -n test_am4
+```
+in your console, where *test_am4* is an example of your use-case name. then fill the code for creating a box into the function *geometry_spawn(pm)*:
+```python
+box = aw.geom.create_box(length=pm.length,
+                        width= pm.width,
+                        height=pm.height,
+                        radius=pm.radius)
+```
+
+Alternatively, 
+
+* 1. Create a new folder in /usecase, for example test_am4.
+    2. Create a new script am4.py. (You may also find it in examples/test_am4.)
+    3. simply do:
+        ```python
+        from amworkflow.api import amWorkflow as aw
+        @aw.engine.amworkflow
+        def geometry_spawn(pm):
+            box = aw.geom.create_box(length=pm.length,
+                                width= pm.width,
+                                height=pm.height,
+                                radius=pm.radius)
+            return box
+        ```
+        The function name *geometry_spawn* and form parameter *pm* are only examples, however it is recommended to stick with these names in case of overwriting functions in the *Baseworkflow*. 
 
 4. In your terminal move to the directory:
     ```bash
