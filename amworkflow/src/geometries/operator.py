@@ -157,7 +157,7 @@ def hollow_carver(face: TopoDS_Shape, factor: float):
     cut = BRepAlgoAPI_Cut(face, cutter).Shape()
     return cut
 
-def rotate_face(shape: TopoDS_Shape, angle: float, axis: str = "z"):
+def rotate_face(shape: TopoDS_Shape, angle: float, axis: str = "z", cnt: tuple = None):
     """
      @brief Rotate the topography by the given angle around the center of mass of the face.
      @param shape TopoDS_Shape to be rotated.
@@ -166,7 +166,8 @@ def rotate_face(shape: TopoDS_Shape, angle: float, axis: str = "z"):
      @return the rotated shape.
     """
     transform = gp_Trsf()
-    cnt = get_face_center_of_mass(shape, gp_pnt=True)
+    if cnt is None:
+        cnt = get_face_center_of_mass(shape, gp_pnt=True)
     match axis:
         case "z":
             ax = gp_Ax1(cnt, gp_Dir(0,0,1))

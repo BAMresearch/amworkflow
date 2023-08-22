@@ -77,7 +77,7 @@ class amWorkflow(object):
         
         @staticmethod
         def query_join_data(table: str, join_column: str, table1: str,  join_column1:str, table2: str = None, join_column2:str = None, filter0: str = None, filter1: str = None, filter2: str = None, on_column_tb: str = None, on_column_tb1: str = None, on_column_tb2: str = None):
-            return cr.query_join_tables(table=table, join_column=join_column, table1=table1, join_column1=join_column1, table2=table2, filter0=filter0, filter1=filter1, filter2=filter2, on_column_tb=on_column_tb, on_column_tb1=on_column_tb1, on_column_tb2=on_column_tb2)
+            return cr.query_join_tables(table=table, join_column=join_column, table1=table1, join_column1=join_column1, table2=table2, filter0=filter0, filter1=filter1, filter2=filter2, on_column_tb=on_column_tb, on_column_tb1=on_column_tb1, on_column_tb2=on_column_tb2, join_column2=join_column2)
         
     class geom(object):
         @staticmethod
@@ -92,7 +92,7 @@ class amWorkflow(object):
         def make_solid(item: TopoDS_Shape) -> TopoDS_Shape:
             return b.solid_maker(item=item)
         @staticmethod
-        def pnt(x: float, y:float, z:float) -> gp_Pnt:
+        def pnt(x: float, y:float, z:float = 0) -> gp_Pnt:
             return gp_Pnt(x, y, z)
         
         @staticmethod
@@ -140,6 +140,10 @@ class amWorkflow(object):
             @return return the prism
             """
             return sg.create_prism(shape, vector, copy)
+        
+        @staticmethod
+        def create_prism_by_curve(shape: TopoDS_Shape, curve: TopoDS_Wire):
+            return sg.create_prism_by_curve(shape, curve)
         
         @staticmethod
         def create_wire(*edge) -> TopoDS_Wire:
@@ -274,7 +278,7 @@ class amWorkflow(object):
             return cg.create_sym_hexagon1_infill(total_len, total_wid, height, th)
         
         @staticmethod
-        def create_wall_by_points(pts:list, th: float, isclose:bool, height: float = None, debug: bool = False, output: str = "prism") -> np.ndarray or TopoDS_Face or TopoDS_Shell:
+        def create_wall_by_points(pts:list, th: float, isclose:bool, height: float = None, debug: bool = False, debug_type: str = "linear", output: str = "prism", interpolate: float = None, R: float = None) -> np.ndarray or TopoDS_Face or TopoDS_Shell:
             """
             @brief Create a prism wall by points. It takes a list of points as a skeleton of a central path and then build a strip or a loop.
             @param pts list of 2D points that define the wall. The algorithm can compute points in 3D theoretically but the result may make no sense.
@@ -285,7 +289,7 @@ class amWorkflow(object):
             @param output selecting result intended to output. can be varied among "face" and "prism".
             @return two arrays or a face or a prism.
             """
-            return cg.create_wall_by_points(pts, th, isclose, height,debug, output)
+            return cg.create_wall_by_points(pts, th, isclose, height,debug, debug_type, output,interpolate, R)
         
         @staticmethod
         def get_face_center_of_mass(face: TopoDS_Face, gp_pnt: bool = False) -> tuple | gp_Pnt:
@@ -392,6 +396,18 @@ class amWorkflow(object):
             @param vector The vector to translate the object by. The vector has to be a list with three elements
             """
             return o.translate(item, vector)
+        
+        @staticmethod
+        def p_translate(pts:np.ndarray, direct: np.ndarray) -> np.ndarray:
+            return sg.p_translate(pts, direct=direct)
+        
+        @staticmethod
+        def p_rotate(pts:np.ndarray, angle_x: float = 0, angle_y: float = 0, angle_z: float = 0, cnt:np.ndarray = None) -> np.ndarray:
+            return sg.p_rotate(pts = pts, cnt = cnt, angle_x = angle_x, angle_y=angle_y, angle_z=angle_z)
+        
+        @staticmethod
+        def p_center_of_mass(pts: np.ndarray) -> np.ndarray:
+            return sg.p_center_of_mass(pts=pts)
         
         @staticmethod
         def reverse(item:TopoDS_Shape) -> TopoDS_Shape:

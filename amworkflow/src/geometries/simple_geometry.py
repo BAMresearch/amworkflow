@@ -104,6 +104,9 @@ def create_prism(shape: TopoDS_Shape,
                                               vector[2]),
                                  copy).Shape()
 
+def create_prism_by_curve(shape: TopoDS_Shape, curve: TopoDS_Wire):
+    return BRepPrimAPI_MakePrism(shape, curve).Shape()
+
 def create_face(wire: TopoDS_Wire) -> TopoDS_Face:
     """
      @brief Create a BRep face from a TopoDS_Wire. This is a convenience function to use : func : ` BRepBuilderAPI_MakeFace ` and
@@ -200,10 +203,11 @@ def angle_of_two_arrays(a1:np.ndarray, a2:np.ndarray, rad: bool = True) -> float
     """
     dot = np.dot(a1, a2)
     norm = np.linalg.norm(a1)*np.linalg.norm(a2)
+    cos_value = np.round(dot / norm, 15)
     if rad:
-        return np.arccos(dot / norm)
+        return np.arccos(cos_value)
     else:
-        return np.rad2deg(np.arccos(dot / norm))
+        return np.rad2deg(np.arccos(cos_value))
 
 def laterality_indicator(a: np.ndarray, d:bool):
     """
@@ -238,3 +242,35 @@ def angular_bisector(a1:np.ndarray, a2:np.ndarray) -> np.ndarray:
     else:
         opt = bst / norm3
     return opt
+
+def p_translate(pts:np.ndarray, direct: np.ndarray) -> np.ndarray:
+    pts = np.array([np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in pts])
+    pts = [i + direct for i in pts]
+    return list(pts)
+
+def p_center_of_mass(pts: np.ndarray) -> np.ndarray: 
+    pts = np.array([np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in pts])
+    
+    return np.mean(pts.T, axis=1)
+    
+def p_rotate(pts:np.ndarray, angle_x: float = 0, angle_y: float = 0, angle_z: float = 0, cnt:np.ndarray = None) -> np.ndarray:
+    pts = np.array([np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in pts])
+    com = p_center_of_mass(pts)
+    if cnt is None:
+        cnt = np.array([0,0,0])
+    t_vec = cnt - com
+    pts += t_vec
+    rot_x = np.array([[1, 0, 0],
+                      [0, np.cos(angle_x), -np.sin(angle_x)],
+                      [0, np.sin(angle_x), np.cos(angle_x)]])
+    rot_y = np.array([[np.cos(angle_y), 0, np.sin(angle_y)],
+                      [0, 1, 0],
+                      [-np.sin(angle_y), np.cos(angle_y), 0]])
+    rot_z = np.array([[np.cos(angle_z), -np.sin(angle_z), 0],
+                      [np.sin(angle_z), np.cos(angle_z), 0],
+                      [0, 0, 1]])
+    R = rot_x@rot_y@rot_z
+    rt_pts = pts@R
+    r_pts = rt_pts - t_vec
+    return r_pts
+
