@@ -583,7 +583,7 @@ class CreateWallByPoints():
     def create_sides(self):
         if self.R is not None:
             self.pts = polygon_interpolater(self.pts, self.interpolate)
-            bender(self.pts, self.R)
+            self.pts = bender(self.pts, self.R)
             self.pts = [i for i in self.pts]
         self.th *= 0.5
         for i,p in enumerate(self.pts):

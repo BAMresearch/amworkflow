@@ -19,11 +19,11 @@ def geometry_spawn(pm):
     put1 = g.p_translate(pu, [3 * l, 0, 0]) # Translate the unit _/-\_/-\
     end_p = np.copy(put1[-1]) 
     end_p[0] += l * 0.5 # Add one point to make half of the infill _/-\_/-\_
-    pm = pu + put1 # integrate the points together
-    pm.append(end_p) # add the point
+    p_up = pu + put1 # integrate the points together
+    p_up.append(end_p) # add the point
     # pm_cnt = g.p_center_of_mass(pm)
     # pm_cnt[0] -=hth
-    pmr = g.p_rotate(pm, angle_z=np.pi) # Rotate the half infill to make it upside down
+    pmr = g.p_rotate(p_up, angle_z=np.pi) # Rotate the half infill to make it upside down
     # pmr = g.p_translate(pmr, np.array([-th,0,0]))
     cnt2 = g.p_center_of_mass(pmr) #Get the center of mass of all points
     t_len = cnt2[1] * 2 #2 times the y coord would be the length for translation

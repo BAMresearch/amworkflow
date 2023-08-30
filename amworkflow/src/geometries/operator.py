@@ -264,6 +264,7 @@ def bender(point_cordinates, radius: float = None, mx_pt: np.ndarray = None, mn_
         thetp = lp / (Rp)
         pt[0] = Rp * np.sin(thetp)
         pt[1] = o_y - Rp*np.cos(thetp)
+    return point_cordinates
         
 def array_project(array: np.ndarray, direct: np.ndarray) -> np.ndarray:
     '''
