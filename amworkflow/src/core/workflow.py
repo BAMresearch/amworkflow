@@ -20,10 +20,10 @@ from multiprocessing import Pipe, Process
 class BaseWorkflow(object):
     def __init__(self, args):
         #base
-        self.args = args
+        self.args = args # store data from the terminal
         self.geometry_spawn: callable
         # data
-        self.geom_data = []
+        self.geom_data = [] #
         self.pm = 0
         self.mdl = 0
         self.md5 = ""
@@ -34,10 +34,6 @@ class BaseWorkflow(object):
         self.db_data_collect = {"geometry":[],
                                 "occ": [],
                                 "mesh":[]}
-        self.oil = [
-            [0,0,0,1,0],
-            [0,4,1,1,0]
-        ]
         self.pcs_indicator = [0,0,0]
         #signals
         self.indicator = self.task_handler()
@@ -46,10 +42,8 @@ class BaseWorkflow(object):
         self.onlyimport = False
         self.cmesh = False
         self.init_signal = self.data_init()
-        print(self.indicator)
         #main
         self.task_id = task_id_creator()
-        
         self.sequence()
 
     def sequence(self):
@@ -62,6 +56,9 @@ class BaseWorkflow(object):
                 value = self.args.geom_param_value
                 self.pm = MapParamModel(label, value)
                 # self.create()
+            case 3:
+                print("Draft ready.")
+                
     
     def create(self) -> None:
         if self.init_signal == 2:
@@ -200,10 +197,6 @@ class BaseWorkflow(object):
                     case 2:
                         # replace geom file from selected profile.
                         aw.db.update_data("ModelProfile", self.args.name, "model_name", "imported_file_id", self.md5)
-            # case 2: # yaml file provided
-            #     # self.data = DeepMapParamModel(yaml_parser(self.args.yaml_dir))
-            #     data = DeepMapParamModel(yaml_parser(self.args.yaml_dir))
-            #     return data
         match self.indicator[0]:
             case 0: # model_name provided
                 match self.indicator[1]:
@@ -256,29 +249,39 @@ class BaseWorkflow(object):
                         if self.args.import_dir is not None:
                             path_valid_check(self.args.import_dir)
                             
-                    case 3: # Create a new model profile with given parameters.
-                        query_m = aw.db.query_data("ModelProfile", self.args.name, "model_name")
-                        if query_m.empty:
-                            aw.db.insert_data("ModelProfile", {"model_name": self.args.name})
-                        if self.args.geom_param is not None:
-                            input_data = {}
-                            input_data2 = {}
-                            collect = []
-                            collect2 = []
-                            have_data, diff,_,_ = aw.db.have_data_in_db("ModelParameter", "param_name", self.args.geom_param)
-                            if not have_data:
-                                for param in diff:
-                                    input_data.update({"param_name": param})
-                                    collect.append(copy.copy(input_data))
-                                aw.db.insert_data("ModelParameter", collect, True)
-                            for param in self.args.geom_param:
-                                input_data2.update({"param_name": param,
-                                                    "model_name": self.args.name})
-                                collect2.append(copy.copy(input_data2))
-                            aw.db.insert_data("ParameterToProfile", collect2, True)
+            case 1: # Create a new model profile with given parameters.
+                query_m = aw.db.query_data("ModelProfile", self.args.name, "model_name")
+                if query_m.empty:
+                    aw.db.insert_data("ModelProfile", {"model_name": self.args.name})
+                match self.indicator[1]:
+                    case 3:
+                        input_data = {}
+                        input_data2 = {}
+                        collect = []
+                        collect2 = []
+                        have_data, diff,_,_ = aw.db.have_data_in_db("ModelParameter", "param_name", self.args.geom_param)
+                        if not have_data:
+                            for param in diff:
+                                input_data.update({"param_name": param})
+                                collect.append(copy.copy(input_data))
+                            aw.db.insert_data("ModelParameter", collect, True)
+                        for param in self.args.geom_param:
+                            input_data2.update({"param_name": param,
+                                                "model_name": self.args.name})
+                            collect2.append(copy.copy(input_data2))
+                        aw.db.insert_data("ParameterToProfile", collect2, True)
                             
             case 3: # Draft mode.
-                pass
+                if self.args.geom_param is not None:
+                    self.draft_pm = MapParamModel(self.args.geom_param, self.args.geom_param_value)
+                else:
+                    self.draft_pm = MapParamModel({})
+                if self.args.import_dir is not None:
+                    fmt = path_valid_check(self.args.import_dir, format=["stp", "step","stl","STL"])
+                    if fmt.lower() == "stl":
+                        self.draft_pm.imported_model = aw.tool.read_stl(self.args.import_dir)
+                    else:
+                        self.draft_pm.imported_model = aw.tool.read_step(self.args.import_dir)
             
             case 4: # Download files:
                 if len(self.args.download) == 1:
@@ -288,13 +291,15 @@ class BaseWorkflow(object):
                     #TODO download files from several tasks
                     aw.tool.download(file_dir=self.args.db_file_dir, output_dir=self.args.db_opt_dir, time_range=[self.args.download[0], self.args.download[1]])
             
-        if (self.indicator[4] == 1) and (self.args.geom_param_value is not None) and (self.args.geom_param is not None):
+        if (self.indicator[4] == 1):
+        # and (self.args.geom_param_value is not None) and (self.args.geom_param is not None):
             return 0
-        # elif ((self.indicator[0:2] == [0,4]) or (self.indicator[0:2] == [0,0])) and ((self.indicator[2:4] == [1,0]) or (self.indicator[2:4] == [1,1])):
-        elif self.indicator in self.oil:
+        elif (self.import_fl is not None) and self.args.geom_param is None:
             self.onlyimport = True
-            self.load_geom_file()
+            # self.load_geom_file()
             return 2
+        elif self.indicator[0] == 3:
+            return 3
         else:
             return 1
             
@@ -345,13 +350,14 @@ class BaseWorkflow(object):
                             elif self.args.remove:
                                 indicator[1] = 2 #[0,2,0,0,0]
                         elif self.args.geom_param is not None:
-                            indicator[1] = 3 #[0,3,0,0,0]
+                            indicator[0] = 1
+                            indicator[1] = 3 #[1,3,0,0,0]
                             if self.args.geom_param_value is not None:
-                                indicator[4] = 1 #[0,3,0,0,1]
+                                indicator[4] = 1 #[1,3,0,0,1]
                         else:
-                            indicator[1] = 4 #[0,4,0,0,0]
+                            indicator[0] = 1 #[1,0,0,0,0]
                         if self.args.import_dir != None:
-                            indicator[2] = 1
+                            indicator[2] = 1 #[-,-,1,0,0]
                             self.impt_format = path_valid_check(self.args.import_dir, format=["stp", "step","stl","STL"])
                             self.isimport = True
                             self.impt_filename = aw.tool.get_filename(self.args.import_dir)
@@ -361,30 +367,19 @@ class BaseWorkflow(object):
                                 q_filename = result.filename[0]
                                 self.impt_filename = q_filename
                                 if self.args.remove:
-                                    indicator[3] = 2
+                                    indicator[3] = 2 #[-,-,1,2,0]
                                 else:
                                     indicator[3] = 0
                                     print(f"Got same file {q_filename} in db, using existing file now...")
                             else:
-                                indicator[3] = 1
+                                indicator[3] = 1 #[-,-,1,1,0]
                                 aw.tool.upload(self.args.import_dir, self.args.import_file_dir)
                                 aw.db.insert_data("ImportedFile",{"filename": self.impt_filename, "md5_id": self.md5})
-                                if (indicator[0:2] != [0,3]) and (indicator[0:2] != [0,4]) and (indicator[0] == 0):
+                                if (indicator[0] == 0):
                                     #profile info exists while a file needs to be imported.
                                     aw.db.update_data("ModelProfile",self.args.name, "model_name", "imported_file_id", self.md5)
                                 else:
                                     aw.db.insert_data("ModelProfile", {"model_name": self.args.name,"imported_file_id": self.md5})
-                        # elif (indicator[0:2] == [0,4]) and result.loc["imported_file_id"][0] is not None:
-                        #     self.md5 = result.loc["imported_file_id"][0]
-                        #     query_f = aw.db.query_data("ImportedFile", by_name=self.md5, column_name="md5_id")
-                        #     if not query_f.empty:
-                        #         q_filename = query_f.filename[0]
-                        #         self.impt_filename = q_filename
-                                    
-                        # else:
-                        #     raise InsufficientDataException()
-                    # elif self.args.yaml_dir is not None:
-                    #     indicator = (2,0,0)
                     else:
                         q0 = aw.db.query_data("ParameterToProfile")
                         q1 = aw.db.query_data("ModelParameter")
@@ -395,8 +390,6 @@ class BaseWorkflow(object):
                             print(f"\033[1mModel Profile\033[0m:\n{q2}\n\033[1mModel Parameters\033[0m:\n{q1}\n\033[1mParameter Properties\033[0m:\n{q0}\n\033[1mImported Files\033[0m:\n{q4}\n\033[1mTask\033[0m:\n{q3}")
                         else:
                             print("No model profile found.")
-
-                        # raise InsufficientDataException()
         return indicator
     
     def load_geom_file(self):
@@ -410,4 +403,7 @@ class BaseWorkflow(object):
             aw.tool.download(file_dir=self.args.db_file_dir, output_dir=self.args.db_opt_dir, task_id=self.task_id)
         else:
             print(f"\033[1mGeometries Creation seems not working properly, downloading abort.\033[0m")
+            
+    def create_draft(self):
+        self.draft = self.geometry_spawn(self.draft_pm)
 

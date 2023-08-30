@@ -4,7 +4,7 @@ def cli():
     parser.add_argument("-gp", "--geom_param", nargs="+")
     parser.add_argument("-gpv", "--geom_param_value", nargs="+", type=float)
     parser.add_argument("-ip", "--iter_param", nargs="*", type=int)
-    parser.add_argument("-mbl", "--mesh_by_layer", nargs="?", type=float)
+    parser.add_argument("-mbl", "--mesh_by_layer", nargs="?", type=int)
     parser.add_argument("-mbt", "--mesh_by_thickness", nargs="?", type=float)
     parser.add_argument("-msf", "--mesh_size_factor", nargs="?", type=float)
     parser.add_argument("-stlad", "--stl_angular_deflect", nargs="?", type=float)

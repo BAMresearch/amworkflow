@@ -1,10 +1,11 @@
 import gmsh
 import math as m
-from OCC.Core.TopoDS import TopoDS_Shape
+from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Solid
 from amworkflow.src.geometries.operator import split
 from amworkflow.src.geometries.operator import get_occ_bounding_box
 from amworkflow.src.constants.exceptions import GmshUseBeforeInitializedException
 import logging
+import psutil
 
 def gmsh_switch(s: bool) -> None:
     if s:
@@ -28,6 +29,8 @@ def mesher(item: TopoDS_Shape,
         gmsh.is_initialized()
     except:
         raise GmshUseBeforeInitializedException()
+    if not isinstance(item, TopoDS_Solid):
+        raise Exception("Must be Solid object to mesh.")
     if layer_type: 
         geo = split(item=item,
             split_z=True,
@@ -37,9 +40,12 @@ def mesher(item: TopoDS_Shape,
             split_z=True,
             nz = layer_param)
     model = gmsh.model()
+    threads_count = psutil.cpu_count()
+    gmsh.option.setNumber("General.NumThreads",threads_count)
     model.add(model_name)
     v = get_geom_pointer(model, geo)
     model.occ.synchronize()
+    gmsh.fltk.run()
     for layer in v:
         model.add_physical_group(3,[layer[1]], name=f"layer{layer[1]}")
         phy_gp = model.getPhysicalGroups()

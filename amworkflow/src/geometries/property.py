@@ -9,6 +9,8 @@ from OCC.Core.TopoDS import topods_Face
 from OCC.Core.gp import gp_Pnt
 from OCC.Core.TopExp import TopExp_Explorer
 from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE, TopAbs_WIRE, TopAbs_SHELL, TopAbs_FORWARD, TopAbs_SOLID, TopAbs_COMPOUND
+from OCCUtils.Topology  import Topo
+import numpy as np
 
 def get_face_center_of_mass(face: TopoDS_Face, gp_pnt: bool = False) -> tuple:
     """
@@ -109,3 +111,13 @@ def topo_explorer(shape: TopoDS_Shape, shape_type: str) -> list:
         result.append(explorer.Current())
         explorer.Next()
     return result
+
+def traverser(item: TopoDS_Shape) -> Topo:
+    return Topo(item)
+
+def p_bounding_box(pts: list):
+    pts = np.array(pts)
+    coord_t = np.array(pts).T
+    mx_pt = np.max(coord_t,1)
+    mn_pt = np.min(coord_t,1)
+    return mx_pt, mn_pt

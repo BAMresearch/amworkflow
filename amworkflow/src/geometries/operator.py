@@ -1,13 +1,13 @@
 from OCC.Core.gp import gp_Pnt, gp_Trsf, gp_Vec
 from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Copy
-from OCC.Core.TopoDS import TopoDS_Shape
+from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Wire
 import numpy as np
 import OCC.Core.BRepBuilderAPI as BRepBuilderAPI
 import OCC.Core.gp as gp
 from OCC.Core.gp import gp_Pln
 from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Ax1, gp_Dir
-from OCC.Core.BOPAlgo import BOPAlgo_Builder
+from OCC.Core.BOPAlgo import BOPAlgo_Builder, BOPAlgo_MakerVolume, BOPAlgo_Splitter
 from OCCUtils.Topology  import Topo
 from OCCUtils.Construct import make_face
 from OCCUtils.Construct import vec_to_dir
@@ -20,8 +20,10 @@ from OCC.Core.TopoDS import TopoDS_Compound, TopoDS_Iterator
 from amworkflow.src.geometries.property import get_face_center_of_mass
 from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Transform, BRepBuilderAPI_Sewing
-from amworkflow.src.geometries.property import get_occ_bounding_box
-
+from amworkflow.src.geometries.property import get_occ_bounding_box, topo_explorer
+from amworkflow.src.geometries.builder import geometry_builder
+from amworkflow.src.utils.writer import stl_writer
+from OCC.Core.TopTools import TopTools_ListOfShape
 def translate(item: TopoDS_Shape,
                 vector: list):
     """
@@ -79,15 +81,18 @@ def split(item: TopoDS_Shape,
     plan_len = 1.2 * max(abs(xmin - xmax), abs(ymin - ymax))
     z = zmax - zmin
     if nz != None:
-        z_list = np.linspace(0, z, nz)
+        z_list = np.linspace(zmin, z, nz)
     if layer_thickness != None:
-        z_list = np.arange(0, z, layer_thickness)
-    bo = BOPAlgo_Builder()
+        z_list = np.arange(zmin, z, layer_thickness)
+        z_list = np.concatenate((z_list,np.array([z])))
+    # bo = BOPAlgo_Builder()
+    # bo = BOPAlgo_MakerVolume()
+    bo = BOPAlgo_Splitter()
     bo.AddArgument(item)
     for i in z_list:
-        p1, v1 = gp_Pnt(0,0,i), gp_Vec(0, 0, -1)
+        p1, v1 = gp_Pnt(0,0,i), gp_Vec(0, 0, 1)
         fc1 = make_face(gp_Pln(p1, vec_to_dir(v1)), -plan_len, plan_len, -plan_len, plan_len)
-        bo.AddArgument(fc1)
+        bo.AddTool(fc1)
     if ny!= None:
         y = ymax - ymin
         y_list = np.linspace(0, y, ny)
@@ -199,6 +204,16 @@ def cutter3D(shape1: TopoDS_Shape, shape2: TopoDS_Shape) -> TopoDS_Shape:
     comm = BRepAlgoAPI_Cut(shape1, shape2)
     return comm.Shape()
 
+def split2(item: TopoDS_Shape, *tools: TopoDS_Shape) -> TopoDS_Compound:
+    top_list = TopTools_ListOfShape()
+    for i in tools:
+        top_list.Append(i)
+    cut = BOPAlgo_Splitter()
+    print(tools)
+    cut.SetArguments(top_list)
+    cut.Perform()
+    return cut.Shape()
+
 def common(shape1: TopoDS_Shape, shape2: TopoDS_Shape) -> TopoDS_Shape:
     """
      @brief Common between two TopoDS_Shapes. The result is a shape that has all components of shape1 and shape2
@@ -208,3 +223,51 @@ def common(shape1: TopoDS_Shape, shape2: TopoDS_Shape) -> TopoDS_Shape:
     """
     comm = BRepAlgoAPI_Common(shape1, shape2)
     return comm.Shape()
+
+def get_boundary(item: TopoDS_Shape) -> TopoDS_Wire:
+    bbox = get_occ_bounding_box(item) 
+    edge = topo_explorer(item, "edge") #get all edges from imported model.
+    xx = []
+    yy = []
+    #select all edges on the boundary.
+    for e in edge:
+        xmin, ymin, zmin, xmax, ymax, zmax = get_occ_bounding_box(e) # get bounding box of an edge
+        if (ymin + ymax < 1e-3) or (abs((ymin + ymax)*0.5 - bbox[4]) < 1e-3): # if the edge is either 
+            xx.append(e)
+        if (xmin + xmax < 1e-3) or (abs((xmin + xmax)*0.5 - bbox[3]) < 1e-3):
+            yy.append(e)
+    edges = xx + yy
+    #build a compound of all edges
+    wire = geometry_builder(edges)
+    return wire
+
+def bender(point_cordinates, radius: float = None, mx_pt: np.ndarray = None, mn_pt: np.ndarray = None):
+    coord_t = np.array(point_cordinates).T
+    if mx_pt is None:
+        mx_pt = np.max(coord_t,1)
+    if mn_pt is None:
+        mn_pt = np.min(coord_t,1)
+    cnt = 0.5 * (mn_pt + mx_pt)
+    scale = np.abs(mn_pt-mx_pt)
+    if radius is None:
+        radius = scale[1] * 2
+    o_y = scale[1]*0.5 + radius
+    for pt in point_cordinates:
+        xp = pt[0]
+        yp = pt[1]
+        ratio_l = xp / scale[0]
+        ypr = scale[1] * 0.5 - yp
+        Rp = radius + ypr
+        ly = scale[0] * (1 + ypr / radius)
+        lp = ratio_l * ly
+        thetp = lp / (Rp)
+        thetp = lp / (Rp)
+        pt[0] = Rp * np.sin(thetp)
+        pt[1] = o_y - Rp*np.cos(thetp)
+        
+def array_project(array: np.ndarray, direct: np.ndarray) -> np.ndarray:
+    '''
+    Project an array to the specified direction.
+    '''
+    direct = direct / np.linalg.norm(direct)
+    return np.dot(array, direct)*direct

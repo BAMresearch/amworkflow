@@ -46,7 +46,7 @@ def task_new_case():
             n_dir = os.path.join(ucs, case_name)
             os.mkdir(n_dir)
             with open(f"{n_dir}/{case_name}.py", "w") as opt:
-                opt.write("from amworkflow.api import amWorkflow as aw\n@aw.engine.amworkflow()\ndef geometry_spawn(pm):\n#This is where to define your model.\n\nreturn #TopoDS_Shape")
+                opt.write("from amworkflow.api import amWorkflow as aw\n@aw.engine.amworkflow()\ndef geometry_spawn(pm):\n#This is where to define your model.\n\n    return #TopoDS_Shape")
         else:
             print(f"{case_name} already exists, please input a new name.")
     

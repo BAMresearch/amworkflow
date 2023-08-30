@@ -82,7 +82,7 @@ Alternatively,
     | -n | creating a new model profile with model name "p_wall" |
     |-gp| and geometry parameters *length, width, height, radius* (as are corresponding with the ones in the *pm* in *am4.py*. The order doesn't matter.) |
     |-gpv|input geometry parameters correspondingly, which are 1, 2, 3 and 10|
-    |-ip|Setting iteration parameters by the index number, endpoint and number of geom_files expected. In this example, we iterate parameter *width(2)* from its start point which is defined in -gp, to its endpoint(4) and we want 2 geom_files including the startpoint and endpoint.Also we want iterate *radius*(4) from 10 to 20 with 4 geom_files created in total.|
+    |-ip|Setting iteration parameters by the index number, endpoint and number of geom_files expected. In this example, we iterate parameter *width(2)* from its start point which is defined in -gpv, to its endpoint(4) and we want 2 geom_files including the startpoint and endpoint.Also we want iterate *radius*(4) from 10 to 20 with 4 geom_files created in total.|
     |-mbt|Mesh geometries with layer thickness defined. In this case every layer will be 0.2 of thickness.|
     |-msf|Mesh geometries with a global size factor. It is recommended to set a number smaller than the layer thickness to get a better performance.|
 

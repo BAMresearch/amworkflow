@@ -1,10 +1,11 @@
 from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox
 from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Wire, TopoDS_Shell, TopoDS_Solid, TopoDS_Face, TopoDS_Edge, topods_Compound
 from OCC.Core.Geom import Geom_TrimmedCurve
-from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Ax2, gp_Dir
-from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace, BRepBuilderAPI_Sewing, BRepBuilderAPI_MakeSolid, BRepBuilderAPI_MakeShell, brepbuilderapi_Precision,BRepBuilderAPI_MakePolygon
+from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Ax2, gp_Dir, gp_Pln
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace, BRepBuilderAPI_Sewing, BRepBuilderAPI_MakeSolid, BRepBuilderAPI_MakeShell, brepbuilderapi_Precision, BRepBuilderAPI_MakePolygon
 from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakePrism, BRepPrimAPI_MakeCylinder
 from amworkflow.src.geometries.operator import geom_copy, translate, reverse
+from OCCUtils.Construct import make_face
 from amworkflow.src.geometries.builder import geometry_builder, sewer
 
 from OCC.Core.GC import GC_MakeArcOfCircle
@@ -13,9 +14,10 @@ from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeOffsetShape
 from OCCUtils.Topology import Topo
 import numpy as np
 
-def create_box(length: float, 
-               width: float, 
-               height: float, 
+
+def create_box(length: float,
+               width: float,
+               height: float,
                radius: float = None,
                alpha: float = None,
                shell: bool = False) -> TopoDS_Shape:
@@ -36,14 +38,14 @@ def create_box(length: float,
             print(isinstance(faces[0], TopoDS_Shape))
             sewed_face = sewer(faces)
             # make_shell = BRepBuilderAPI_MakeShell(sewed_face, False).Shell()
-            
+
             return sewed_face
         else:
             return BRepPrimAPI_MakeBox(length, width, height).Shape()
     else:
         # The alpha of the circle.
         if alpha == None:
-            alpha = (length / radius)% (m.pi * 2)
+            alpha = (length / radius) % (m.pi * 2)
         R = radius + (width / 2)
         r = radius - (width / 2)
         p1 = gp_Pnt(0, 0, 0)
@@ -58,7 +60,8 @@ def create_box(length: float,
         arch_edge3_4 = BRepBuilderAPI_MakeEdge(arch3_4.Value()).Edge()
         edge2 = BRepBuilderAPI_MakeEdge(p2, p3).Edge()
         edge4 = BRepBuilderAPI_MakeEdge(p4, p1).Edge()
-        wire = BRepBuilderAPI_MakeWire(arch_edge1_2, edge2, arch_edge3_4, edge4).Wire()
+        wire = BRepBuilderAPI_MakeWire(
+            arch_edge1_2, edge2, arch_edge3_4, edge4).Wire()
         wire_top = geom_copy(wire)
         translate(wire_top, [0, 0, height])
         prism = create_prism(wire, [0, 0, height], True)
@@ -80,6 +83,7 @@ def create_box(length: float,
         else:
             return solid
 
+
 def create_cylinder(radius: float, length: float) -> TopoDS_Shape:
     """
      @brief Create a cylinder shape. This is a convenience function for BRepPrimAPI_MakeCylinder
@@ -88,6 +92,7 @@ def create_cylinder(radius: float, length: float) -> TopoDS_Shape:
      @return Shape of the cylinder ( TopoDS_Shape ) that is created and ready to be added to topology
     """
     return BRepPrimAPI_MakeCylinder(radius, length).Shape()
+
 
 def create_prism(shape: TopoDS_Shape,
                  vector: list,
@@ -100,12 +105,14 @@ def create_prism(shape: TopoDS_Shape,
     @return return the prism
     """
     return BRepPrimAPI_MakePrism(shape, gp_Vec(vector[0],
-                                              vector[1],
-                                              vector[2]),
+                                               vector[1],
+                                               vector[2]),
                                  copy).Shape()
+
 
 def create_prism_by_curve(shape: TopoDS_Shape, curve: TopoDS_Wire):
     return BRepPrimAPI_MakePrism(shape, curve).Shape()
+
 
 def create_face(wire: TopoDS_Wire) -> TopoDS_Face:
     """
@@ -115,12 +122,14 @@ def create_face(wire: TopoDS_Wire) -> TopoDS_Face:
     """
     return BRepBuilderAPI_MakeFace(wire).Face()
 
+
 def create_wire(*edge) -> TopoDS_Wire:
     """
      @brief Create a wire. Input at least one edge to build a wire. This is a convenience function to call BRepBuilderAPI_MakeWire with the given edge and return a wire.
      @return A wire built from the given edge ( s ). The wire may be used in two ways : 1
     """
     return BRepBuilderAPI_MakeWire(*edge).Wire()
+
 
 def create_edge(pnt1: gp_Pnt = None, pnt2: gp_Pnt = None, arch: Geom_TrimmedCurve = None) -> TopoDS_Edge:
     """
@@ -135,7 +144,8 @@ def create_edge(pnt1: gp_Pnt = None, pnt2: gp_Pnt = None, arch: Geom_TrimmedCurv
     elif isinstance(arch, Geom_TrimmedCurve):
         edge = BRepBuilderAPI_MakeEdge(arch).Edge()
     return edge
-    
+
+
 def create_arch(pnt1, pnt2, pnt1_2, make_edge: bool = True) -> TopoDS_Edge:
     """
      @brief Create an arc of circle. If make_edge is True the arc is created in TopoDS_Edge.
@@ -148,9 +158,10 @@ def create_arch(pnt1, pnt2, pnt1_2, make_edge: bool = True) -> TopoDS_Edge:
     arch = GC_MakeArcOfCircle(pnt1, pnt1_2, pnt2).Value()
     # Create an edge if make_edge is true.
     if make_edge:
-        return create_edge(arch) 
+        return create_edge(arch)
     else:
         return arch
+
 
 def create_wire_by_points(points: list):
     """
@@ -163,18 +174,19 @@ def create_wire_by_points(points: list):
     for i in range(len(pts)):
         # Create a wire for the i th point.
         if i == 0:
-            edge = create_edge(pts[i],pts[i+1])
+            edge = create_edge(pts[i], pts[i+1])
             wire = create_wire(edge)
         # Create a wire for the given points.
         if i != len(pts)-1:
-            edge = create_edge(pts[i],pts[i+1])
+            edge = create_edge(pts[i], pts[i+1])
             wire = create_wire(wire, edge)
         else:
-            edge = create_edge(pts[i],pts[0])
+            edge = create_edge(pts[i], pts[0])
             wire = create_wire(wire, edge)
     return wire
 
-def random_polygon_constructor(points:list, isface: bool = True) -> TopoDS_Face or TopoDS_Wire:
+
+def random_polygon_constructor(points: list, isface: bool = True) -> TopoDS_Face or TopoDS_Wire:
     """
      @brief Creates a polygon in any shape. If isface is True the polygon is made face - oriented otherwise it is wires
      @param points List of points defining the polygon
@@ -193,7 +205,8 @@ def random_polygon_constructor(points:list, isface: bool = True) -> TopoDS_Face 
     else:
         return pb.Wire()
 
-def angle_of_two_arrays(a1:np.ndarray, a2:np.ndarray, rad: bool = True) -> float:
+
+def angle_of_two_arrays(a1: np.ndarray, a2: np.ndarray, rad: bool = True) -> float:
     """
      @brief Returns the angle between two vectors. This is useful for calculating the rotation angle between a vector and another vector
      @param a1 1D array of shape ( n_features )
@@ -209,23 +222,25 @@ def angle_of_two_arrays(a1:np.ndarray, a2:np.ndarray, rad: bool = True) -> float
     else:
         return np.rad2deg(np.arccos(cos_value))
 
-def laterality_indicator(a: np.ndarray, d:bool):
+
+def laterality_indicator(a: np.ndarray, d: bool):
     """
      @brief Compute laterality indicator of a vector. This is used to create a vector which is perpendicular to the based vector on its left side ( d = True ) or right side ( d = False )
      @param a vector ( a )
      @param d True if on left or False if on right
      @return A vector.
     """
-    z = np.array([0,0,1])
+    z = np.array([0, 0, 1])
     # cross product of z and a
     if d:
-        na = np.cross(z,a)
+        na = np.cross(z, a)
     else:
-        na = np.cross(-z,a)
+        na = np.cross(-z, a)
     norm = np.linalg.norm(na, na.shape[0])
     return na / norm
 
-def angular_bisector(a1:np.ndarray, a2:np.ndarray) -> np.ndarray:
+
+def angular_bisector(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
     """
      @brief Angular bisector between two vectors. The result is a vector splitting the angle between two vectors uniformly.
      @param a1 1xN numpy array
@@ -238,26 +253,32 @@ def angular_bisector(a1:np.ndarray, a2:np.ndarray) -> np.ndarray:
     norm3 = np.linalg.norm(bst)
     # The laterality indicator a2 norm3 norm3
     if norm3 == 0:
-        opt = laterality_indicator(a2,True)
+        opt = laterality_indicator(a2, True)
     else:
         opt = bst / norm3
     return opt
 
-def p_translate(pts:np.ndarray, direct: np.ndarray) -> np.ndarray:
-    pts = np.array([np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in pts])
+
+def p_translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
+    pts = np.array([np.array(list(i.Coord())) if isinstance(
+        i, gp_Pnt) else np.array(i) for i in pts])
     pts = [i + direct for i in pts]
     return list(pts)
 
-def p_center_of_mass(pts: np.ndarray) -> np.ndarray: 
-    pts = np.array([np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in pts])
-    
+
+def p_center_of_mass(pts: np.ndarray) -> np.ndarray:
+    pts = np.array([np.array(list(i.Coord())) if isinstance(
+        i, gp_Pnt) else np.array(i) for i in pts])
+
     return np.mean(pts.T, axis=1)
-    
-def p_rotate(pts:np.ndarray, angle_x: float = 0, angle_y: float = 0, angle_z: float = 0, cnt:np.ndarray = None) -> np.ndarray:
-    pts = np.array([np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in pts])
+
+
+def p_rotate(pts: np.ndarray, angle_x: float = 0, angle_y: float = 0, angle_z: float = 0, cnt: np.ndarray = None) -> np.ndarray:
+    pts = np.array([np.array(list(i.Coord())) if isinstance(
+        i, gp_Pnt) else np.array(i) for i in pts])
     com = p_center_of_mass(pts)
     if cnt is None:
-        cnt = np.array([0,0,0])
+        cnt = np.array([0, 0, 0])
     t_vec = cnt - com
     pts += t_vec
     rot_x = np.array([[1, 0, 0],
@@ -274,3 +295,13 @@ def p_rotate(pts:np.ndarray, angle_x: float = 0, angle_y: float = 0, angle_z: fl
     r_pts = rt_pts - t_vec
     return r_pts
 
+def create_face_by_plane(pln: gp_Pln, *vt: gp_Pnt) -> TopoDS_Face:
+    return make_face(pln, *vt)
+
+def linear_interpolate(pts: np.ndarray, num: int): 
+    for i, pt in enumerate(pts):
+        if i == len(pts)-1:
+            break
+        else:
+            interpolated_points = np.linspace(pt, pts[i+1], num=num+2)[1:-1]
+    return interpolated_points
