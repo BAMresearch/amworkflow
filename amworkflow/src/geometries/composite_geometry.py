@@ -188,181 +188,181 @@ def create_sym_hexagon1_infill(total_len: float, total_wid:float, height:float, 
     p1 = []
 
 # def create_wall_by_points(pts:list, th: float, isclose:bool, height: float = None, debug: bool = False, debug_type: str = "linear", output: str = "prism", interpolate:float = None, R: float = None) -> np.ndarray or TopoDS_Face or TopoDS_Shell:
-#     """
-#      @brief Create a prism wall by points. It takes a list of points as a skeleton of a central path and then build a strip or a loop.
-#      @param pts list of 2D points that define the wall. The algorithm can compute points in 3D theoretically but the result may make no sense.
-#      @param th thickness of the wall.
-#      @param isclose True if the wall is closed (loop)
-#      @param height height of the wall if a prism is needed.
-#      @param debug if True output two groups of points for plotting.
-#      @param output selecting result intended to output. can be varied among "face" and "prism".
-#      @return two arrays or a face or a prism.
-#     """
-#     is_loop = False
-#     pts = [np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in pts]
-#     if R is not None:
-#         pts = polygon_interpolater(pts, interpolate)
-#         bender(pts, R)
-#         pts = [i for i in pts]
-#     th *= 0.5
-#     opt_pts = []
-#     vecs = []
-#     dir_vecs = []
-#     ths = []
-#     lft_pts = []
-#     rgt_pts = []
-#     segaments = []
-#     for i,p in enumerate(pts):
-#         if i != len(pts) - 1:
-#             a1 = pts[i+1] - pts[i]
-#             if i == 0:
-#                 if isclose:
-#                     dr = angular_bisector(pts[-1] - p, a1)
-#                     # ang = angle_of_two_arrays(dir_vecs[i-1],dr)
-#                     ang2 = angle_of_two_arrays(laterality_indicator(p - pts[-1], True), dr)
-#                     ang_th = ang2
-#                     if ang2 > np.pi / 2:
-#                         dr *= -1
-#                         ang_th = np.pi - ang2
-#                     nth = np.abs(th / np.cos(ang_th))
-#                 else:
-#                     dr = laterality_indicator(a1, True)
-#                     nth = th
-#             else:
-#                 dr = angular_bisector(-vecs[i-1], a1)
-#                 ang2 = angle_of_two_arrays(laterality_indicator(vecs[i-1], True), dr)
-#                 ang_th = ang2
-#                 if ang2 > np.pi / 2:
-#                     dr *= -1
-#                     ang_th = np.pi - ang2
-#                 nth = np.abs(th / np.cos(ang_th))
-#         else:
-#             if isclose:
-#                 a1 = pts[0] - pts[i]
-#                 dr = angular_bisector(-vecs[i-1], a1)
-#                 ang2 = angle_of_two_arrays(laterality_indicator(vecs[i-1], True), dr)
-#                 ang_th = ang2
-#                 if ang2 > np.pi / 2:
-#                     dr *= -1
-#                     ang_th = np.pi - ang2 
-#                 nth = np.abs(th / np.cos(ang_th))
-#             else:
-#                 dr = laterality_indicator(a1, True)
-#                 nth = th
-#         vecs.append(a1)
-#         ths.append(nth)
-#         dir_vecs.append(dr)
-#         lft_pts.append(dr * nth + p)
-#         opt_pts.append(dr * nth + p)
-#     if isclose:
-#         lft_pts.append(lft_pts[0])
-#     for i,p in enumerate(pts[::-1]):
-#         dr = -dir_vecs[::-1][i]
-#         nth = ths[::-1][i]
-#         rgt_pts.append(dr * nth + p)
-#     if isclose:
-#         rgt_pts.append(rgt_pts[0])
-#         pts.append(pts[0])
-#     #find bounding box if bending needed
-#     if R is not None:
-#         mxpt, mnpt = p_bounding_box(lft_pts+rgt_pts)
-#     # Deal with overlapping sides.
-#     lft_pts = break_overlap(lft_pts)
-#     rgt_pts = break_overlap(rgt_pts)
-#     loops_lft_pt_i, peak_lft_pt_i = find_loop(lft_pts)
-#     loops_rgt_pt_i, peak_rgt_pt_i = find_loop(rgt_pts)
-#     if (len(loops_lft_pt_i+peak_lft_pt_i)>0) or (len(loops_rgt_pt_i+peak_rgt_pt_i)>0):
-#         is_loop = True
-#         loops_lft = index2array(loops_lft_pt_i, lft_pts)
-#         loops_rgt = index2array(loops_rgt_pt_i, rgt_pts)
-#         loops = loops_lft+loops_rgt
-#         # if interpolate is not None:
-#         #     for i in range(len(loops)):
-#         #         loops[i] = polygon_interpolater(loops[i], interpolate)
-#         #         if R is not None:
-#         #             bender(loops[i], mxpt, mnpt)
-#         loops_h = find_topology(loops)
+    """
+     @brief Create a prism wall by points. It takes a list of points as a skeleton of a central path and then build a strip or a loop.
+     @param pts list of 2D points that define the wall. The algorithm can compute points in 3D theoretically but the result may make no sense.
+     @param th thickness of the wall.
+     @param isclose True if the wall is closed (loop)
+     @param height height of the wall if a prism is needed.
+     @param debug if True output two groups of points for plotting.
+     @param output selecting result intended to output. can be varied among "face" and "prism".
+     @return two arrays or a face or a prism.
+    """
+    is_loop = False
+    pts = [np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in pts]
+    if R is not None:
+        pts = polygon_interpolater(pts, interpolate)
+        bender(pts, R)
+        pts = [i for i in pts]
+    th *= 0.5
+    opt_pts = []
+    vecs = []
+    dir_vecs = []
+    ths = []
+    lft_pts = []
+    rgt_pts = []
+    segaments = []
+    for i,p in enumerate(pts):
+        if i != len(pts) - 1:
+            a1 = pts[i+1] - pts[i]
+            if i == 0:
+                if isclose:
+                    dr = angular_bisector(pts[-1] - p, a1)
+                    # ang = angle_of_two_arrays(dir_vecs[i-1],dr)
+                    ang2 = angle_of_two_arrays(laterality_indicator(p - pts[-1], True), dr)
+                    ang_th = ang2
+                    if ang2 > np.pi / 2:
+                        dr *= -1
+                        ang_th = np.pi - ang2
+                    nth = np.abs(th / np.cos(ang_th))
+                else:
+                    dr = laterality_indicator(a1, True)
+                    nth = th
+            else:
+                dr = angular_bisector(-vecs[i-1], a1)
+                ang2 = angle_of_two_arrays(laterality_indicator(vecs[i-1], True), dr)
+                ang_th = ang2
+                if ang2 > np.pi / 2:
+                    dr *= -1
+                    ang_th = np.pi - ang2
+                nth = np.abs(th / np.cos(ang_th))
+        else:
+            if isclose:
+                a1 = pts[0] - pts[i]
+                dr = angular_bisector(-vecs[i-1], a1)
+                ang2 = angle_of_two_arrays(laterality_indicator(vecs[i-1], True), dr)
+                ang_th = ang2
+                if ang2 > np.pi / 2:
+                    dr *= -1
+                    ang_th = np.pi - ang2 
+                nth = np.abs(th / np.cos(ang_th))
+            else:
+                dr = laterality_indicator(a1, True)
+                nth = th
+        vecs.append(a1)
+        ths.append(nth)
+        dir_vecs.append(dr)
+        lft_pts.append(dr * nth + p)
+        opt_pts.append(dr * nth + p)
+    if isclose:
+        lft_pts.append(lft_pts[0])
+    for i,p in enumerate(pts[::-1]):
+        dr = -dir_vecs[::-1][i]
+        nth = ths[::-1][i]
+        rgt_pts.append(dr * nth + p)
+    if isclose:
+        rgt_pts.append(rgt_pts[0])
+        pts.append(pts[0])
+    #find bounding box if bending needed
+    if R is not None:
+        mxpt, mnpt = p_bounding_box(lft_pts+rgt_pts)
+    # Deal with overlapping sides.
+    lft_pts = break_overlap(lft_pts)
+    rgt_pts = break_overlap(rgt_pts)
+    loops_lft_pt_i, peak_lft_pt_i = find_loop(lft_pts)
+    loops_rgt_pt_i, peak_rgt_pt_i = find_loop(rgt_pts)
+    if (len(loops_lft_pt_i+peak_lft_pt_i)>0) or (len(loops_rgt_pt_i+peak_rgt_pt_i)>0):
+        is_loop = True
+        loops_lft = index2array(loops_lft_pt_i, lft_pts)
+        loops_rgt = index2array(loops_rgt_pt_i, rgt_pts)
+        loops = loops_lft+loops_rgt
+        # if interpolate is not None:
+        #     for i in range(len(loops)):
+        #         loops[i] = polygon_interpolater(loops[i], interpolate)
+        #         if R is not None:
+        #             bender(loops[i], mxpt, mnpt)
+        loops_h = find_topology(loops)
 
-#     if debug:
-#         if debug_type == "polygon":
-#             fig, ax = plt.subplots()
-#             for polygon in loops:
-#                 poly2d = np.array([[i[0], i[1]] for i in polygon])
-#                 polygon_patch = Polygon(poly2d, closed=True, fill=False, edgecolor='black')
-#                 ax.add_patch(polygon_patch)
-#             ax.set_xlabel('X-axis')
-#             ax.set_ylabel('Y-axis')
-#             ax.set_xlim(-200, 200)
-#             ax.set_ylim(-200, 200)
-#             ax.set_title('Visualization of Polygons')
-#             plt.show()
-#         elif debug_type == "linear":
-#             plt.figure(figsize=(8, 6))  # Optional: Set the figure size
-#             output1 = np.array(lft_pts)
-#             output2 = np.array(rgt_pts)
-#             talist = np.array(pts).T
-#             toutput1 = output1.T
-#             toutput2 = output2.T
-#             x1 = talist[0]
-#             y1 = talist[1]
-#             x2 = toutput1[0]
-#             y2 = toutput1[1]
-#             x3 = toutput2[0]
-#             y3 = toutput2[1]
-#             plt.plot(x1, y1, 'bo-', label='central path')
-#             # Plot Group 2 points and connect with lines in red
-#             plt.plot(x2, y2, 'ro-', label='outer line')
-#             # Plot Group 3 points and connect with lines in green
-#             plt.plot(x3, y3, 'go-', label='inner line')
-#             # Add labels and a legend
-#             for i in range(x2.shape[0]):
-#                 plt.text(x2[i], y2[i], str(i))
-#             for i in range(x3.shape[0]):
-#                 plt.text(x3[i], y3[i], str(i))
+    if debug:
+        if debug_type == "polygon":
+            fig, ax = plt.subplots()
+            for polygon in loops:
+                poly2d = np.array([[i[0], i[1]] for i in polygon])
+                polygon_patch = Polygon(poly2d, closed=True, fill=False, edgecolor='black')
+                ax.add_patch(polygon_patch)
+            ax.set_xlabel('X-axis')
+            ax.set_ylabel('Y-axis')
+            ax.set_xlim(-200, 200)
+            ax.set_ylim(-200, 200)
+            ax.set_title('Visualization of Polygons')
+            plt.show()
+        elif debug_type == "linear":
+            plt.figure(figsize=(8, 6))  # Optional: Set the figure size
+            output1 = np.array(lft_pts)
+            output2 = np.array(rgt_pts)
+            talist = np.array(pts).T
+            toutput1 = output1.T
+            toutput2 = output2.T
+            x1 = talist[0]
+            y1 = talist[1]
+            x2 = toutput1[0]
+            y2 = toutput1[1]
+            x3 = toutput2[0]
+            y3 = toutput2[1]
+            plt.plot(x1, y1, 'bo-', label='central path')
+            # Plot Group 2 points and connect with lines in red
+            plt.plot(x2, y2, 'ro-', label='outer line')
+            # Plot Group 3 points and connect with lines in green
+            plt.plot(x3, y3, 'go-', label='inner line')
+            # Add labels and a legend
+            for i in range(x2.shape[0]):
+                plt.text(x2[i], y2[i], str(i))
+            for i in range(x3.shape[0]):
+                plt.text(x3[i], y3[i], str(i))
             
-#             plt.xlabel('X-axis')
-#             plt.ylabel('Y-axis')
-#             plt.legend()
-#             plt.axis('equal')
-#             plt.grid(True)  # Optional: Add grid lines
-#             plt.show()
-#     else:
-#         if not is_loop:
-#             gp_pts_lft = [gp_Pnt(i[0],i[1],i[2]) for i in lft_pts]
-#             gp_pts_rgt = [gp_Pnt(i[0],i[1],i[2]) for i in rgt_pts]
-#             gp_pts = [gp_Pnt(i[0],i[1],i[2]) for i in opt_pts]
-#             poly = random_polygon_constructor(gp_pts)
-#         else:
-#             for i,v in enumerate(loops_h):
-#                 for j,vv in enumerate(loops_h[i]):
-#                     loops_h[i][j] = list(loops_h[i][j])
-#                     for ind,k in enumerate(loops_h[i][j]):
-#                         loops_h[i][j][ind] = gp_Pnt(k[0], k[1], k[2])
-#             poly0 = random_polygon_constructor(loops_h[0][0])
-#             poly_r = poly0
-#             for i, h in enumerate(loops_h):
-#                 if i == 0:
-#                     continue
-#                 for j in h:
-#                     poly_c = random_polygon_constructor(j)
-#                     poly_r = cutter3D(poly_r, poly_c)
-#             poly = poly_r
-#         match output:
-#             case "face":
-#                 if not isclose:
-#                     return poly
-#                 else:
-#                     return poly
-#             case "prism":
-#                 pr = create_prism(poly, [0,0,height],True)
-#                 # top = geom_copy(poly)
-#                 # translate(top,[0,0,height])
-#                 # opt = sewer([top,pr,poly])
-#                 # print(opt)
-#                 pr_face = topo_explorer(pr,"face")
-#                 pr_remake = sewer(pr_face)
-#                 opt = solid_maker(pr_remake)
-#                 return opt
+            plt.xlabel('X-axis')
+            plt.ylabel('Y-axis')
+            plt.legend()
+            plt.axis('equal')
+            plt.grid(True)  # Optional: Add grid lines
+            plt.show()
+    else:
+        if not is_loop:
+            gp_pts_lft = [gp_Pnt(i[0],i[1],i[2]) for i in lft_pts]
+            gp_pts_rgt = [gp_Pnt(i[0],i[1],i[2]) for i in rgt_pts]
+            gp_pts = [gp_Pnt(i[0],i[1],i[2]) for i in opt_pts]
+            poly = random_polygon_constructor(gp_pts)
+        else:
+            for i,v in enumerate(loops_h):
+                for j,vv in enumerate(loops_h[i]):
+                    loops_h[i][j] = list(loops_h[i][j])
+                    for ind,k in enumerate(loops_h[i][j]):
+                        loops_h[i][j][ind] = gp_Pnt(k[0], k[1], k[2])
+            poly0 = random_polygon_constructor(loops_h[0][0])
+            poly_r = poly0
+            for i, h in enumerate(loops_h):
+                if i == 0:
+                    continue
+                for j in h:
+                    poly_c = random_polygon_constructor(j)
+                    poly_r = cutter3D(poly_r, poly_c)
+            poly = poly_r
+        match output:
+            case "face":
+                if not isclose:
+                    return poly
+                else:
+                    return poly
+            case "prism":
+                pr = create_prism(poly, [0,0,height],True)
+                # top = geom_copy(poly)
+                # translate(top,[0,0,height])
+                # opt = sewer([top,pr,poly])
+                # print(opt)
+                pr_face = topo_explorer(pr,"face")
+                pr_remake = sewer(pr_face)
+                opt = solid_maker(pr_remake)
+                return opt
 
 def find_intersect(lines: np.ndarray) -> np.ndarray:
     parallel = False
@@ -533,6 +533,7 @@ class CreateWallByPoints():
         self.height = height
         self.is_loop = False
         self.R = None
+        self.overlap = False
         self.interpolate = 6
         self.th = th
         self.is_close = False
@@ -543,6 +544,7 @@ class CreateWallByPoints():
         self.rgt_pts = []
         self.loops_h = []
         self.loops = []
+        self.fc_set = []
         self.poly: TopoDS_Shape
         
     def create_polygon(self):
@@ -568,17 +570,33 @@ class CreateWallByPoints():
             self.poly = poly_r
         
     def Shape(self):
-        self.create_sides()
-        self.create_loop()
-        self.create_polygon()
-        if np.isclose(self.height, 0):
-            opt = self.poly
+        if self.overlap:
+            self.create_sides()
+            for i in range(len(self.lft_pts)-1):
+                opts = self.lft_pts
+                ipts = self.rgt_pts
+                opt1 = gp_Pnt(opts[i][0], opts[i][1], opts[i][2])
+                opt2 = gp_Pnt(opts[i+1][0], opts[i+1][1], opts[i+1][2])
+                ipt2 = gp_Pnt(ipts[i][0], ipts[i][1], ipts[i][2])
+                ipt1 = gp_Pnt(ipts[i+1][0], ipts[i+1][1], ipts[i+1][2])
+                fc = random_polygon_constructor([opt1, opt2, ipt1, ipt2])
+                self.fc_set.append(fc)
+            face = self.fc_set[0]
+            for fce in self.fc_set[1:]:
+                face = fuser(face, fce)
+            return create_prism(face, [0,0,self.height])
         else:
-            pr = create_prism(self.poly, [0,0,self.height],True)
-            pr_face = topo_explorer(pr,"face")
-            pr_remake = sewer(pr_face)
-            opt = solid_maker(pr_remake)
-        return opt
+            self.create_sides()
+            self.create_loop()
+            self.create_polygon()
+            if np.isclose(self.height, 0):
+                opt = self.poly
+            else:
+                pr = create_prism(self.poly, [0,0,self.height],True)
+                pr_face = topo_explorer(pr,"face")
+                pr_remake = sewer(pr_face)
+                opt = solid_maker(pr_remake)
+            return opt
         
     def create_sides(self):
         if self.R is not None:
@@ -627,12 +645,15 @@ class CreateWallByPoints():
             self.ths.append(nth)
             self.dir_vecs.append(dr)
             self.lft_pts.append(dr * nth + p)
+            if self.overlap:
+                self.rgt_pts.append(-dr * nth + p)
         if self.is_close:
             self.lft_pts.append(self.lft_pts[0])
-        for i,p in enumerate(self.pts[::-1]):
-            dr = -self.dir_vecs[::-1][i]
-            nth = self.ths[::-1][i]
-            self.rgt_pts.append(dr * nth + p)
+        if not self.overlap:
+            for i,p in enumerate(self.pts[::-1]):
+                dr = -self.dir_vecs[::-1][i]
+                nth = self.ths[::-1][i]
+                self.rgt_pts.append(dr * nth + p)
         if self.is_close:
             self.rgt_pts.append(self.rgt_pts[0])
             self.pts.append(self.pts[0])
@@ -766,7 +787,8 @@ class CreateWallByPoints():
         return loop_l, peak_p
     
     def visualize(self, plot_type: str) -> None:
-        self.Shape()
+        if len(self.create_sides) == 0:
+            self.Shape()
         if plot_type == "polygon":
             fig, ax = plt.subplots()
             for polygon in self.loops:
