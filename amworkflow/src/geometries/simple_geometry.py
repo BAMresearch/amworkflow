@@ -305,3 +305,17 @@ def linear_interpolate(pts: np.ndarray, num: int):
         else:
             interpolated_points = np.linspace(pt, pts[i+1], num=num+2)[1:-1]
     return interpolated_points
+
+def random_pnt_gen(xmin, xmax, ymin, ymax, zmin = 0, zmax = 0):
+    random_x = np.random.randint(xmin, xmax)
+    random_y = np.random.randint(ymin, ymax)
+    if zmin == 0 and zmax == 0:
+        random_z = 0
+    else:
+        random_z = np.random.randint(zmin, zmax)
+    return np.array([random_x, random_y, random_z])
+
+def random_line_gen(xmin, xmax, ymin, ymax, zmin = 0, zmax = 0):
+    pt1 = random_pnt_gen(xmin, xmax,ymin,ymax,zmin,zmax)
+    pt2 = random_pnt_gen(xmin, xmax,ymin,ymax,zmin,zmax)
+    return np.array([pt1, pt2])

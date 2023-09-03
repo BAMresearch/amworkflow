@@ -121,3 +121,50 @@ def p_bounding_box(pts: list):
     mx_pt = np.max(coord_t,1)
     mn_pt = np.min(coord_t,1)
     return mx_pt, mn_pt
+
+def shortest_distance_point_line(line, p):
+    pt1, pt2 = line
+    s = pt2 - pt1
+    lmbda = (p - pt1).dot(s) / s.dot(s)
+    pt_compute = pt1 + lmbda * s
+    if lmbda < 1 and lmbda > 0:
+        distance = np.linalg.norm(pt_compute - p)
+        return lmbda, distance
+    elif lmbda <= 0:
+        distance = np.linalg.norm(pt1 - p)
+        return 0, distance
+    else:
+        distance = np.linalg.norm(pt2 - p)
+        return 1, distance
+    
+def shortest_distance_line_line(line1, line2):
+    pt11, pt12 = line1
+    pt21, pt22 = line2
+    s1 = pt12 - pt11
+    s2 = pt22 - pt21
+    s1square = np.dot(s1, s1)
+    s2square = np.dot(s2, s2)
+    lmbda1 = (np.dot(s1,s2) * np.dot(pt11 - pt21,s2) - s2square * np.dot(pt11 - pt21, s1)) / (s1square * s2square - (np.dot(s1, s2)**2))
+    lmbda2 = -(np.dot(s1,s2) * np.dot(pt11 - pt21,s1) - s1square * np.dot(pt11 - pt21, s2)) / (s1square * s2square - (np.dot(s1, s2)**2))
+    condition1 = lmbda1 >= 1
+    condition2 = lmbda1 <= 0
+    condition3 = lmbda2 >= 1
+    condition4 = lmbda2 <= 0
+    if condition1 or condition2 or condition3 or condition4:
+        choices = [[line2, pt11,s2], [line2, pt12, s2], [line1, pt21, s1], [line1, pt22, s1]]
+        result = np.zeros((4,2))
+        for i in range(4):   
+            result[i] = shortest_distance_point_line(choices[i][0], choices[i][1])
+        shortest_index = np.argmin(result.T[1])
+        shortest_result = result[shortest_index]
+        pti1 = shortest_result[0] * choices[shortest_index][2] + choices[shortest_index][0][0]
+        pti2 = choices[shortest_index][1]
+        # print(result)
+    else:
+        pti1 = pt11 + lmbda1 * s1
+        pti2 = pt21 + lmbda2 * s2
+    # print(lmbda1, lmbda2)
+    # print(pti1, pti2)
+    # print(np.dot(s1,pti2 - pti1), np.dot(s2,pti2 - pti1))
+    distance = np.linalg.norm(pti1 - pti2)
+    return distance, np.array([pti1, pti2])
