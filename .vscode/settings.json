@@ -5,5 +5,9 @@
     "python.formatting.provider": "none",
     "docify.commentService.docstringFormat": "Doxygen",
     "docify.translateService.docstringFormat": "Doxygen",
-    "docify.commentService.sidePanelReviewMode": true
+    "docify.commentService.sidePanelReviewMode": true,
+    "code-runner.executorMap": {
+        "cpp": "cd $dir && g++ $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+      }
+      
 }
