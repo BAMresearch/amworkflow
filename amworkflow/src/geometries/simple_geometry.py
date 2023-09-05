@@ -7,6 +7,7 @@ from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakePrism, BRepPrimAPI_MakeCylinder
 from amworkflow.src.geometries.operator import geom_copy, translate, reverse
 from OCCUtils.Construct import make_face
 from amworkflow.src.geometries.builder import geometry_builder, sewer
+from amworkflow.src.geometries.property import check_overlap, check_parallel_line_line, shortest_distance_line_line
 
 from OCC.Core.GC import GC_MakeArcOfCircle
 import math as m
@@ -295,10 +296,12 @@ def p_rotate(pts: np.ndarray, angle_x: float = 0, angle_y: float = 0, angle_z: f
     r_pts = rt_pts - t_vec
     return r_pts
 
+
 def create_face_by_plane(pln: gp_Pln, *vt: gp_Pnt) -> TopoDS_Face:
     return make_face(pln, *vt)
 
-def linear_interpolate(pts: np.ndarray, num: int): 
+
+def linear_interpolate(pts: np.ndarray, num: int):
     for i, pt in enumerate(pts):
         if i == len(pts)-1:
             break
@@ -306,7 +309,8 @@ def linear_interpolate(pts: np.ndarray, num: int):
             interpolated_points = np.linspace(pt, pts[i+1], num=num+2)[1:-1]
     return interpolated_points
 
-def random_pnt_gen(xmin, xmax, ymin, ymax, zmin = 0, zmax = 0):
+
+def random_pnt_gen(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
     random_x = np.random.randint(xmin, xmax)
     random_y = np.random.randint(ymin, ymax)
     if zmin == 0 and zmax == 0:
@@ -315,7 +319,190 @@ def random_pnt_gen(xmin, xmax, ymin, ymax, zmin = 0, zmax = 0):
         random_z = np.random.randint(zmin, zmax)
     return np.array([random_x, random_y, random_z])
 
-def random_line_gen(xmin, xmax, ymin, ymax, zmin = 0, zmax = 0):
-    pt1 = random_pnt_gen(xmin, xmax,ymin,ymax,zmin,zmax)
-    pt2 = random_pnt_gen(xmin, xmax,ymin,ymax,zmin,zmax)
+
+def random_line_gen(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
+    pt1 = random_pnt_gen(xmin, xmax, ymin, ymax, zmin, zmax)
+    pt2 = random_pnt_gen(xmin, xmax, ymin, ymax, zmin, zmax)
     return np.array([pt1, pt2])
+
+
+class Pnt():
+    def __init__(self, *coords: list):
+        self.coords = coords
+        print(len(self.coords))
+        if (len(self.coords) == 1) and (type(self.coords[0]) is list or isinstance(self.coords[0],np.ndarray)):
+            self.coords = coords[0]
+        self.pts_index = {}
+        self.pts_digraph = {}
+        self.coords_numpy: np.ndarray
+        self.count_pt_id = 0
+        self.init_pts_sequence = []
+        self.init_pnts()
+
+    def enclose(self):
+        distance = np.linalg.norm(self.coords_numpy[-1] - self.coords_numpy[0])
+        if np.isclose(distance, 0):
+            print("Polygon seems already enclosed, skipping...")
+        else:
+            self.coords_numpy = np.vstack(
+                (self.coords_numpy, self.coords_numpy[0]))
+            self.create_attr()
+
+    # def create(self):
+    #     self.coords_numpy = self.create_pnts()
+    #     self.eliminate_overlap()
+    #     self.create_attr()
+
+    def create_attr(self):
+        self.coords_to_list = self.coords_numpy.tolist()
+        self.coords_to_gp_Pnt: list
+        self.x, self.y, self.z = self.coords_numpy.T
+        self.pts_num = self.coords_numpy.shape[0]
+
+    def pnt(self, pt_coord) -> np.ndarray:
+        opt = np.array(pt_coord)
+        dim = len(pt_coord)
+        if dim > 3:
+            raise Exception(
+                f"Got wrong point {pt_coord}: Dimension more than 3rd provided.")
+        if dim < 3:
+            opt = np.lib.pad(opt, ((0, 3 - dim)),
+                             "constant", constant_values=0)
+        return opt
+
+    def new_pnt(self, pt_coords: list):
+        pt_coords = self.pnt(pt_coords)
+        for i, v in self.pts_index.items():
+            if self.pnt_overlap(v, pt_coords):
+                return False, i
+        return True, None
+
+    def pnt_overlap(self, pt1: np.ndarray, pt2: np.ndarray) -> bool:
+        return np.isclose(np.linalg.norm(pt1-pt2), 0)
+
+    def init_pnts(self) -> None:
+        for i, pt in enumerate(self.coords):
+            pt_id = self.register_pnt(pt)
+            if i != len(self.coords) - 1:
+                self.init_pts_sequence.append(pt_id)
+            if i != 0:
+                self.update_digraph(self.init_pts_sequence[i-1], pt_id)
+                self.init_pts_sequence[i -
+                                       1] = [self.init_pts_sequence[i-1], pt_id]
+
+    def register_pnt(self, pt: list) -> int:
+        pnt = self.pnt(pt)
+        new, old_id = self.new_pnt(pnt)
+        if new:
+            self.pts_index.update({self.count_pt_id: pnt})
+            pnt_id = self.count_pt_id
+            self.count_pt_id += 1
+            return pnt_id
+        else:
+            return old_id
+
+    def update_digraph(self, start_node: int, end_node: int, insert_node: int = None, build_new_edge: bool = True) -> None:
+        if start_node not in self.pts_index:
+            raise Exception(f"Unrecognized start node: {start_node}.")
+        if end_node not in self.pts_index:
+            raise Exception(f"Unrecognized end node: {end_node}.")
+        if (insert_node not in self.pts_index) and (insert_node is not None):
+            raise Exception(f"Unrecognized inserting node: {insert_node}.")
+        if start_node in self.pts_digraph:
+            if insert_node is None:
+                self.pts_digraph[start_node].append(end_node)
+            else:
+                end_node_list_index = self.pts_digraph[start_node].index(
+                    end_node)
+                self.pts_digraph[start_node][end_node_list_index] = insert_node
+                if build_new_edge:
+                    self.pts_digraph.update({insert_node: [end_node]})
+        else:
+            if insert_node is None:
+                self.pts_digraph.update({start_node: [end_node]})
+            else:
+                raise Exception("No edge found for insertion option.")
+
+class Segments(Pnt):
+    def __init__(self, *coords: list):
+        super().__init__(*coords)
+        self.segments_index = {}
+        self.modify_edge_list = {}
+        self.find_overlap_node_on_edge()
+        self.modify_edge()
+
+    def enclose(self):
+        pass
+
+    def get_segment(self, pt1: int, pt2: int) -> np.ndarray:
+        return np.array([self.pts_index[pt1], self.pts_index[pt2]])
+
+    # def init_segments(self):
+        for i, v in enumerate(self.pts_sequance):
+            if i != len(self.pts_sequance) - 1:
+                self.segments_index.update({v: [self.pts_sequance[i+1]]})
+                self.count_vector_id += 1
+
+    def insert_item(self, *items: np.ndarray, original: np.ndarray, insert_after: int) -> np.ndarray:
+        print(original[:insert_after+1])
+        return np.concatenate((original[:insert_after+1], items, original[insert_after+1:]))
+    
+    def add_pending_change(self, edge: tuple, new_node: int) -> None:
+        if edge in self.modify_edge_list:
+            self.modify_edge_list[edge].append(new_node)
+        else:
+            self.modify_edge_list.update({edge:[new_node]})
+            
+    def modify_edge(self):
+        for edge,nodes in self.modify_edge_list.items():
+            edge_0_coords = self.pts_index[edge[0]]
+            nodes_coords = [self.pts_index[i] for i in nodes]
+            distances = [np.linalg.norm(i-edge_0_coords) for i in nodes_coords]
+            order = np.argsort(distances)
+            nodes = [nodes[i] for i in order]
+            self.pts_digraph[edge[0]].remove(edge[1])
+            pts_list = [edge[0]]+nodes+[edge[1]]
+            for i,nd in enumerate(pts_list):
+                if i == 0:
+                    continue
+                self.update_digraph(pts_list[i-1],nd,build_new_edge=False)
+    
+    def check_self_edge(self, line: np.ndarray) -> bool:
+        if self.pnt_overlap(line[0],line[1]):
+            return True
+        else:
+            return False
+            
+    def find_overlap_node_on_edge(self):
+        visited = {}
+        for i,v in enumerate(self.init_pts_sequence):
+            for j,vv in enumerate(self.init_pts_sequence):
+                if i == j:
+                    continue
+                if (i,j) in visited or (j,i) in visited:
+                    continue
+                lin1 = self.get_segment(v[0], v[1])
+                lin2 = self.get_segment(vv[0], vv[1])
+                self_edge = (self.check_self_edge(lin1) or self.check_self_edge(lin2))
+                if not self_edge:
+                    parallel, colinear = check_parallel_line_line(lin1, lin2)
+                    # if v == [13,14]:
+                    #     print("line:",(v,vv), parallel, colinear)
+                    if parallel:
+                        if colinear:
+                            index, coords = check_overlap(lin1, lin2)
+                            if len(index) < 4:
+                                for ind in index:
+                                    if ind in [0,1]:
+                                        self.add_pending_change(tuple(vv),v[ind])
+                                    else:
+                                        self.add_pending_change(tuple(v),vv[ind])
+                    else:
+                        distance = shortest_distance_line_line(lin1, lin2)
+                        intersect = np.isclose(distance[0],0)
+                        new,pt = self.new_pnt(distance[1][0])
+                        if intersect and new:
+                            pnt_id = self.register_pnt(distance[1][0])
+                            self.add_pending_change(tuple(v),pnt_id)
+                            self.add_pending_change(tuple(vv), pnt_id)
+                visited.update({(i,j): True, (j,i): True})

@@ -1,4 +1,4 @@
-from amworkflow.src.geometries.simple_geometry import create_edge, create_wire, create_face, create_prism, random_polygon_constructor, angle_of_two_arrays, laterality_indicator, angular_bisector, p_center_of_mass, linear_interpolate
+from amworkflow.src.geometries.simple_geometry import create_edge, create_wire, create_face, create_prism, random_polygon_constructor, angle_of_two_arrays, laterality_indicator, angular_bisector, p_center_of_mass, linear_interpolate, Pnt, Segments
 from amworkflow.src.geometries.operator import reverse, geom_copy, translate, rotate_face, fuser, hollow_carver, cutter3D, bender
 from amworkflow.src.geometries.property import topo_explorer, p_bounding_box
 from amworkflow.src.geometries.builder import solid_maker
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 import itertools
 import copy as cp
-
+import networkx as nx
 
 
 def polygon_maker(side_num: int,
@@ -373,28 +373,31 @@ def find_intersect(lines: np.ndarray) -> np.ndarray:
     L1 = (pt2 - pt1) / np.linalg.norm(pt2 - pt1)
     L2 = (pt4 - pt3) / np.linalg.norm(pt4 - pt3)
     V1 = pt4 - pt1
-    if np.linalg.norm(L1 - L2, 1) < 1e-8:
+    D1 = np.linalg.norm(V1)
+    if np.isclose(np.dot(L1, L2),0) or np.isclose(np.dot(L1, L2),-1):
         parallel = True
         print("Two lines are parallel.")
         return np.full((3,1), np.nan)
     indicate = np.linalg.det(np.array([V1, L1, L2]))
     if np.abs(indicate) < 1e-8:
-         coplanarity = True
+        coplanarity = True
     else:
         print("lines are not in the same plane.")
-        return np.full((3,1), np.nan)
+        return np.full((1,3), np.nan)
     if coplanarity and not parallel:
-        pt5_pt4 = np.linalg.norm(np.cross(V1, L1))
-        theta = np.arccos(np.dot(L1, L2))
-        o_pt5 = pt5_pt4 / np.tan(theta)
-        o_pt4 = pt5_pt4 / np.sin(theta)
-        pt1_pt4 = np.linalg.norm(V1)
-        V1_n = V1 / pt1_pt4
-        cos_beta = np.dot(V1_n, L1)
-        pt1_pt5 = pt1_pt4 * cos_beta
-        o_pt1 = pt1_pt5 - o_pt5
-        o = L1 * o_pt1 + pt1
-        return o
+        if np.isclose(D1,0):
+            return pt1
+        else:
+            pt5_pt4 = np.linalg.norm(np.cross(V1, L1))
+            theta = np.arccos(np.dot(L1, L2))
+            o_pt5 = pt5_pt4 / np.tan(theta)
+            o_pt4 = pt5_pt4 / np.sin(theta)
+            V1_n = V1 / D1
+            cos_beta = np.dot(V1_n, L1)
+            pt1_pt5 = D1 * cos_beta
+            pt1_o = pt1_pt5 - o_pt5
+            o = L1 * pt1_o + pt1
+            return o
 
 def index2array(ind: list, array: np.ndarray):
     real_array = []
@@ -529,7 +532,7 @@ def polygon_interpolater(plg: np.ndarray, step_len: float = None, num: int = Non
         
 class CreateWallByPoints():
     def __init__(self, pts: list, th: float, height: float):
-        self.pts = [np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in pts]
+        self.coords = [np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in pts]
         self.height = height
         self.is_loop = False
         self.R = None
@@ -540,8 +543,8 @@ class CreateWallByPoints():
         self.vecs = []
         self.dir_vecs = []
         self.ths = []
-        self.lft_pts = []
-        self.rgt_pts = []
+        self.lft_coords = []
+        self.rgt_coords = []
         self.loops_h = []
         self.loops = []
         self.fc_set = []
@@ -549,8 +552,8 @@ class CreateWallByPoints():
         
     def create_polygon(self):
         if not self.is_loop:
-            gp_pts_lft = [gp_Pnt(i[0],i[1],i[2]) for i in self.lft_pts]
-            gp_pts_rgt = [gp_Pnt(i[0],i[1],i[2]) for i in self.rgt_pts]
+            gp_pts_lft = [gp_Pnt(i[0],i[1],i[2]) for i in self.lft_coords]
+            gp_pts_rgt = [gp_Pnt(i[0],i[1],i[2]) for i in self.rgt_coords]
             self.gp_pts = gp_pts_lft + gp_pts_rgt
             self.poly = random_polygon_constructor(self.gp_pts)
         else:
@@ -572,9 +575,9 @@ class CreateWallByPoints():
     def Shape(self):
         if self.overlap:
             self.create_sides()
-            for i in range(len(self.lft_pts)-1):
-                opts = self.lft_pts
-                ipts = self.rgt_pts
+            for i in range(len(self.lft_coords)-1):
+                opts = self.lft_coords
+                ipts = self.rgt_coords
                 opt1 = gp_Pnt(opts[i][0], opts[i][1], opts[i][2])
                 opt2 = gp_Pnt(opts[i+1][0], opts[i+1][1], opts[i+1][2])
                 ipt2 = gp_Pnt(ipts[i][0], ipts[i][1], ipts[i][2])
@@ -600,18 +603,18 @@ class CreateWallByPoints():
         
     def create_sides(self):
         if self.R is not None:
-            self.pts = polygon_interpolater(self.pts, self.interpolate)
-            self.pts = bender(self.pts, self.R)
-            self.pts = [i for i in self.pts]
+            self.coords = polygon_interpolater(self.coords, self.interpolate)
+            self.coords = bender(self.coords, self.R)
+            self.coords = [i for i in self.coords]
         self.th *= 0.5
-        for i,p in enumerate(self.pts):
-            if i != len(self.pts) - 1:
-                a1 = self.pts[i+1] - self.pts[i]
+        for i,p in enumerate(self.coords):
+            if i != len(self.coords) - 1:
+                a1 = self.coords[i+1] - self.coords[i]
                 if i == 0:
                     if self.is_close:
-                        dr = angular_bisector(self.pts[-1] - p, a1)
+                        dr = angular_bisector(self.coords[-1] - p, a1)
                         # ang = angle_of_two_arrays(dir_vecs[i-1],dr)
-                        ang2 = angle_of_two_arrays(laterality_indicator(p - self.pts[-1], True), dr)
+                        ang2 = angle_of_two_arrays(laterality_indicator(p - self.coords[-1], True), dr)
                         ang_th = ang2
                         if ang2 > np.pi / 2:
                             dr *= -1
@@ -630,7 +633,7 @@ class CreateWallByPoints():
                     nth = np.abs(self.th / np.cos(ang_th))
             else:
                 if self.is_close:
-                    a1 = self.pts[0] - self.pts[i]
+                    a1 = self.coords[0] - self.coords[i]
                     dr = angular_bisector(-self.vecs[i-1], a1)
                     ang2 = angle_of_two_arrays(laterality_indicator(self.vecs[i-1], True), dr)
                     ang_th = ang2
@@ -644,31 +647,31 @@ class CreateWallByPoints():
             self.vecs.append(a1)
             self.ths.append(nth)
             self.dir_vecs.append(dr)
-            self.lft_pts.append(dr * nth + p)
+            self.lft_coords.append(dr * nth + p)
             if self.overlap:
-                self.rgt_pts.append(-dr * nth + p)
+                self.rgt_coords.append(-dr * nth + p)
         if self.is_close:
-            self.lft_pts.append(self.lft_pts[0])
+            self.lft_coords.append(self.lft_coords[0])
         if not self.overlap:
-            for i,p in enumerate(self.pts[::-1]):
+            for i,p in enumerate(self.coords[::-1]):
                 dr = -self.dir_vecs[::-1][i]
                 nth = self.ths[::-1][i]
-                self.rgt_pts.append(dr * nth + p)
+                self.rgt_coords.append(dr * nth + p)
         if self.is_close:
-            self.rgt_pts.append(self.rgt_pts[0])
-            self.pts.append(self.pts[0])
+            self.rgt_coords.append(self.rgt_coords[0])
+            self.coords.append(self.coords[0])
             
     def create_loop(self):
         if self.R is not None:
-            mxpt, mnpt = p_bounding_box(self.lft_pts+self.rgt_pts)
-        self.lft_pts = self.break_overlap(self.lft_pts)
-        self.rgt_pts = self.break_overlap(self.rgt_pts)
-        loops_lft_pt_i, peak_lft_pt_i = self.find_loop(self.lft_pts)
-        loops_rgt_pt_i, peak_rgt_pt_i = self.find_loop(self.rgt_pts)
+            mxpt, mnpt = p_bounding_box(self.lft_coords+self.rgt_coords)
+        self.lft_coords = self.break_overlap(self.lft_coords)
+        self.rgt_coords = self.break_overlap(self.rgt_coords)
+        loops_lft_pt_i, peak_lft_pt_i = self.find_loop(self.lft_coords)
+        loops_rgt_pt_i, peak_rgt_pt_i = self.find_loop(self.rgt_coords)
         if (len(loops_lft_pt_i+peak_lft_pt_i)>0) or (len(loops_rgt_pt_i+peak_rgt_pt_i)>0):
             self.is_loop = True
-            self.loops_lft = index2array(loops_lft_pt_i, self.lft_pts)
-            self.loops_rgt = index2array(loops_rgt_pt_i, self.rgt_pts)
+            self.loops_lft = index2array(loops_lft_pt_i, self.lft_coords)
+            self.loops_rgt = index2array(loops_rgt_pt_i, self.rgt_coords)
             self.loops = self.loops_lft+self.loops_rgt
             self.loops_h = self.find_topology(self.loops)
         
@@ -803,9 +806,9 @@ class CreateWallByPoints():
             plt.show()
         elif plot_type == "linear":
             plt.figure(figsize=(8, 6))  # Optional: Set the figure size
-            output1 = np.array(self.lft_pts)
-            output2 = np.array(self.rgt_pts)
-            talist = np.array(self.pts).T
+            output1 = np.array(self.lft_coords)
+            output2 = np.array(self.rgt_coords)
+            talist = np.array(self.coords).T
             toutput1 = output1.T
             toutput2 = output2.T
             x1 = talist[0]
@@ -831,3 +834,114 @@ class CreateWallByPoints():
             plt.axis('equal')
             plt.grid(True)  # Optional: Add grid lines
             plt.show()
+            
+class CreateWallByPointsUpdate():
+    def __init__(self, coords: list, th: float, height: float):
+        self.coords = [np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in coords]
+        self.height = height
+        self.R = None
+        self.interpolate = 6
+        self.th = th
+        self.is_close = True
+        self.vecs = []
+        self.dir_vecs = []
+        self.ths = []
+        self.lft_coords = []
+        self.rgt_coords = []
+        self.side_coords: list
+        self.create_sides()
+        self.pnts = Segments(self.side_coords)
+        self.G = nx.from_dict_of_lists(self.pnts.pts_digraph, create_using=nx.DiGraph)
+        self.all_loops = list(nx.simple_cycles(self.G))
+        self.loops = self.get_loops()
+        
+    def create_sides(self):
+        if self.R is not None:
+            self.coords = polygon_interpolater(self.coords, self.interpolate)
+            self.coords = bender(self.coords, self.R)
+            self.coords = [i for i in self.coords]
+        self.th *= 0.5
+        for i,p in enumerate(self.coords):
+            if i != len(self.coords) - 1:
+                a1 = self.coords[i+1] - self.coords[i]
+                if i == 0:
+                    if self.is_close:
+                        dr = angular_bisector(self.coords[-1] - p, a1)
+                        # ang = angle_of_two_arrays(dir_vecs[i-1],dr)
+                        ang2 = angle_of_two_arrays(laterality_indicator(p - self.coords[-1], True), dr)
+                        ang_th = ang2
+                        if ang2 > np.pi / 2:
+                            dr *= -1
+                            ang_th = np.pi - ang2
+                        nth = np.abs(self.th / np.cos(ang_th))
+                    else:
+                        dr = laterality_indicator(a1, True)
+                        nth = self.th
+                else:
+                    dr = angular_bisector(-self.vecs[i-1], a1)
+                    ang2 = angle_of_two_arrays(laterality_indicator(self.vecs[i-1], True), dr)
+                    ang_th = ang2
+                    if ang2 > np.pi / 2:
+                        dr *= -1
+                        ang_th = np.pi - ang2
+                    nth = np.abs(self.th / np.cos(ang_th))
+            else:
+                if self.is_close:
+                    a1 = self.coords[0] - self.coords[i]
+                    dr = angular_bisector(-self.vecs[i-1], a1)
+                    ang2 = angle_of_two_arrays(laterality_indicator(self.vecs[i-1], True), dr)
+                    ang_th = ang2
+                    if ang2 > np.pi / 2:
+                        dr *= -1
+                        ang_th = np.pi - ang2 
+                    nth = np.abs(self.th / np.cos(ang_th))
+                else:
+                    dr = laterality_indicator(a1, True)
+                    nth = self.th
+            self.vecs.append(a1)
+            self.ths.append(nth)
+            self.dir_vecs.append(dr)
+            self.lft_coords.append(dr * nth + p)
+            self.rgt_coords.append(-dr * nth + p)
+        if self.is_close:
+            self.lft_coords.append(self.lft_coords[0])
+            self.rgt_coords.append(self.rgt_coords[0])
+            self.rgt_coords = self.rgt_coords[::-1]
+            self.coords.append(self.coords[0])
+        else:
+            self.rgt_coords = self.rgt_coords[::-1]
+        self.side_coords = self.lft_coords + self.rgt_coords + self.lft_coords[0]
+        
+    def visualize(self):
+        # Extract the x and y coordinates and IDs
+        a = self.pnts.pts_index
+        x = [coord[0] for coord in a.values()]
+        y = [coord[1] for coord in a.values()]
+        ids = list(a.keys())  # Get the point IDs
+
+        # Create a scatter plot in 2D
+        plt.figure()
+        plt.scatter(x, y)
+
+        # Annotate points with IDs
+        for i, (xi, yi) in enumerate(zip(x, y)):
+            plt.annotate(f'{ids[i]}', (xi, yi), fontsize=12, ha='right')
+
+        # Set labels and title
+        plt.xlabel('X-axis')
+        plt.ylabel('Y-axis')
+        plt.title('2D Scatter Plot with Annotations')
+
+        # Show the plot
+        plt.show()
+    
+    def get_loops(self):
+        return [i for i in self.all_loops if len(i) > 2]
+
+    def visualize_graph(self):
+        layout = nx.spring_layout(self.G)
+        # Draw the nodes and edges
+        nx.draw(self.G, pos=layout, with_labels=True, node_color='skyblue', font_size=10, node_size=500)
+        plt.title("NetworkX Graph Visualization")
+        plt.show()
+    

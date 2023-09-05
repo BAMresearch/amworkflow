@@ -4,28 +4,33 @@ import matplotlib.pyplot as plt
 class Pnt():
     def __init__(self, *coords: list):
         self.coords = coords
-        self.pts_numpy: np.ndarray
+        self.pts_index = {}
+        self.overlap_pts_index = {}
+        self.coords_numpy: np.ndarray
+        self.pts_sequance = np.arange(len(self.coords))
         if (len(self.coords) == 1) and (type(self.coords[0]) is list):
             self.coords = coords[0]
         self.create()
+        
     
     def enclose(self):
-        distance = np.linalg.norm(self.pts_numpy[-1] - self.pts_numpy[0])
+        distance = np.linalg.norm(self.coords_numpy[-1] - self.coords_numpy[0])
         if np.isclose(distance,0):
             print("Polygon seems already enclosed, skipping...")
         else:
-            self.pts_numpy = np.vstack((self.pts_numpy, self.pts_numpy[0]))
+            self.coords_numpy = np.vstack((self.coords_numpy, self.coords_numpy[0]))
             self.create_attr()
         
     def create(self):
-        self.pts_numpy = self.create_pnts()
+        self.coords_numpy = self.create_pnts()
+        self.eliminate_overlap()
         self.create_attr()
         
     def create_attr(self):
-        self.pts_to_list = self.pts_numpy.tolist()
+        self.pts_to_list = self.coords_numpy.tolist()
         self.pts_to_gp_Pnt: list
-        self.x, self.y, self.z = self.pts_numpy.T
-        self.pts_num = self.pts_numpy.shape[0]
+        self.x, self.y, self.z = self.coords_numpy.T
+        self.pts_num = self.coords_numpy.shape[0]
     
     def pnt(self,pt_coord) -> np.ndarray:
         opt = np.array(pt_coord)
@@ -40,9 +45,31 @@ class Pnt():
         for i, pt in enumerate(self.coords):
             if i == 0:
                 pts = np.array([self.pnt(pt)])
+                self.pts_index = {i:pts}
             else:
                 pts = np.vstack([pts, self.pnt(pt)])
+                self.pts_index.update({i:self.pnt(pt)})
         return pts
+    
+    def eliminate_overlap(self):
+        visited = {}
+        for i in self.pts_sequance:
+            for key1, value1 in self.pts_index.items():
+                if i == key1:
+                    continue
+                else:
+                    if ((key1,i) in visited) or ((i, key1) in visited):
+                        continue
+                    else:
+                        if np.isclose(np.linalg.norm(self.coords_numpy[i]-value1),0):
+                            visited.update({(key1, i): True})
+                            self.overlap_pts_index.update({key1:i})
+                        else:
+                            visited.update({(key1,i): False})
+        self.pts_sequance = [i if i not in self.overlap_pts_index else self.overlap_pts_index[i] for i in self.pts_sequance]
+
+                
+                        
 
 class Segments(Pnt):
     def __init__(self,*coords: list):
@@ -54,7 +81,7 @@ class Segments(Pnt):
     def init_pnts(self):
         enrch_pts = np.zeros((self.pts_num,5))
         for i in range(self.pts_num):
-            enrch_pts[i] = np.concatenate((self.pts_numpy[i],(i,1)))
+            enrch_pts[i] = np.concatenate((self.coords_numpy[i],(i,1)))
         return enrch_pts
     
     def enclose(self):
@@ -76,29 +103,18 @@ class Segments(Pnt):
     
     
 class CheckSegments():
-    def __init__(self, s1: np.ndarray, s2: np.ndarray) -> None:
-        self.s1 = s1
-        self.s2 = s2
-        self.L1, self.st1, self.et1 = self.s1
-        self.L2, self.st2, self.et2 = self.s2
-        self.L3 = self.et2 - self.st1
-        self.L4 = self.st1 - self.et2
-        self.L5 = self.st2 - self.st1
-        self.L6 = self.et2 - self.et1
-        self.D1 = np.linalg.norm(self.et1 - self.st1)
-        self.D2 = np.linalg.norm(self.et2 - self.st2)
-        self.D3 = np.linalg.norm(self.et2-self.st1)
-        self.D4 = np.linalg.norm(self.st2-self.et1)
-        self.D5 = np.linalg.norm(self.st2-self.st1)
-        self.D6 = np.linalg.norm(self.et2 - self.et1)
-        self.N1 = self.get_normalize_vector(self.L1)
-        self.N2 = self.get_normalize_vector(self.L2)
+    def __init__(self, s1: np.ndarray = None, s2: np.ndarray = None, s1_ind: int = None, s2_ind: int = None, coords: np.ndarray = None) -> None:
+        if (s1 is not None) and (s2 is not None):
+            self.s1 = s1
+            self.s2 = s2
+        # elif (s1_ind is not None) and (s2_ind is not None) and (coords is not None):
+        #     self.s1 = coords[]
+        self.s1_profile = {"self edge": False}
+        self.s2_profile = {"self edge": False}
         self.are_parallel = False
         self.are_colinear = False
         self.are_coplanar = False
         self.intersect = None
-        self.on_s1 = False
-        self.on_s2 = False
         
     def check_relationship(self):
         coplanarity = np.linalg.det(np.array([self.L3, self.L1, self.L2]))
@@ -110,16 +126,11 @@ class CheckSegments():
         if np.isclose(parallel, 0):
             self.are_parallel = True
     
-    def check_exceptions(self):
-        if np.isclose(self.D1+self.D4-self.D5, 0) and np.isclose(self.D1+self.D6-self.D3, 0):
-            self.are_colinear = True
-        
-    
     def get_normalize_vector(self, v: np.ndarray):
         return v / np.linalg.norm(v)
     
     
-def find_intersect(lines: np.ndarray) -> np.ndarray:
+# def find_intersect(lines: np.ndarray) -> np.ndarray:
     parallel = False
     coplanarity = False
     l1, l2 = lines
@@ -156,9 +167,9 @@ def find_intersect(lines: np.ndarray) -> np.ndarray:
 
 
 
-pts = Pnt([0,0,0], [0, 5, 0], [5,5,0], [2,2], [-2,2])
+pts = Pnt([0,0,0], [0, 5, 0], [5,5,0], [2,2], [-2,2],[0,5])
 segments = Segments([0,0,0], [0, 5, 0], [5,5,0], [2,2], [-2,2])
-
+print(pts.pts_numpy)
 pts.enclose()
 x = pts.x
 y = pts.y
@@ -209,7 +220,7 @@ def plot_intersect(x11, x12, y11, y12, x21, x22, y21, y22):
     # Display the plot
     plt.show()
     
-plot_intersect(2,5,3,5,5,2,5,3)
+# plot_intersect(2,5,3,5,5,2,5,3)
     
 
 def plot_segments(x,y):

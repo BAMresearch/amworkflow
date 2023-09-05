@@ -168,3 +168,69 @@ def shortest_distance_line_line(line1, line2):
     # print(np.dot(s1,pti2 - pti1), np.dot(s2,pti2 - pti1))
     distance = np.linalg.norm(pti1 - pti2)
     return distance, np.array([pti1, pti2])
+
+def check_parallel_line_line(line1: np.ndarray, line2: np.ndarray) -> tuple:
+    parallel = False
+    colinear = False
+    pt1, pt2 = line1
+    pt3, pt4 = line2
+    def generate_link(): 
+        t1 = np.random.randint(1,4)* 0.1
+        t2 = np.random.randint(5,9) * 0.1
+        pt12 = (1-t1)*pt1+t1*pt2
+        pt34 = (1-t2)*pt3+t2*pt4
+        norm_L3 = np.linalg.norm(pt34 - pt12)
+        while np.isclose(norm_L3,0):
+            t1 = np.random.randint(1,4)* 0.1
+            t2 = np.random.randint(5,9) * 0.1
+            pt12 = (1-t1)*pt1+t1*pt2
+            pt34 = (1-t2)*pt3+t2*pt4
+            norm_L3 = np.linalg.norm(pt34 - pt12)
+        return pt12, pt34
+    pt12, pt34 = generate_link()        
+    L1 = (pt2 - pt1) / np.linalg.norm(pt2 - pt1)
+    L2 = (pt4 - pt3) / np.linalg.norm(pt4 - pt3)
+    L3 = (pt34 - pt12) / np.linalg.norm(pt34 - pt12)
+    if np.isclose(np.linalg.norm(np.cross(L1, L2)), 0):
+        parallel = True
+    if np.isclose(np.linalg.norm(np.cross(L1, L3)), 0) and parallel:
+        colinear = True
+    return parallel, colinear
+
+def check_overlap(line1: np.ndarray, line2: np.ndarray) -> np.ndarray:
+    A, B = line1
+    C, D = line2
+    s = B - A
+    dist_s = np.linalg.norm(s)
+    norm_s = s / dist_s
+    c = C - A
+    dist_c = np.linalg.norm(c)
+    if np.isclose(dist_c, 0):
+        lmbda_c = 0
+    else:
+        norm_c = c / dist_c
+        sign_c = -1 if np.isclose(np.sum(norm_c + norm_s), 0) else 1
+        lmbda_c = sign_c * dist_c / dist_s
+    d = D - A
+    dist_d = np.linalg.norm(d)
+    if np.isclose(dist_d, 0):
+        lmbda_d = 0
+    else:
+        norm_d = d / dist_d
+        sign_d = -1 if np.isclose(np.sum(norm_d + norm_s), 0) else 1
+        lmbda_d = sign_d * dist_d / dist_s
+    indicator = np.zeros(4)
+    direction_cd = lmbda_d - lmbda_c
+    smaller = min(lmbda_c, lmbda_d)
+    larger = max(lmbda_c, lmbda_d)
+    pnt_list = np.array([A,B,C,D])
+    if lmbda_c < 1 and lmbda_c > 0:
+        indicator[2] = 1
+    if lmbda_d < 1 and lmbda_d > 0:
+        indicator[3] = 1
+    if 0 <larger and 0 > smaller:
+        indicator[0] = 1
+    if 1 < larger and 1 > smaller:
+        indicator[1] = 1
+    return np.where(indicator == 1)[0],  np.unique(pnt_list[np.where(indicator == 1)[0]], axis=0)
+
