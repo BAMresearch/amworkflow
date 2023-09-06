@@ -837,7 +837,6 @@ class CreateWallByPoints():
             
 class CreateWallByPointsUpdate():
     def __init__(self, coords: list, th: float, height: float):
-        # self.coords = [np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in coords]
         self.coords = Pnt(coords).coords
         self.height = height
         self.R = None
@@ -853,8 +852,10 @@ class CreateWallByPointsUpdate():
         self.create_sides()
         self.pnts = Segments(self.side_coords)
         self.G = nx.from_dict_of_lists(self.pnts.pts_digraph, create_using=nx.DiGraph)
-        self.all_loops = list(nx.simple_cycles(self.G))
-        self.loops = self.get_loops()
+        # self.all_loops = list(nx.simple_cycles(self.G))
+        self.self_loops = nx.selfloop_edges(self.G)
+        # self.all_loops = list(nx.simple_cycles(self.H)) # Dangerous! Ran out of memory.
+        self.loop_generator = nx.simple_cycles(self.G)
         
     def create_sides(self):
         if self.R is not None:
@@ -913,7 +914,7 @@ class CreateWallByPointsUpdate():
             self.rgt_coords = self.rgt_coords[::-1]
         self.side_coords = self.lft_coords + self.rgt_coords + self.lft_coords[0]
         
-    def visualize(self):
+    def visualize(self, display_polygon: bool = True):
         # Extract the x and y coordinates and IDs
         a = self.pnts.pts_index
         x = [coord[0] for coord in a.values()]
@@ -921,24 +922,34 @@ class CreateWallByPointsUpdate():
         ids = list(a.keys())  # Get the point IDs
 
         # Create a scatter plot in 2D
-        plt.figure()
+        plt.subplot(1,2,1)
+        # plt.figure()
         plt.scatter(x, y)
 
         # Annotate points with IDs
         for i, (xi, yi) in enumerate(zip(x, y)):
             plt.annotate(f'{ids[i]}', (xi, yi), fontsize=12, ha='right')
-            
-        for lp in self.loops:
-            coords = [self.pnts.pts_index[i] for i in lp]
-            x = [point[0] for point in coords]
-            y = [point[1] for point in coords]
-            plt.plot(x + [x[0]], y + [y[0]], linestyle='-', marker='o')
+        
+        if display_polygon:
+            for lp in self.loop_generator:
+                if len(lp) > 2:
+                    coords = [self.pnts.pts_index[i] for i in lp]
+                    x = [point[0] for point in coords]
+                    y = [point[1] for point in coords]
+                    plt.plot(x + [x[0]], y + [y[0]], linestyle='-', marker='o')
             
         # Set labels and title
         plt.xlabel('X-axis')
         plt.ylabel('Y-axis')
-        plt.title('2D Scatter Plot with Annotations')
+        plt.title('Points With Polygons detected')
 
+        plt.subplot(1,2,2)
+        # layout = nx.spring_layout(self.G)
+        layout = nx.circular_layout(self.G)
+        # Draw the nodes and edges
+        nx.draw(self.G, pos=layout, with_labels=True, node_color='skyblue', font_size=10, node_size=300)
+        plt.title("Multi-Digraph")
+        plt.tight_layout() 
         # Show the plot
         plt.show()
     

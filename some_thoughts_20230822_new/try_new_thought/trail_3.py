@@ -59,6 +59,6 @@ wall = CreateWallByPointsUpdate(pmfo, th, height)
 
 # plot_digraph(wall.pnts.pts_digraph)
 # wall.visualize()
-print(wall.loops)
-wall.visualize_graph()
+# print(wall.loops)
+# wall.visualize_graph()
 wall.visualize()

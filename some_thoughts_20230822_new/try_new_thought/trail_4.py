@@ -19,5 +19,5 @@ print(pmfo)
 g = aw.geom
 wall = CreateWallByPointsUpdate(pmfo, 8, 12)
 # print(wall.loops)
-wall.visualize_graph()
-wall.visualize()
+# wall.visualize_graph()
+wall.visualize(display_polygon=False)
