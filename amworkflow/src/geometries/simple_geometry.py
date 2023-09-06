@@ -329,12 +329,11 @@ def random_line_gen(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
 class Pnt():
     def __init__(self, *coords: list):
         self.coords = coords
-        print(len(self.coords))
         if (len(self.coords) == 1) and (type(self.coords[0]) is list or isinstance(self.coords[0],np.ndarray)):
             self.coords = coords[0]
+        self.coords = self.format_coords()
         self.pts_index = {}
         self.pts_digraph = {}
-        self.coords_numpy: np.ndarray
         self.count_pt_id = 0
         self.init_pts_sequence = []
         self.init_pnts()
@@ -352,6 +351,8 @@ class Pnt():
     #     self.coords_numpy = self.create_pnts()
     #     self.eliminate_overlap()
     #     self.create_attr()
+    def format_coords(self):
+        return [self.pnt(i) for i in self.coords]
 
     def create_attr(self):
         self.coords_to_list = self.coords_numpy.tolist()
@@ -479,8 +480,13 @@ class Segments(Pnt):
             for j,vv in enumerate(self.init_pts_sequence):
                 if i == j:
                     continue
+                if i == j + 1:
+                    continue
+                if j == i - 1:
+                    continue
                 if (i,j) in visited or (j,i) in visited:
                     continue
+                print(i,j)
                 lin1 = self.get_segment(v[0], v[1])
                 lin2 = self.get_segment(vv[0], vv[1])
                 self_edge = (self.check_self_edge(lin1) or self.check_self_edge(lin2))

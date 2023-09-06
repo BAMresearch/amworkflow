@@ -837,7 +837,8 @@ class CreateWallByPoints():
             
 class CreateWallByPointsUpdate():
     def __init__(self, coords: list, th: float, height: float):
-        self.coords = [np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in coords]
+        # self.coords = [np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i) for i in coords]
+        self.coords = Pnt(coords).coords
         self.height = height
         self.R = None
         self.interpolate = 6
@@ -926,7 +927,13 @@ class CreateWallByPointsUpdate():
         # Annotate points with IDs
         for i, (xi, yi) in enumerate(zip(x, y)):
             plt.annotate(f'{ids[i]}', (xi, yi), fontsize=12, ha='right')
-
+            
+        for lp in self.loops:
+            coords = [self.pnts.pts_index[i] for i in lp]
+            x = [point[0] for point in coords]
+            y = [point[1] for point in coords]
+            plt.plot(x + [x[0]], y + [y[0]], linestyle='-', marker='o')
+            
         # Set labels and title
         plt.xlabel('X-axis')
         plt.ylabel('Y-axis')
