@@ -27,6 +27,7 @@ def geometry_spawn(pm):
     # pmfo = pmfo[0:90] # outline
     wall_maker = g.CreateWallByPoints(pmfo, pm.thickness, pm.height,is_close=False)
     design = wall_maker.Shape()
+    # wall_maker.visualize # Uncomment this line if you would like to visualize it in plot.
 
     return design #TopoDS_Shape
 

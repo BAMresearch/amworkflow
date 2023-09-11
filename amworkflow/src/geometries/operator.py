@@ -81,7 +81,7 @@ def split(item: TopoDS_Shape,
     plan_len = 1.2 * max(abs(xmin - xmax), abs(ymin - ymax))
     z = zmax - zmin
     if nz != None:
-        z_list = np.linspace(zmin, z, nz)
+        z_list = np.linspace(zmin, z, nz+1)
     if layer_thickness != None:
         z_list = np.arange(zmin, z, layer_thickness)
         z_list = np.concatenate((z_list,np.array([z])))

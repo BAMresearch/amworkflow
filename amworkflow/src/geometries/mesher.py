@@ -45,7 +45,6 @@ def mesher(item: TopoDS_Shape,
     model.add(model_name)
     v = get_geom_pointer(model, geo)
     model.occ.synchronize()
-    gmsh.fltk.run()
     for layer in v:
         model.add_physical_group(3,[layer[1]], name=f"layer{layer[1]}")
         phy_gp = model.getPhysicalGroups()

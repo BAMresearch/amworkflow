@@ -17,9 +17,6 @@ classifiers = [
 license = {file = "LICENSE"}
 keywords = ["AM concrete", "workflow", "CAD"]
 dependencies = [
-  "fenics-dolfinx",
-  "gmsh",
-  "sqlalchemy"
 ]
 
 [project.urls]
