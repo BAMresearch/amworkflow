@@ -318,10 +318,10 @@ class amWorkflow(object):
         #     """
         #     return cg.create_wall_by_points(pts, th, isclose, height,debug, debug_type, output,interpolate, R)
         
-        @staticmethod
-        class CreateWallByPoints(cg.CreateWallByPoints):
-            def __init__(self, pts: list, th: float, height: float):
-                super().__init__(pts,th,height)
+        # @staticmethod
+        class CreateWallByPoints(cg.CreateWallByPointsUpdate):
+            def __init__(self, pts: list, th: float, height: float, is_close:bool = True):
+                super().__init__(pts,th,height,is_close)
         
         @staticmethod
         def get_face_center_of_mass(face: TopoDS_Face, gp_pnt: bool = False) -> tuple | gp_Pnt:

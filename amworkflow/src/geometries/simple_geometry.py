@@ -8,13 +8,15 @@ from amworkflow.src.geometries.operator import geom_copy, translate, reverse
 from OCCUtils.Construct import make_face
 from amworkflow.src.geometries.builder import geometry_builder, sewer
 from amworkflow.src.geometries.property import check_overlap, check_parallel_line_line, shortest_distance_line_line
-
+from amworkflow.src.utils.system import threads_count
 from OCC.Core.GC import GC_MakeArcOfCircle
 import math as m
 from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakeOffsetShape
 from OCCUtils.Topology import Topo
 import numpy as np
-
+import multiprocessing
+from itertools import repeat
+from amworkflow.src.utils.meter import timer
 
 def create_box(length: float,
                width: float,
@@ -373,6 +375,7 @@ class Pnt():
 
     def new_pnt(self, pt_coords: list):
         pt_coords = self.pnt(pt_coords)
+        
         for i, v in self.pts_index.items():
             if self.pnt_overlap(v, pt_coords):
                 return False, i
@@ -423,12 +426,15 @@ class Pnt():
                 self.pts_digraph.update({start_node: [end_node]})
             else:
                 raise Exception("No edge found for insertion option.")
-
+            
+    
 class Segments(Pnt):
     def __init__(self, *coords: list):
         super().__init__(*coords)
         self.segments_index = {}
         self.modify_edge_list = {}
+        self.virtual_vector = {}
+        self.virtual_pnt = {}
         self.find_overlap_node_on_edge()
         self.modify_edge()
 
@@ -467,13 +473,65 @@ class Segments(Pnt):
                 if i == 0:
                     continue
                 self.update_digraph(pts_list[i-1],nd,build_new_edge=False)
+                if (i != 1) and (i != len(pts_list) - 1):
+                    if (pts_list[i-1] in self.virtual_pnt) and nd in (self.virtual_pnt):
+                        self.virtual_vector.update({(pts_list[i-1],nd): True})
     
     def check_self_edge(self, line: np.ndarray) -> bool:
         if self.pnt_overlap(line[0],line[1]):
             return True
         else:
             return False
-            
+                    
+    def overlap_node_on_edge_finder(self,i,j):
+        v = self.init_pts_sequence[i]
+        vv = self.init_pts_sequence[j]
+        print(i,j)
+        lin1 = self.get_segment(v[0], v[1])
+        lin2 = self.get_segment(vv[0], vv[1])
+        self_edge = (self.check_self_edge(lin1) or self.check_self_edge(lin2))
+        if not self_edge:
+            parallel, colinear = check_parallel_line_line(lin1, lin2)
+            # if v == [13,14]:
+            #     print("line:",(v,vv), parallel, colinear)
+            if parallel:
+                if colinear:
+                    index, coords = check_overlap(lin1, lin2)
+                    if len(index) < 4:
+                        for ind in index:
+                            if ind in [0,1]:
+                                self.add_pending_change(tuple(vv),v[ind])
+                            else:
+                                self.add_pending_change(tuple(v),vv[ind])
+            else:
+                distance = shortest_distance_line_line(lin1, lin2)
+                intersect = np.isclose(distance[0],0)
+                new,pt = self.new_pnt(distance[1][0])
+                if intersect and new:
+                    pnt_id = self.register_pnt(distance[1][0])
+                    self.add_pending_change(tuple(v),pnt_id)
+                    self.add_pending_change(tuple(vv), pnt_id)
+        
+
+    def arg_generator(self):
+        iter_range = range(len(self.init_pts_sequence))
+        visited = {}
+        for i in iter_range:
+            for j in iter_range:
+                if i == j:
+                    continue
+                if i == j + 1:
+                    continue
+                if j == i - 1:
+                    continue
+                if (i,j) in visited or (j,i) in visited:
+                    continue
+                args = (self,i,j)
+                print(args)
+                yield args
+            visited.update({(i,j): True, (j,i): True})
+        
+    
     def find_overlap_node_on_edge(self):
         visited = {}
         for i,v in enumerate(self.init_pts_sequence):
@@ -482,7 +540,9 @@ class Segments(Pnt):
                     continue
                 if i == j + 1:
                     continue
-                if j == i - 1:
+                if j == i + 1:
+                    continue
+                if i == len(self.init_pts_sequence) * 2 -1 - i:
                     continue
                 if (i,j) in visited or (j,i) in visited:
                     continue
@@ -502,13 +562,22 @@ class Segments(Pnt):
                                     if ind in [0,1]:
                                         self.add_pending_change(tuple(vv),v[ind])
                                     else:
-                                        self.add_pending_change(tuple(v),vv[ind])
+                                        self.add_pending_change(tuple(v),vv[ind-2])
                     else:
                         distance = shortest_distance_line_line(lin1, lin2)
                         intersect = np.isclose(distance[0],0)
                         new,pt = self.new_pnt(distance[1][0])
                         if intersect and new:
                             pnt_id = self.register_pnt(distance[1][0])
+                            self.virtual_pnt.update({pnt_id: True})
                             self.add_pending_change(tuple(v),pnt_id)
                             self.add_pending_change(tuple(vv), pnt_id)
                 visited.update({(i,j): True, (j,i): True})
+    
+    # def find_overlap_node_on_edge(self):
+    #     with multiprocessing.Pool(processes=threads_count) as pool:
+    #         args = self.arg_generator()
+    #         # b = zip(repeat(self),args)
+    #         # print(tuple(b))
+    #         # pool.map(Segments.overlap_node_on_edge_finder,zip(repeat(self),args))
+    #         pool.map(Segments.overlap_node_on_edge_finder,args)

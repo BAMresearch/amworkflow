@@ -44,21 +44,6 @@ pout_nd = [i.Coord() for i in pout]
 pmfo = np.vstack((pmf, pout_nd))
 
 wall = CreateWallByPointsUpdate(pmfo, th, height)
-# print(wall.pnts.init_pts_sequence)
-# print(wall.pnts.modify_edge_list)
-# print(wall.side_coords)
-# print(wall.pnts.pts_index)
-# print(wall.pnts.pts_digraph)
-# G = nx.from_dict_of_lists(wall.pnts.pts_digraph, create_using=nx.DiGraph)
-# loops = list(nx.simple_cycles(G))
-
-# print("Loops in the MultiDiGraph:")
-# for loop in loops:
-#     print(loop)
-
-
-# plot_digraph(wall.pnts.pts_digraph)
-# wall.visualize()
-# print(wall.loops)
-# wall.visualize_graph()
+poly = wall.Shape()
 wall.visualize()
+aw.tool.write_stl(poly, "sucess_new_scheme",store_dir="/home/yhe/Documents/new_am2/amworkflow/some_thoughts_20230822_new/try_new_thought")

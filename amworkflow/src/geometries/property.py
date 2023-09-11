@@ -126,8 +126,8 @@ def shortest_distance_point_line(line, p):
     pt1, pt2 = line
     s = pt2 - pt1
     lmbda = (p - pt1).dot(s) / s.dot(s)
-    pt_compute = pt1 + lmbda * s
     if lmbda < 1 and lmbda > 0:
+        pt_compute = pt1 + lmbda * s
         distance = np.linalg.norm(pt_compute - p)
         return lmbda, distance
     elif lmbda <= 0:
@@ -144,6 +144,20 @@ def shortest_distance_line_line(line1, line2):
     s2 = pt22 - pt21
     s1square = np.dot(s1, s1)
     s2square = np.dot(s2, s2)
+    term1 = s1square * s2square - (np.dot(s1, s2)**2)
+    term2 = s1square * s2square - (np.dot(s1, s2)**2)
+    if np.isclose(term1,0) or np.isclose(term2, 0):
+        if np.isclose(s1[0],0):   
+            s_p = np.array([-s1[1],s1[0],0])
+        else:
+            s_p = np.array([s1[1],-s1[0],0])
+        l1 = np.random.randint(1,4) * 0.1
+        l2 = np.random.randint(6,9) * 0.1
+        pt1i = s1 * l1 + pt11
+        pt2i = s2 * l2 + pt21
+        si = pt2i - pt1i
+        dist = np.linalg.norm(si * ( si * s_p) / (np.linalg.norm(si) * np.linalg.norm(s_p)))
+        return dist, np.array([pt1i,pt2i])
     lmbda1 = (np.dot(s1,s2) * np.dot(pt11 - pt21,s2) - s2square * np.dot(pt11 - pt21, s1)) / (s1square * s2square - (np.dot(s1, s2)**2))
     lmbda2 = -(np.dot(s1,s2) * np.dot(pt11 - pt21,s1) - s1square * np.dot(pt11 - pt21, s2)) / (s1square * s2square - (np.dot(s1, s2)**2))
     condition1 = lmbda1 >= 1
@@ -234,3 +248,15 @@ def check_overlap(line1: np.ndarray, line2: np.ndarray) -> np.ndarray:
         indicator[1] = 1
     return np.where(indicator == 1)[0],  np.unique(pnt_list[np.where(indicator == 1)[0]], axis=0)
 
+def p_get_face_area(points: list):
+    pts = np.array(points).T
+    x = pts[0]
+    y = pts[1]
+    result = 0
+    for i in range(len(x)):
+        if i < len(x) - 1:
+            t = x[i]*y[i+1] - x[i+1]*y[i]
+        else:
+            t = x[i]*y[0] - x[0]*y[i]
+        result += t
+    return np.abs(result) * 0.5

@@ -399,6 +399,7 @@ dependencies:
     - mdit-py-plugins==0.4.0
     - mistune==3.0.1
     - nbclassic==1.0.0
+    - networkx
     - nbclient==0.8.0
     - nbconvert==7.6.0
     - nbformat==5.9.0
