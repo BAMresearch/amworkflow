@@ -1,5 +1,6 @@
 <p align="center"><img src="pics/icon.png" alt="icon" width="288.2095" height="85"></p>
-[![tests](https://github.com/BAMresearch/amworkflow/actions/workflows/usecase.yml/badge.svg?branch=v0.43)](https://github.com/BAMresearch/amworkflow/actions/workflows/usecase.yml)
+[![tests]
+(https://github.com/BAMresearch/amworkflow/actions/workflows/usecase.yml/badge.svg?branch=v0.43)](https://github.com/BAMresearch/amworkflow/actions/workflows/usecase.yml)
 
 ## Conda
 ```conda env create -f environment.yml```
