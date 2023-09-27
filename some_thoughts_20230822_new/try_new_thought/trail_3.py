@@ -45,5 +45,5 @@ pmfo = np.vstack((pmf, pout_nd))
 
 wall = CreateWallByPointsUpdate(pmfo, th, height)
 poly = wall.Shape()
-wall.visualize()
+wall.visualize(all_polygons=False, display_central_path=True)
 aw.tool.write_stl(poly, "sucess_new_scheme",store_dir="/home/yhe/Documents/new_am2/amworkflow/some_thoughts_20230822_new/try_new_thought")

@@ -350,10 +350,10 @@ class CreateWallByPointsUpdate():
             self.rgt_coords.append(self.rgt_coords[0])
             self.rgt_coords = self.rgt_coords[::-1]
             self.coords.append(self.coords[0])
+            self.side_coords = self.lft_coords + self.rgt_coords
         else:
             self.rgt_coords = self.rgt_coords[::-1]
-        self.side_coords = self.lft_coords + self.rgt_coords
-        # + [self.lft_coords[0]]
+            self.side_coords = self.lft_coords + self.rgt_coords + [self.lft_coords[0]]
         
     def check_pnt_in_wall(self):
         for pnt, coord in self.pnts.pts_index.items():
@@ -365,7 +365,7 @@ class CreateWallByPointsUpdate():
                     break
 
         
-    def visualize(self, display_polygon: bool = True):
+    def visualize(self, display_polygon: bool = True,display_central_path:bool = False,all_polygons:bool = False):
         # Extract the x and y coordinates and IDs
         a = self.pnts.pts_index
         x = [coord[0] for coord in a.values()]
@@ -381,17 +381,21 @@ class CreateWallByPointsUpdate():
             plt.annotate(f'{ids[i]}', (xi, yi), fontsize=12, ha='right')
         
         if display_polygon:
-            for lp in self.result_loops:
-                print(lp)                
+            if all_polygons:
+                display_loops = nx.simple_cycles(self.G)
+            else:
+                display_loops = self.result_loops
+            for lp in display_loops:              
                 coords = [self.pnts.pts_index[i] for i in lp]
                 x = [point[0] for point in coords]
                 y = [point[1] for point in coords]
                 plt.plot(x + [x[0]], y + [y[0]], linestyle='-', marker='o')
+        if display_central_path:
+            talist = np.array(self.coords).T
+            x1 = talist[0]
+            y1 = talist[1]
+            plt.plot(x1, y1, 'bo-', label='central path', color = "b")
         
-        # talist = np.array(self.coords).T
-        # x1 = talist[0]
-        # y1 = talist[1]
-        # plt.plot(x1, y1, 'bo-', label='central path')
         # Create segments by connecting consecutive points
 
         # a_subtitute = np.array(self.side_coords)
@@ -466,7 +470,7 @@ class CreateWallByPointsUpdate():
                             in_wall_pt_count += 1
                         if (lp[i-1],pt) in self.pnts.virtual_vector:
                             virtual_vector_count += 1
-                    if (in_wall_pt_count > 0) or (virtual_vector_count > 1):
+                    if (in_wall_pt_count > 0) or (virtual_vector_count > 1) or ((in_wall_pt_count == 0) and (virtual_vector_count > 0)):
                     # if (in_wall_pt_count > 0):
                         visible_loop = False
                         break  
@@ -498,10 +502,10 @@ class CreateWallByPointsUpdate():
                             loop_counter[ind] += 1
                 counter += 1
         filtered_lp = np.where(loop_counter > 1)[0].tolist()
-        print(self.result_loops)
-        print(filtered_lp)
-        print(loop_counter)
+        print("filtered:", filtered_lp)
+        print("vote:", loop_counter)
         self.result_loops = [v for i,v in enumerate(self.result_loops) if i not in filtered_lp]
+        print("result:", self.result_loops)
 
     def rank_result_loops(self):
         areas = np.zeros(len(self.result_loops))

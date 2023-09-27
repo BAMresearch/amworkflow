@@ -40,8 +40,7 @@ class PolygonInfiller(object):
             return ln, wd, True
     
     def raid_creator(self):
-                    
+        pass      
                 
 
-    def polygon_infiller(side_num: int, side_len:float, bbox_len:float, bbox_wid:float,bbox_hgt:float) -> TopoDS_Shape:
-    
+    # def polygon_infiller(side_num: int, side_len:float, bbox_len:float, bbox_wid:float,bbox_hgt:float) -> TopoDS_Shape:

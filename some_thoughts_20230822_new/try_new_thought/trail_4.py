@@ -19,11 +19,8 @@ print(pmfo.shape)
 # # only for outer line
 # print(pmfo[0:90])
 g = aw.geom
-wall = CreateWallByPointsUpdate(pmfo, 50, 12, is_close=False)
-# print(wall.loops)
-# wall.visualize_graph()
-wall.visualize(display_polygon=True)
+wall = CreateWallByPointsUpdate(pmfo, 80, 12, is_close=False)
 poly = wall.Shape()
-wall.visualize()
+wall.visualize(display_polygon=True)
 aw.tool.write_stl(poly, "sucess_new_scheme2",store_dir="/home/yhe/Documents/new_am2/amworkflow/some_thoughts_20230822_new/try_new_thought")
 

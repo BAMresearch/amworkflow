@@ -375,7 +375,6 @@ class Pnt():
 
     def new_pnt(self, pt_coords: list):
         pt_coords = self.pnt(pt_coords)
-        
         for i, v in self.pts_index.items():
             if self.pnt_overlap(v, pt_coords):
                 return False, i

@@ -19,6 +19,11 @@ class NoDataInDatabaseException(Exception):
         self.message = f"{item} not found."
         super().__init__(self.message)
         
+class InvalidGeometryException(Exception):
+    def __init__(self, item: str):
+        self.message = f"{item} is not valid, check input values."
+        super().__init__(self.message)
+        
 class InvalidFileFormatException(Exception):
     def __init__(self, item: str):
         self.message = f"Invalid file format {item} imported."

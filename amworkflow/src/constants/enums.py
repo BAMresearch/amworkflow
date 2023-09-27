@@ -36,3 +36,10 @@ class Label(Enum):
     LYR_TKN = "layer_thickness"
     LYR_NUM = "layer_num"
     IMP_DIR = "import_dir"
+
+GEOM_TYPE = {0: "Pnt",
+             1: "Vec",
+             2: "Line",
+             3: "Segment",
+             4: "PointSeries",
+             5: "Polygon"}

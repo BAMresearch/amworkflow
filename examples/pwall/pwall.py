@@ -1,6 +1,6 @@
 from amworkflow.api import amWorkflow as aw
 import numpy as np
-@aw.engine.amworkflow("draft")
+@aw.engine.amworkflow()
 def geometry_spawn(pm):
 #This is where to define your model.
     th = pm.thickness
