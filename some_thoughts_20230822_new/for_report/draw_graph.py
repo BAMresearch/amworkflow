@@ -66,7 +66,7 @@ def build_dependency_graph(directory):
     return G
 
 if __name__ == '__main__':
-    directory_to_scan = '/home/yhe/Documents/new_am2/amworkflow/amworkflow'  # Replace with the directory you want to scan
+    directory_to_scan = 'amworkflow/amworkflow'  # Replace with the directory you want to scan
     dependency_graph = build_dependency_graph(directory_to_scan)
 
     # Create a pyvis network
@@ -81,4 +81,4 @@ if __name__ == '__main__':
     # Create an interactive visualization
     network.show_buttons(filter_=['physics'])
     network.toggle_hide_edges_on_drag = True
-    network.show('dependency_graph.html')
+    network.show('amworkflow/some_thoughts_20230822_new/for_report/dependency_graph.html')
