@@ -20,13 +20,6 @@ params = {'name': 'template',
     # ....
 }
 
-def geometry_spawn(pm):
-    box = geometry.create_box(length=pm.length,
-                        width= pm.width,
-                        height=pm.height,
-                        radius=pm.radius)
-    return box
-
 def task_create_design():
     """create the design
 
