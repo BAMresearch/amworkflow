@@ -25,7 +25,7 @@ def task_create_design():
 
         if a step file was generated externally you can skip this task
 
-        how to create a design:
+        choose a geometry class or create a new one
         - centerline model -> geometryCenterline with given file where the center line point are stored
         - wall model -> geometryWall with parameters for length, height, width, radius, fill-in
         - new geometry -> create a new geometry class from geometry_base class and change the geometry_spawn method accordingly
@@ -33,11 +33,6 @@ def task_create_design():
     pathlib.Path(OUTPUT).mkdir(parents=True, exist_ok=True)
 
     out_file = OUTPUT / f"{params['name']}.step" # plus stl
-
-    # create geometry class
-    new_geometry = geometry.Geometry(params)
-    new_geometry.geometry_spawn
-
 
     return {
         # "actions": [geometry.create()],
