@@ -1,5 +1,6 @@
 from doit.action import CmdAction
 import os
+import shutil
 import pkg_resources
 
 
@@ -23,6 +24,7 @@ def task_install():
         cmd_list.append("python -m pip install .")
     else:
         cmd_list.append('echo amworkflow already installed.')
+
     return {
         'actions': cmd_list,
         'verbosity': 2
@@ -37,14 +39,14 @@ def task_new_case():
         if case_name not in xst_dir:
             n_dir = os.path.join(ucs, case_name)
             os.mkdir(n_dir)
-            with open(f"{n_dir}/{case_name}.py", "w") as opt:
-                opt.write(
-                    "from amworkflow.api import amWorkflow as aw\n@aw.engine.amworkflow()\ndef geometry_spawn(pm):\n#This is where to define your model.\n\n    return #TopoDS_Shape")
-        else:
+
+            shutil.copytree(os.path.join(os.path.join(cwd, "template.py"), n_dir, f"{case_name}.py"))
+
+         else:
             print(f"{case_name} already exists, please input a new name.")
 
     return {
         "actions": [scpt_ctr],
-        'params': [{'name': 'case_name', 'short': 'n', 'long': 'name', "default": "new_usecase"}],
+        'params': [{'name': 'case_name'}],
         'verbosity': 2
     }

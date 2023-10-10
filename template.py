@@ -10,15 +10,13 @@ from amworkflow import geometry, meshing, #...
 # > doit s <taskname> # for specific task
 # > doit clean # for deleting task output
 
-
-ROOT = pathlib.Path(__file__).parent
-SOURCE = ROOT
-OUTPUT = ROOT / "out" # TODO datastore stuff??
-
 # use parameter class from fenicsXconcrete ?? TODO
 params = {'name': 'template',
+          'out_dir': pathlib.Path(__file__).parent / 'output',  # TODO datastore stuff??
     # ....
 }
+
+OUTPUT = params['out_dir']
 
 def task_create_design():
     """create the design
@@ -49,7 +47,7 @@ def task_meshing():
         required parameters in params:
         - name: name of the design
         - mesh_size: size of the mesh
-        - meshing via number of layers or layer height possible --> TODO
+        - meshing via number of layers or layer height possible
     """
 
     pathlib.Path(OUTPUT).mkdir(parents=True, exist_ok=True)
@@ -57,11 +55,11 @@ def task_meshing():
     in_file = f"{params['name']}.step"
     out_file = f"{params['name']}.xdmf" # plus vtk
 
-    # new_meshing = meshing.Meshing(in_file, params)
+    # new_meshing = meshing.Meshing(params)
 
     return {
         "file_dep": [in_file],
-        # "actions": [(new_meshing.create()],
+        # "actions": [new_meshing.create(in_file)],
         "targets": [out_file],
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],
