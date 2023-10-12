@@ -25,7 +25,7 @@ params =   {'name': 'wall',
             "infill": "solid",
             "mesh_size_factor": 10}
 
-OUTPUT = params['out_dir']
+OUTPUT = Path(params['out_dir'])
 
 def task_create_design():
     """create the design
@@ -37,9 +37,9 @@ def task_create_design():
         - wall model -> geometryWall with parameters for length, height, width, radius, fill-in
         - new geometry -> create a new geometry class from geometry_base class and change the geometry_spawn method accordingly
     """
-    Path(OUTPUT).mkdir(parents=True, exist_ok=True)
+    OUTPUT.mkdir(parents=True, exist_ok=True)
 
-    out_file = Path(OUTPUT) / f"{params['name']}.stp" # plus stl, plus path points!!!!
+    out_file = OUTPUT / f"{params['name']}.stp" # plus stl, plus path points!!!!
     print(params)
 
     geometry = GeometryParamWall(params)
@@ -62,7 +62,7 @@ def task_create_design():
 #         - meshing via number of layers or layer height possible
 #     """
 #
-#     pathlib.Path(OUTPUT).mkdir(parents=True, exist_ok=True)
+#     OUTPUT.mkdir(parents=True, exist_ok=True)
 #
 #     in_file = f"{params['name']}.step"
 #     out_file = f"{params['name']}.xdmf" # plus vtk
@@ -71,50 +71,8 @@ def task_create_design():
 #
 #     return {
 #         "file_dep": [in_file],
-#         "actions": [new_meshing.create, in_file],
+#         "actions": [(new_meshing.create, [in_file])],
 #         "targets": [out_file],
 #         "clean": [clean_targets],
 #         "uptodate": [config_changed(params)],
 #     }
-
-# @create_after(executed="create_meshing")
-# def task_simulation():
-#     """ perform FE simulation on a given mesh
-#
-#         Two options:
-#         - simulation of the process with element activation
-#             * use class amprocess ...
-#             * required parameters in params:
-#         - simulation of printed structure with linear elastic material
-#             * use class amsimulation
-#             * required parameters in params:
-#
-#     to adapt the boundaries/ loading condition create a new class (child of one of the above) and overwrite the method you need to change
-#     """
-#
-#     pathlib.Path(OUTPUT).mkdir(parents=True, exist_ok=True)
-#
-#     in_file = OUTPUT / f"{params['name']}.stl"
-#     out_file = OUTPUT / f"{params['name']}.gcode"
-#
-#     return {
-#         "file_dep": [in_file],
-#         # "actions": [(generate_gcode_simple, [in_file, params])],
-#         "targets": [out_file],
-#         "clean": [clean_targets],
-#         "uptodate": [config_changed(params)],
-#     }
-#
-#     pass
-#
-# @create_after(executed="create_design")
-# def task_gcode():
-#     """generate gcode from stl file"""
-#
-#     pass
-#
-#
-#
-#
-#
-#
