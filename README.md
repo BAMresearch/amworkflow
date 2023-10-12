@@ -22,6 +22,7 @@ This repository contains a module for creating automated workflows in the contex
 ## Installation
 activate the environment if you did not:
 ```bash
+conda env create -f environment.yml
 conda activate amworkflow
 ```
 
@@ -42,7 +43,7 @@ Alternatively,
     ```
     Last step, install amworkflow locally:
     ```bash
-    python -m pip install .
+    pip install -e .
     ```
 
 Then you are good to go.
@@ -51,7 +52,7 @@ Then you are good to go.
 
 By
 ```bash
-doit new_case -n <name>
+doit -s new_case case_name="<name>"
 ```
 a new folder under /usecases will be created with the name given containing a template workflow as basis for the new usecase.
 

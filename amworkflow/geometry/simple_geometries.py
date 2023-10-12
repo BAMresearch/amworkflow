@@ -14,8 +14,10 @@ from OCC.Core.TopoDS import (TopoDS_Face, TopoDS_Shape, TopoDS_Shell,
                              TopoDS_Solid, TopoDS_Wire)
 from OCCUtils.Topology import Topo
 
-from amworkflow.geometry.helper import (geom_copy, geometry_builder, reverse,
-                                        sewer, translate)
+from amworkflow.geometry import helpers
+
+#(geom_copy, geometry_builder, reverse,
+#                                        sewer, translate)
 
 
 def create_box(length: float,
@@ -39,7 +41,7 @@ def create_box(length: float,
             box = BRepPrimAPI_MakeBox(length, width, height).Shape()
             faces = list(Topo(TopoDS_Solid).faces_from_solids(box))
             print(isinstance(faces[0], TopoDS_Shape))
-            sewed_face = sewer(faces)
+            sewed_face = helper.sewer(faces)
             # make_shell = BRepBuilderAPI_MakeShell(sewed_face, False).Shell()
 
             return sewed_face
@@ -65,11 +67,11 @@ def create_box(length: float,
         edge4 = BRepBuilderAPI_MakeEdge(p4, p1).Edge()
         wire = BRepBuilderAPI_MakeWire(
             arch_edge1_2, edge2, arch_edge3_4, edge4).Wire()
-        wire_top = geom_copy(wire)
-        translate(wire_top, [0, 0, height])
+        wire_top = helpers.geom_copy(wire)
+        helpers.translate(wire_top, [0, 0, height])
         prism = create_prism(wire, [0, 0, height], True)
         bottom_face = create_face(wire)
-        top_face = reverse(create_face(wire_top))
+        top_face = helpers.reverse(create_face(wire_top))
         component = [prism, top_face, bottom_face]
         sewing = BRepBuilderAPI_Sewing()
         # Add all components to the sewing.
@@ -79,7 +81,7 @@ def create_box(length: float,
         sewed_shape = sewing.SewedShape()
         # shell = BRepBuilderAPI_MakeShell(sewed_shape)
         solid = BRepBuilderAPI_MakeSolid(sewed_shape).Shape()
-        curve_box = geometry_builder(component)
+        curve_box = helpers.geometry_builder(component)
         # Returns the shape of the shell.
         if shell:
             return sewed_shape

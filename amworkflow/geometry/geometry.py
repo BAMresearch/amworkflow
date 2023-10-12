@@ -1,14 +1,22 @@
-from OCC.Core.TopoDS import TopoDS_Shape
-from amworkflow.geometry.composite_geometries import CreateWallByPointsUpdate
+import copy
+import os
+from pathlib import Path
 
-class Geometry(): # TODO datastore as parent class??
-    def __int__(self, parameters: dict) -> None:
+from OCC.Core.TopoDS import TopoDS_Shape
+from OCC.Extend.DataExchange import write_stl_file, write_step_file
+from OCC.Core.StlAPI import StlAPI_Writer
+
+from amworkflow.geometry import simple_geometries, composite_geometries
+
+
+class Geometry: # TODO datastore as parent class??
+    def __init__(self, parameters: dict) -> None:
         """general geometry class
 
 
         """
 
-        self.p = parameters
+        self.p = copy.deepcopy(parameters)
 
     @staticmethod
     def parameter_description(self) -> dict[str,str]:
@@ -19,7 +27,7 @@ class Geometry(): # TODO datastore as parent class??
 
         description = {
             "name": "name of the design",
-            "out_dirc": "directory where the output files are stored",
+            "out_dir": "directory where the output files are stored",
 
             "stl_linear_deflect": "?? default = ??",
             "stl_angular_deflect": "?? default = ??",
@@ -41,30 +49,41 @@ class Geometry(): # TODO datastore as parent class??
 
             fixed method
         """
+
+        print('in create')
         # create step file
         self.shape = self.geometry_spawn()
 
-        # export as stl saved in self.p["out_dir"]
-        self.write_stl()
+        # export as stl and step file
+        assert "out_dir" in self.p
+        stl_output_dir = Path(self.p["out_dir"])
+        assert stl_output_dir.is_dir()
 
-        # export as step file
-        self.write_step()
+
+        outfile = stl_output_dir / f"{self.p['name']}.stl"
+
+        # TODO
+        stl_write = StlAPI_Writer()
+        stl_write.SetASCIIMode(True)  # Set to False for binary STL output
+        status = stl_write.Write(self.shape, self.p["name"])
+        print(status)
+        if status:
+            print("Done!")
+
+        # # default stl parameters
+        # self.p["stl_linear_deflection"] = self.p.get("stl_linear_deflection", 0.001)
+        # self.p["stl_angular_deflection"] = self.p.get("stl_angular_deflection", 0.1)
+        # write_stl_file(self.shape, outfile, mode="binary",
+        #                linear_deflection=self.p["stl_linear_deflection"],
+        #                angular_deflection=self.p["stl_angular_deflection"],
+        #                )
+
+        # not working
+        # outfile = stl_output_dir / f"{self.p['name']}.stp"
+        # write_step_file(a_shape=self.shape, filename=outfile)
+
         pass
 
-    def write_stl(self):
-        """write stl file from occ shape
-
-        """
-        # from old aw.tool
-        # self.shape, self.p["stl_linear_deflect"], self.p["stl_angular_deflect"]
-        pass
-
-    def write_step(self):
-        """write step file from occ shape
-
-        """
-        # from old aw.tool
-        pass
 
 
 class GeometryCenterline(Geometry):
@@ -95,9 +114,9 @@ class GeometryCenterline(Geometry):
         """
         # where to put those geometry building function?
         # is_close as global parameter?
-        wall_maker = CreateWallByPointsUpdate(self.p["name"], self.p["layer_thickness"], self.p["layer_height"]*self.p["number_of_layers"], is_close=False)
-        design = wall_maker.Shape()
-
+        # wall_maker = CreateWallByPointsUpdate(self.p["name"], self.p["layer_thickness"], self.p["layer_height"]*self.p["number_of_layers"], is_close=False)
+        # design = wall_maker.Shape()
+        design = None
         return design
 
 class GeometryParamWall(Geometry):
@@ -105,6 +124,7 @@ class GeometryParamWall(Geometry):
         """geometry class for parametric wall element
 
         """
+
         super().__init__(parameters)
 
     @staticmethod
@@ -128,13 +148,12 @@ class GeometryParamWall(Geometry):
     def geometry_spawn(self) -> TopoDS_Shape:
         """define geometry
         """
-        if "infill" == "solid":
-            box = create_box(length=self.p["length"],
+        print('in spawn of child class')
+        if self.p["infill"] == "solid":
+            box = simple_geometries.create_box(length=self.p["length"],
                                      width=self.p["width"],
                                      height=self.p["height"],
                                      radius=self.p["radius"],
                              )
+            print(box)
             return box
-
-
-    return

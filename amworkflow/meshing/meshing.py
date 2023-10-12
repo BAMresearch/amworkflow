@@ -1,6 +1,8 @@
 import gmsh
+import copy
 from pathlib import Path
 
+from OCC.Core.TopoDS import TopoDS_Shape
 
 
 class Meshing(): # TODO datastore as parent class??
@@ -8,7 +10,7 @@ class Meshing(): # TODO datastore as parent class??
         """general meshing class
         """
 
-        self.p = parameters
+        self.p = copy.deepcopy(parameters)
 
     @staticmethod
     def parameter_description(self) -> dict[str,str]:
@@ -27,7 +29,8 @@ class Meshing(): # TODO datastore as parent class??
             "TODO": "TODO",
         }
         return description
-    def create(self, step_file: str|Path.Path) -> None:
+
+    def create(self, step_file: str|Path) -> None:
         """ create xdmf file and vtk file
         """
         # read step file
@@ -49,36 +52,37 @@ class Meshing(): # TODO datastore as parent class??
 
             from old mesher.py
             """
-        try:
-            gmsh.is_initialized()
-        except:
-            raise GmshUseBeforeInitializedException()
-        if not isinstance(shape, TopoDS_Solid):
-            raise Exception("Must be Solid object to mesh.")
-        if layer_type:
-            geo = split(item=item,
-                        split_z=True,
-                        layer_thickness=layer_param)
-        else:
-            geo = split(item=item,
-                        split_z=True,
-                        nz=layer_param)
-        model = gmsh.model()
-        threads_count = psutil.cpu_count()
-        gmsh.option.setNumber("General.NumThreads", threads_count)
-        model.add(model_name)
-        v = get_geom_pointer(model, geo)
-        model.occ.synchronize()
-        for layer in v:
-            model.add_physical_group(3, [layer[1]], name=f"layer{layer[1]}")
-            phy_gp = model.getPhysicalGroups()
-        gmsh.option.setNumber("Mesh.MeshSizeFactor", size_factor)
-        model.mesh.generate()
-        model.mesh.remove_duplicate_nodes()
-        model.mesh.remove_duplicate_elements()
-        phy_gp = model.getPhysicalGroups()
-        model_name = model.get_current()
-        return model
+        # try:
+        #     gmsh.is_initialized()
+        # except:
+        #     raise GmshUseBeforeInitializedException()
+        # if not isinstance(shape, TopoDS_Solid):
+        #     raise Exception("Must be Solid object to mesh.")
+        # if layer_type:
+        #     geo = split(item=item,
+        #                 split_z=True,
+        #                 layer_thickness=layer_param)
+        # else:
+        #     geo = split(item=item,
+        #                 split_z=True,
+        #                 nz=layer_param)
+        # model = gmsh.model()
+        # threads_count = psutil.cpu_count()
+        # gmsh.option.setNumber("General.NumThreads", threads_count)
+        # model.add(model_name)
+        # v = get_geom_pointer(model, geo)
+        # model.occ.synchronize()
+        # for layer in v:
+        #     model.add_physical_group(3, [layer[1]], name=f"layer{layer[1]}")
+        #     phy_gp = model.getPhysicalGroups()
+        # gmsh.option.setNumber("Mesh.MeshSizeFactor", size_factor)
+        # model.mesh.generate()
+        # model.mesh.remove_duplicate_nodes()
+        # model.mesh.remove_duplicate_elements()
+        # phy_gp = model.getPhysicalGroups()
+        # model_name = model.get_current()
+        # return model
+        return
 
 # if we have someday different meshing tools we can separte that into different meshing classes
 # For now use Meshing class as the only one
