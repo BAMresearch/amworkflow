@@ -3,19 +3,20 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python
-  - matplotlib
-  - scipy
+  - pythonocc-core=7.7.0
+  - python=3.10
   - doit
-  - ipython
-  - meshio
-  - h5py
-  - pytest
+  - pandas
+  - sqlite
+  - numpy
   - fenics-dolfinx
   - mpich
   - pyvista
-  - pandas
-  - pygraphviz
+  - pip
   - pip:
     - gmsh==4.11.1
-    - doit-graph
+    - networkx
+    - pyqt5
+    - sphinx
+    - sqlalchemy
+    - ruamel-yaml
