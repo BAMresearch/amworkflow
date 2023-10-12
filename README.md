@@ -3,11 +3,10 @@
 This repository contains a module for creating automated workflows in the context of concrete additive manufacturing.
 
 ### Workflow steps
-* parameter definition (class parameter)
-* design definition (class geometry)
-* create mesh file (class mesh)
-* generate GCODE (class gcode)
-* perform FEM simulation (of print process or final printed structure) (class simulation)
+* design definition (class Geometry)
+* create mesh file (class Meshing)
+* generate GCODE (class Gcode)
+* perform FEM simulation (of print process or final printed structure) (class Simulation)
 
 ### folder structure
 * src/amworkflow: source code of the amworkflow package
