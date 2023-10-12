@@ -1,3 +1,1 @@
-from .geometry import GeometryParamWall
-from .geometry import GeometryCenterline
-from .geometry import Geometry
+from .geometry import Geometry, GeometryCenterline, GeometryParamWall

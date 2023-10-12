@@ -1,4 +1,6 @@
 from pathlib import Path
+import datetime
+import logging
 
 from doit import create_after, get_var
 from doit.task import clean_targets
@@ -8,71 +10,65 @@ import pandas as pd
 import numpy as np
 
 from amworkflow.geometry import GeometryParamWall
-from amworkflow.meshing import Meshing
+from amworkflow.meshing import MeshingGmsh
 
 # > doit -f <filename>   # for execution of all task
 # > doit -f <filename> s <taskname> # for specific task
 # > doit -f <filename> clean # for deleting task output
 
+logging.basicConfig(level=logging.INFO)
 
-# use parameter class from fenicsXconcrete ?? TODO
-params =   {'name': 'wall',
-            'out_dir': str(Path(__file__).parent / 'output'),  # TODO datastore stuff??
+# define required parameters
+params =   {# geometry parameters
             "length": 200, # mm
             "height": 200, # mm
             "width": 200, # mm
             "radius": 1000, # mm
             "infill": "solid",
-            "mesh_size_factor": 10}
+            # mesh parameters (meshing by layer height)
+            "mesh_size_factor": 10,
+            "layer_height": 10, #mm
+}
 
-OUTPUT = Path(params['out_dir'])
+# TODO datastore stuff??
+OUTPUT_NAME = Path(__file__).parent.name
+OUTPUT = Path(__file__).parent / 'output' #/ f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
 
 def task_create_design():
-    """create the design
+    """Create the design."""
 
-        if a step file was generated externally you can skip this task
-
-        choose a geometry class or create a new one
-        - centerline model -> geometryCenterline with given file where the center line point are stored
-        - wall model -> geometryWall with parameters for length, height, width, radius, fill-in
-        - new geometry -> create a new geometry class from geometry_base class and change the geometry_spawn method accordingly
-    """
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
-    out_file = OUTPUT / f"{params['name']}.stp" # plus stl, plus path points!!!!
-    print(params)
+    out_file_step = OUTPUT / f"{OUTPUT_NAME}.stp"
+    out_file_stl = OUTPUT / f"{OUTPUT_NAME}.stl"
+    out_file_points = OUTPUT / f"{OUTPUT_NAME}.csv"
 
-    geometry = GeometryParamWall(params)
+    geometry = GeometryParamWall(**params)
 
     return {
-        "actions": [(geometry.create, [])],
-        "targets": [out_file],
+        "actions": [(geometry.create, [out_file_step, out_file_stl, out_file_points])],
+        "targets": [out_file_step, out_file_stl, out_file_points],
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],
     }
 
 
-# @create_after(executed="create_design")
-# def task_meshing():
-#     """meshing a given design from a step file
-#
-#         required parameters in params:
-#         - name: name of the design
-#         - mesh_size: size of the mesh
-#         - meshing via number of layers or layer height possible
-#     """
-#
-#     OUTPUT.mkdir(parents=True, exist_ok=True)
-#
-#     in_file = f"{params['name']}.step"
-#     out_file = f"{params['name']}.xdmf" # plus vtk
-#
-#     new_meshing = Meshing(in_file, params)
-#
-#     return {
-#         "file_dep": [in_file],
-#         "actions": [(new_meshing.create, [in_file])],
-#         "targets": [out_file],
-#         "clean": [clean_targets],
-#         "uptodate": [config_changed(params)],
-#     }
+@create_after(executed="create_design")
+def task_meshing():
+    """Meshing a given design from a step file."""
+
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+
+    in_file_step = OUTPUT / f"{OUTPUT_NAME}.stp"
+    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
+    out_file_vtk  = OUTPUT / f"{OUTPUT_NAME}.vtk"
+
+    meshing = MeshingGmsh(**params)
+
+    return {
+        "file_dep": [in_file_step],
+        "actions": [(meshing.create, [in_file_step, out_file_xdmf, out_file_vtk])],
+        "targets": [out_file_xdmf, out_file_vtk],
+        "clean": [clean_targets],
+        "uptodate": [config_changed(params)],
+    }
