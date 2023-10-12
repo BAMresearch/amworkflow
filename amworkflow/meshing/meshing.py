@@ -5,7 +5,7 @@ from pathlib import Path
 from OCC.Core.TopoDS import TopoDS_Shape
 
 
-class Meshing(): # TODO datastore as parent class??
+class Meshing: # TODO datastore as parent class??
     def __int__(self, step_file, parameters) -> None:
         """general meshing class
         """
