@@ -69,7 +69,8 @@ class MeshingGmsh(Meshing):
         assert step_file.is_file(), f"Step file {step_file} does not exist."
 
         shape = read_step_file(filename=str(step_file))
-        solid = None  # TODO: convert shape to solid
+        solid = occ_helpers.solid_maker(shape)
+
         assert isinstance(solid, TopoDS_Solid), "Must be TopoDS_Shape object to mesh."
 
         gmsh.initialize()
