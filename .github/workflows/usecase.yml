@@ -35,6 +35,9 @@ jobs:
           key: conda-${{ hashFiles('environment.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
+      - name: Install libGLU
+        run: sudo apt-get install -y libglu1-mesa
+
       - name: Update environment
         run: mamba env update -n amworkflow -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
