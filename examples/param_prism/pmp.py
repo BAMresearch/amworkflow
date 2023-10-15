@@ -15,7 +15,7 @@ def geom_spn(pm):
             yy.append(e)
     edges = xx + yy
     #build a compound of all edges
-    wire = aw.geom.geometry_builder(edges)
+    wire = aw.geom.make_compound(edges)
     #get the zmax of the new wire object for creating the basement.
     wire_zmax = aw.geom.get_occ_bounding_box(wire)[-1]
     prism = aw.geom.reverse(aw.geom.create_prism(wire,[0,0,-wire_zmax], True))
@@ -33,5 +33,5 @@ def geom_spn(pm):
     cutter = aw.geom.create_prism(aw.geom.scale(btm_face, aw.geom.get_face_center_of_mass(btm_face,True),1.2),[0,0,-15],True)
     prism = aw.geom.reverse(aw.geom.cutter3D(prism, cutter))
     #sew the prism, the bottom face and the imported model together
-    output = aw.geom.geometry_builder([prism, btm_face, imp])
+    output = aw.geom.make_compound([prism, btm_face, imp])
     return output
