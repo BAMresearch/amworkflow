@@ -9,5 +9,14 @@ setup(
     license='MIT',
     author='Yuxiang He',
     author_email='yuxiang.he@bam.de',
-    description=''
+    description='',
+    install_requires=[
+        "gmsh>=4.11.1",
+        "networkx",
+        "sphinx",
+        "sqlalchemy",
+        "ruamel-yaml",
+        "psutil",
+        "pyqt5"
+    ]
 )

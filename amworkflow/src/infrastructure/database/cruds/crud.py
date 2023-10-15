@@ -66,7 +66,9 @@ def query_multi_data(table: str,
             dd.pop("_sa_instance_state", None)
     if target_column_name == None:
         result = pd.DataFrame(result)
-        result.style.applymap(color_background)
+        # This line of code is deprecated informed by the author. 
+        # result.style.applymap(color_background)
+        result.style.map(color_background)
     # elif len(result) != 0:
     #     result = result[0]
     return result

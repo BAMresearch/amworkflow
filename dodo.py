@@ -24,7 +24,7 @@ def task_install():
     cmd_list = []
     aw, ocu = env_check()
     if not ocu:
-        cmd_list.append("python -m pip install /amworkflow/dependencies/OCCUtils-0.1.dev0-py3-none-any.whl")
+        cmd_list.append("python -m pip install ./amworkflow/dependencies/OCCUtils-0.1.dev0-py3-none-any.whl")
         cmd_list.append('echo occ-utils installed successfully.')
     else:
         cmd_list.append('echo occ-utils already installed.')

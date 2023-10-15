@@ -17,6 +17,12 @@ classifiers = [
 license = {file = "LICENSE"}
 keywords = ["AM concrete", "workflow", "CAD"]
 dependencies = [
+    "gmsh>=4.11.1",
+    "networkx",
+    "sphinx",
+    "sqlalchemy",
+    "ruamel-yaml",
+    "doit"
 ]
 
 [project.urls]

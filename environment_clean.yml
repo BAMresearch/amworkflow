@@ -1,4 +1,4 @@
-name: amworkflow_clean
+name: amworkflow
 channels:
   - conda-forge
   - defaults
@@ -11,6 +11,8 @@ dependencies:
   - fenics-dolfinx
   - mpich
   - pyvista
+  - doit
+  - tomlkit
   - pip
   - pip:
     - gmsh==4.11.1
@@ -20,3 +22,4 @@ dependencies:
     - sqlalchemy
     - ruamel-yaml
     - doit
+    - psutil
