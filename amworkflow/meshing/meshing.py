@@ -87,9 +87,8 @@ class MeshingGmsh(Meshing):
 
         model = gmsh.model()
         threads_count = multiprocessing.cpu_count()
-        gmsh.option.setNumber("General.NumThreads", threads_count)
-        # model.add(model_name) # TODO: required?
-
+        # gmsh.option.setNumber("General.NumThreads", threads_count) # FIX: Conflict with doit. Will looking for solutions.
+        # model.add(model_name) # TODO: required? Not necessarily but perhaps for output .msh
         layers = model.occ.importShapesNativePointer(int(geo.this), highestDimOnly=True)
         model.occ.synchronize()
         for layer in layers:
@@ -114,6 +113,6 @@ class MeshingGmsh(Meshing):
             file.write_meshtags(facet_markers)
 
         if out_vtk:
-            gmsh.write(out_vtk)
+            gmsh.write(str(out_vtk))
 
         return
