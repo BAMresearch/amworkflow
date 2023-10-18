@@ -47,6 +47,22 @@ Alternatively,
 
 Then you are good to go.
 
+## Explore examples
+Example workflows can be found in folder examples. 
+Run them by calling the doit file in the subfolder. 
+```bash
+cd examples/<example_name>
+doit -f dodo_<example_name>.py
+```
+
+### Wall
+The workflow is created for a curved wall element with geometrical parameters like length, thickness, width and height with different infill structures.
+
+### TrussArc
+A arc with truss structure is given by a list of points defining the centerline.
+The design is created by those points and additional parameters like layer thickness and the gcode and simulation is set-up.
+
+
 ## Create new usecase  
 
 By
