@@ -9,7 +9,7 @@ from doit.tools import config_changed
 import pandas as pd
 import numpy as np
 
-from amworkflow.geometry import GeometryParamWall
+from amworkflow.geometry import GeometryCenterline
 from amworkflow.meshing import MeshingGmsh
 
 # > doit -f <filename>   # for execution of all task
@@ -18,24 +18,26 @@ from amworkflow.meshing import MeshingGmsh
 
 logging.basicConfig(level=logging.INFO)
 
-# define required parameters
-params =   {# geometry parameters
-            "length": 200, # mm
-            "height": 200, # mm
-            "width": 200, # mm
-            "radius": 1000, # mm
-            "infill": "solid",
+# use parameter class from fenicsXconcrete ?? TODO
+params = {  # geometry parameters
+            'csv_points': 'print110823.csv',
+            "layer_thickness": 50,  # mm
+            "number_of_layers": 10,
+            "layer_height": 10,  # mm
+
             # mesh parameters (meshing by layer height)
             "mesh_size_factor": 10,
-            "layer_height": 10, #mm
-}
+
+            # ....
+            }
 
 # TODO datastore stuff??
 OUTPUT_NAME = Path(__file__).parent.name
 OUTPUT = Path(__file__).parent / 'output' #/ f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
 
+
 def task_create_design():
-    """Create the design of the parametric wall."""
+    """create the design of a centerline model"""
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
@@ -43,7 +45,13 @@ def task_create_design():
     out_file_stl = OUTPUT / f"{OUTPUT_NAME}.stl"
     out_file_points = OUTPUT / f"{OUTPUT_NAME}.csv"
 
-    geometry = GeometryParamWall(**params)
+    # load centerline points:
+    data = pd.read_csv(Path(__file__).parent / params['csv_points'], sep=',')
+    data['z'] = np.zeros(len(data))  # add z coordinate
+    # print(data)
+    params["points"] = np.array(data[['x', 'y', 'z']])
+
+    geometry = GeometryCenterline(**params)
 
     return {
         "actions": [(geometry.create, [out_file_step, out_file_stl, out_file_points])],
@@ -72,3 +80,5 @@ def task_meshing():
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],
     }
+
+
