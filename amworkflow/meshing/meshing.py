@@ -2,6 +2,8 @@ import logging
 import typing
 from pathlib import Path
 
+import meshio
+
 import gmsh
 import multiprocessing
 from OCC.Core.TopoDS import TopoDS_Solid
@@ -101,20 +103,46 @@ class MeshingGmsh(Meshing):
         phy_gp = model.getPhysicalGroups()
         model_name = model.get_current()
 
-        # save
-        msh, cell_markers, facet_markers = gmshio.model_to_mesh(model, MPI.COMM_SELF, 0)
-        msh.name = model_name
-        cell_markers.name = f"{msh.name}_cells"
-        facet_markers.name = f"{msh.name}_facets"
-        with XDMFFile(msh.comm, out_xdmf, "w") as file:
-            file.write_mesh(msh)
-            file.write_meshtags(cell_markers)
-            msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
-            file.write_meshtags(facet_markers)
+        # # save
+        # msh, cell_markers, facet_markers = gmshio.model_to_mesh(model, MPI.COMM_SELF, 0)
+        # msh.name = model_name
+        # cell_markers.name = f"{msh.name}_cells"
+        # facet_markers.name = f"{msh.name}_facets"
+        # with XDMFFile(msh.comm, out_xdmf, "w") as file:
+        #     file.write_mesh(msh)
+        #     file.write_meshtags(cell_markers)
+        #     msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
+        #     file.write_meshtags(facet_markers)
+
+        #workaround for since gmshio.model_to_mesh is not working
+        out_msh = out_xdmf.with_suffix(".msh")
+        gmsh.write(str(out_msh))
+        msh = meshio.read(out_msh)
+        mesh = self.create_mesh(msh, "tetra")
+        meshio.write(out_xdmf, mesh)
 
         if out_vtk:
             gmsh.write(str(out_vtk))
-            gmsh.write(str(out_vtk).replace('.vtk', '.msh')) # additional msh output for debugging
 
 
         return
+
+    def create_mesh(self, mesh, cell_type: str, prune_z: bool = False) -> meshio.Mesh:
+        """Convert msh file to xdmf file for fenic
+            based on https://jsdokken.com/dolfinx-tutorial/chapter3/subdomains.html?highlight=read_mesh
+
+        Args:
+            mesh:
+            cell_type:
+            prune_z:
+
+        Returns:
+
+        """
+        cells = mesh.get_cells_type(cell_type)
+        cell_data = mesh.get_cell_data("gmsh:physical", cell_type)
+        points = mesh.points[:, :2] if prune_z else mesh.points
+        out_mesh = meshio.Mesh(
+            points=points, cells={cell_type: cells}, cell_data={"name_to_read": [cell_data]}
+        )
+        return out_mesh
