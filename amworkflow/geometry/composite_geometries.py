@@ -1,4 +1,4 @@
-import amworkflow.geometry.topology as topo
+import amworkflow.geometry.builtinCAD as bcad
 from pprint import pprint
 class CreateWallByPoints():
     def __init__(self, *pnts, thickness: float, height: float = 0, radius: float = None) -> None:
@@ -17,20 +17,20 @@ class PntHandler():
     def init_pnts(self, *pnts) -> None:
         self.pnt_ids.extend([item.id for item in pnts])
         self.pnt_coords.extend([item.value for item in pnts])
-        # self.pnt_property.update({key:item for key, item in topo.id_index.items() if item["type"] == 0 and item["id"] in self.pnt_ids})
+        # self.pnt_property.update({key:item for key, item in bcad.id_index.items() if item["type"] == 0 and item["id"] in self.pnt_ids})
         
     def init_center_points(self, *pnts) -> None:
         self.init_pnts(*pnts)
         for pnt in pnts:
             pnt.enrich_property({"CWBP": {"center_point": True}})
     
-    def handle_boundary_point(self, center_point: topo.Pnt, boundary_point: topo.Pnt) -> None:
+    def handle_boundary_point(self, center_point: bcad.Pnt, boundary_point: bcad.Pnt) -> None:
         center_point.property["CWBP"].update({"derive": boundary_point.id})
         boundary_point.enrich_property({"CWBP": {"center_point": False}})
         boundary_point.property["CWBP"].update({"originate": center_point.id})
             
 class SegmentHandler(PntHandler):
-    def __init__(self, *pnts: topo.Pnt) -> None:
+    def __init__(self, *pnts: bcad.Pnt) -> None:
         super().__init__()
         self.segments_init = []
         self.digraph = {}
@@ -84,12 +84,20 @@ class SegmentHandler(PntHandler):
         Calculate the boundary of the wall.
         '''
 
-pnt1 = topo.Pnt([2,3])
-pnt2 = topo.Pnt([2,3,3])
-pnt3 = topo.Pnt([2,3,5])
-pnt4 = topo.Pnt([2,3,8])
+pnt1 = bcad.Pnt([2,3])
+pnt2 = bcad.Pnt([2,3,3])
+pnt3 = bcad.Pnt([2,3,5])
+pnt4 = bcad.Pnt([2,3,8])
+seg1 = bcad.Segment(pnt1, pnt2)
+seg2 = bcad.Segment(pnt2, pnt3)
+seg3 = bcad.Segment(pnt3, pnt1)
+wire1 = Wire(seg1, seg2,seg3)
+surf1 = Surface(wire1)
+pprint(id_index)
+print(seg3)
+print(pnt1.property["occ_pnt"])
 
 pnts_handler = PntHandler()
 pnts_handler.init_center_points(pnt1, pnt2, pnt3)
 pnts_handler.handle_boundary_point(pnt1, pnt4)
-# pprint(topo.id_index)
+pprint(bcad.id_index)

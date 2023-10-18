@@ -102,15 +102,15 @@ class MeshingGmsh(Meshing):
         model_name = model.get_current()
 
         # save
-        msh, cell_markers, facet_markers = gmshio.model_to_mesh(model, MPI.COMM_SELF, 0)
-        msh.name = model_name
-        cell_markers.name = f"{msh.name}_cells"
-        facet_markers.name = f"{msh.name}_facets"
-        with XDMFFile(msh.comm, out_xdmf, "w") as file:
-            file.write_mesh(msh)
-            file.write_meshtags(cell_markers)
-            msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
-            file.write_meshtags(facet_markers)
+        # msh, cell_markers, facet_markers = gmshio.model_to_mesh(model, MPI.COMM_SELF, 0)
+        # msh.name = model_name
+        # cell_markers.name = f"{msh.name}_cells"
+        # facet_markers.name = f"{msh.name}_facets"
+        # with XDMFFile(msh.comm, out_xdmf, "w") as file:
+        #     file.write_mesh(msh)
+        #     file.write_meshtags(cell_markers)
+        #     msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
+        #     file.write_meshtags(facet_markers)
 
         if out_vtk:
             gmsh.write(out_vtk)

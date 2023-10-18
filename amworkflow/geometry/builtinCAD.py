@@ -1,10 +1,11 @@
 import numpy as np
-from pprint import pprint
+# from pprint import pprint
 from OCC.Core.gp import gp_Pnt
 from amworkflow.geometry.simple_geometries import create_edge, create_wire, create_face, create_solid
 from amworkflow.occ_helpers import sew_face
 
 count_id = 0
+count_gid = [0 for i in range(7)]
 id_index = {}
 TYPE_INDEX = {
             0: "point",
@@ -38,6 +39,7 @@ class TopoObj():
         self.type = 0
         self.value = 0
         self.id = 0
+        self.gid = 0
         self.own = {}
         self.belong = {}
         self.property = {}
@@ -138,6 +140,7 @@ class TopoObj():
         """       
         self.property.update({"type": self.type,
                         "id": self.id,
+                        "gid": self.gid,
                         "own": self.own,
                         "belong": self.belong,
                         "value": self.value})
@@ -166,6 +169,8 @@ class TopoObj():
         global count_id
         if new:
             self.id = count_id
+            self.gid = count_gid[self.type]
+            count_gid[self.type] += 1
             self.update_basic_property()
             id_index.update({self.id: self.property})
             count_id += 1
