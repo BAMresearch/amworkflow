@@ -45,8 +45,8 @@ jobs:
       - name: Install amworkflow
         run: python -m pip install .
 
-      - name: Run test_am4
+      - name: run dodo_wall
         shell: bash -l {0} #new shell
         run: |
-          doit -f examples/wall/dodo_wall.py
+          doit -f examples/Wall/dodo_wall.py
 
