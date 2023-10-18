@@ -9,7 +9,7 @@ dependencies:
   - pandas
   - sqlite
   - numpy
-  - fenics-dolfinx
+  - fenics-dolfinx=0.6.0
   - mpich
   - pyvista
   - pip
