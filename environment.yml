@@ -4,7 +4,7 @@ channels:
   - defaults
 dependencies:
   - pythonocc-core=7.7.0
-  - python=3.10
+  - python >= 3.10
   - doit
   - pandas
   - sqlite
