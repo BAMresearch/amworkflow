@@ -175,7 +175,7 @@ class GeometryCenterline(GeometryOCC):
         layer_thickness: float | None = None,
         number_of_layers: int | None = None,
         layer_height: float | None = None,
-        *kwargs,
+        **kwargs,
     ) -> None:
 
         """OCC geometry class for creating a layer by layer geometry from a given array of centerline points (x,y,z)
