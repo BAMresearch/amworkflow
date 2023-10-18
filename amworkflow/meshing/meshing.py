@@ -2,6 +2,8 @@ import logging
 import typing
 from pathlib import Path
 
+import meshio
+
 import gmsh
 import multiprocessing
 from OCC.Core.TopoDS import TopoDS_Solid
@@ -69,8 +71,9 @@ class MeshingGmsh(Meshing):
         assert step_file.is_file(), f"Step file {step_file} does not exist."
 
         shape = read_step_file(filename=str(step_file))
-        solid = None  # TODO: convert shape to solid
-        assert isinstance(shape, TopoDS_Solid), "Must be TopoDS_Shape object to mesh."
+        solid = occ_helpers.solid_maker(shape)
+
+        assert isinstance(solid, TopoDS_Solid), "Must be TopoDS_Shape object to mesh."
 
         gmsh.initialize()
 
@@ -86,9 +89,8 @@ class MeshingGmsh(Meshing):
 
         model = gmsh.model()
         threads_count = multiprocessing.cpu_count()
-        gmsh.option.setNumber("General.NumThreads", threads_count)
-        # model.add(model_name) # TODO: required?
-
+        # gmsh.option.setNumber("General.NumThreads", threads_count) # FIX: Conflict with doit. Will looking for solutions.
+        # model.add("model name") # TODO: required? Not necessarily but perhaps for output .msh
         layers = model.occ.importShapesNativePointer(int(geo.this), highestDimOnly=True)
         model.occ.synchronize()
         for layer in layers:
@@ -101,7 +103,7 @@ class MeshingGmsh(Meshing):
         phy_gp = model.getPhysicalGroups()
         model_name = model.get_current()
 
-        # save
+        # # save
         # msh, cell_markers, facet_markers = gmshio.model_to_mesh(model, MPI.COMM_SELF, 0)
         # msh.name = model_name
         # cell_markers.name = f"{msh.name}_cells"
@@ -112,7 +114,35 @@ class MeshingGmsh(Meshing):
         #     msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
         #     file.write_meshtags(facet_markers)
 
+        #workaround for since gmshio.model_to_mesh is not working
+        out_msh = out_xdmf.with_suffix(".msh")
+        gmsh.write(str(out_msh))
+        msh = meshio.read(out_msh)
+        mesh = self.create_mesh(msh, "tetra")
+        meshio.write(out_xdmf, mesh)
+
         if out_vtk:
-            gmsh.write(out_vtk)
+            gmsh.write(str(out_vtk))
+
 
         return
+
+    def create_mesh(self, mesh, cell_type: str, prune_z: bool = False) -> meshio.Mesh:
+        """Convert meshio mesh to fenics compatible mesh.
+            based on https://jsdokken.com/dolfinx-tutorial/chapter3/subdomains.html?highlight=read_mesh
+
+        Args:
+            mesh: Mesh read by meshio from msh file (meshio.read(file_msh)).
+            cell_type: Type of cell to be meshed (e.g. 'tetra','triangle' ...).
+            prune_z: True for 2D meshes - removes z coordinate.
+
+        Returns:
+            out_mesh: Mesh which can be saved as xdmf file. (meshio.write(file_xdmf, out_mesh))
+        """
+        cells = mesh.get_cells_type(cell_type)
+        cell_data = mesh.get_cell_data("gmsh:physical", cell_type)
+        points = mesh.points[:, :2] if prune_z else mesh.points
+        out_mesh = meshio.Mesh(
+            points=points, cells={cell_type: cells}, cell_data={"name_to_read": [cell_data]}
+        )
+        return out_mesh
