@@ -16,6 +16,7 @@ from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.TopoDS import TopoDS_Compound, TopoDS_Face, TopoDS_Shape
 from OCCUtils.Construct import make_face, vec_to_dir
 from OCCUtils.Topology import Topo
+# from amworkflow.geometry.simple_geometries import (create_compound, create_edge,)
 
 
 def sew_face(*component) -> TopoDS_Shape:
@@ -113,7 +114,7 @@ def split(item: TopoDS_Shape,
             bo.AddArgument(fc1)
     bo.Perform()
     top = Topo(bo.Shape())
-    geo = geometry_builder(top.solids())
+    geo = create_compound(top.solids())
     return geo
 
 def get_face_center_of_mass(face: TopoDS_Face, gp_pnt: bool = False) -> tuple:

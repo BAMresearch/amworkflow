@@ -6,7 +6,7 @@ from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Core.TopoDS import TopoDS_Shape
 from OCC.Extend.DataExchange import write_step_file, write_stl_file
 
-# from amworkflow.geometry import composite_geometries, simple_geometries
+from amworkflow.geometry import composite_geometries, simple_geometries
 
 typing.override = lambda x: x
 

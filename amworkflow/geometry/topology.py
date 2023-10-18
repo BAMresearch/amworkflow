@@ -1,5 +1,5 @@
 import numpy as np
-# from pprint import pprint
+from pprint import pprint
 from OCC.Core.gp import gp_Pnt
 from amworkflow.geometry.simple_geometries import create_edge, create_wire, create_face, create_solid
 from amworkflow.occ_helpers import sew_face

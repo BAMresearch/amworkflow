@@ -131,7 +131,9 @@ def create_box(length: float,
         sewed_shape = sewing.SewedShape()
         # shell = BRepBuilderAPI_MakeShell(sewed_shape)
         solid = BRepBuilderAPI_MakeSolid(sewed_shape).Shape()
-        curve_box = occ_helpers.geometry_builder(component)
+        print(solid)
+        curve_box = create_compound(component)
+        
         # Returns the shape of the shell.
         if shell:
             return sewed_shape

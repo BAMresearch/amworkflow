@@ -1,5 +1,5 @@
 import amworkflow.geometry.topology as topo
-# from pprint import pprint
+from pprint import pprint
 class CreateWallByPoints():
     def __init__(self, *pnts, thickness: float, height: float = 0, radius: float = None) -> None:
         self.segments = SegmentHandler(*pnts)
@@ -92,4 +92,4 @@ pnt4 = topo.Pnt([2,3,8])
 pnts_handler = PntHandler()
 pnts_handler.init_center_points(pnt1, pnt2, pnt3)
 pnts_handler.handle_boundary_point(pnt1, pnt4)
-print(topo.id_index)
+# pprint(topo.id_index)
