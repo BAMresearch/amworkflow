@@ -18,16 +18,14 @@ from amworkflow.meshing import MeshingGmsh
 
 logging.basicConfig(level=logging.INFO)
 
-# use parameter class from fenicsXconcrete ?? TODO
+# define required parameters
 params = {  # geometry parameters
             'csv_points': 'print110823.csv',
             "layer_thickness": 50,  # mm
             "number_of_layers": 10,
             "layer_height": 10,  # mm
-
             # mesh parameters (meshing by layer height)
             "mesh_size_factor": 10,
-
             # ....
             }
 
@@ -49,7 +47,8 @@ def task_create_design():
     data = pd.read_csv(Path(__file__).parent / params['csv_points'], sep=',')
     data['z'] = np.zeros(len(data))  # add z coordinate
     # print(data)
-    params["points"] = np.array(data[['x', 'y', 'z']])
+    # params["points"] = np.array(data[['x', 'y', 'z']])
+    params["points"] = list(data[['x', 'y', 'z']])
 
     geometry = GeometryCenterline(**params)
 
