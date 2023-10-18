@@ -128,16 +128,16 @@ class MeshingGmsh(Meshing):
         return
 
     def create_mesh(self, mesh, cell_type: str, prune_z: bool = False) -> meshio.Mesh:
-        """Convert msh file to xdmf file for fenic
+        """Convert meshio mesh to fenics compatible mesh.
             based on https://jsdokken.com/dolfinx-tutorial/chapter3/subdomains.html?highlight=read_mesh
 
         Args:
-            mesh:
-            cell_type:
-            prune_z:
+            mesh: Mesh read by meshio from msh file (meshio.read(file_msh)).
+            cell_type: Type of cell to be meshed (e.g. 'tetra','triangle' ...).
+            prune_z: True for 2D meshes - removes z coordinate.
 
         Returns:
-
+            out_mesh: Mesh which can be saved as xdmf file. (meshio.write(file_xdmf, out_mesh))
         """
         cells = mesh.get_cells_type(cell_type)
         cell_data = mesh.get_cell_data("gmsh:physical", cell_type)
