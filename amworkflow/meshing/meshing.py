@@ -88,7 +88,7 @@ class MeshingGmsh(Meshing):
         model = gmsh.model()
         threads_count = multiprocessing.cpu_count()
         # gmsh.option.setNumber("General.NumThreads", threads_count) # FIX: Conflict with doit. Will looking for solutions.
-        # model.add(model_name) # TODO: required? Not necessarily but perhaps for output .msh
+        # model.add("model name") # TODO: required? Not necessarily but perhaps for output .msh
         layers = model.occ.importShapesNativePointer(int(geo.this), highestDimOnly=True)
         model.occ.synchronize()
         for layer in layers:
@@ -101,18 +101,20 @@ class MeshingGmsh(Meshing):
         phy_gp = model.getPhysicalGroups()
         model_name = model.get_current()
 
-        # save
-        msh, cell_markers, facet_markers = gmshio.model_to_mesh(model, MPI.COMM_SELF, 0)
-        msh.name = model_name
-        cell_markers.name = f"{msh.name}_cells"
-        facet_markers.name = f"{msh.name}_facets"
-        with XDMFFile(msh.comm, out_xdmf, "w") as file:
-            file.write_mesh(msh)
-            file.write_meshtags(cell_markers)
-            msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
-            file.write_meshtags(facet_markers)
+        # # save
+        # msh, cell_markers, facet_markers = gmshio.model_to_mesh(model, MPI.COMM_SELF, 0)
+        # msh.name = model_name
+        # cell_markers.name = f"{msh.name}_cells"
+        # facet_markers.name = f"{msh.name}_facets"
+        # with XDMFFile(msh.comm, out_xdmf, "w") as file:
+        #     file.write_mesh(msh)
+        #     file.write_meshtags(cell_markers)
+        #     msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
+        #     file.write_meshtags(facet_markers)
 
         if out_vtk:
             gmsh.write(str(out_vtk))
+            gmsh.write(str(out_vtk).replace('.vtk', '.msh')) # additional msh output for debugging
+
 
         return
