@@ -1,8 +1,20 @@
 import numpy as np
-# from pprint import pprint
+from pprint import pprint
 from OCC.Core.gp import gp_Pnt
 from amworkflow.geometry.simple_geometries import create_edge, create_wire, create_face, create_solid
 from amworkflow.occ_helpers import sew_face
+from OCC.Core.TopoDS import (TopoDS_Face, 
+                             TopoDS_Shape,
+                             TopoDS_Edge, 
+                             TopoDS_Shell,
+                             TopoDS_Solid,
+                             TopoDS_Wire,
+                             TopoDS_Compound)
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("amworkflow.geometry.builtinCAD")
+logger.setLevel(logging.INFO)
 
 count_id = 0
 count_gid = [0 for i in range(7)]
@@ -16,6 +28,81 @@ TYPE_INDEX = {
             5: "solid",
             6: "compound"
         }
+
+def pnt(pt_coord) -> np.ndarray:
+            
+    opt = np.array(pt_coord)
+    dim = np.shape(pt_coord)[0]
+    if dim > 3:
+        raise Exception(
+            f"Got wrong point {pt_coord}: Dimension more than 3rd provided.")
+    if dim < 3:
+        opt = np.lib.pad(opt, ((0, 3 - dim)),
+                        "constant", constant_values=0)
+    return opt
+
+class DuplicationCheck():
+    def __init__(self, gtype: int, gvalue: any, ) -> None:
+        self.gtype = gtype
+        self.gvalue = gvalue
+        self.check_type_validity(item_type=self.gtype)
+        self.new,self.exist_object = self.new_item(gvalue, gtype)
+        if not self.new:
+            logging.info(f"{TYPE_INDEX[gtype]} {gvalue} already exists, return the old one.")
+        
+    def check_type_coincide(self, base_type: int, item_type: int) -> bool:
+        """Check if items has the same type with the base item.
+
+        :param base_type: The type referred
+        :type base_type: int
+        :param item_type: The type to be examined
+        :type item_type: int
+        :return: True if coincident.
+        :rtype: bool
+        """        
+        different = base_type != item_type
+        self.check_type_validity(item_type=item_type)
+        if different:
+            return False
+        else:
+            return True
+        
+    def check_type_validity(self, item_type: int) -> bool:
+        """Check if given type if valid
+
+        :param item_type: The type to be examined
+        :type item_type: int
+        :raises Exception: Wrong geometry object type, perhaps a mistake made in development.
+        :return: True if valid
+        :rtype: bool
+        """
+        valid = item_type in TYPE_INDEX
+        if not valid:
+            raise Exception("Wrong geometry object type, perhaps a mistake made in development.")
+        return valid
+    
+    def check_value_repetition(self, base_value:any, item_value:any) -> bool:
+        '''
+        Check if a value is close enough to the base value. True if repeated.
+        :param base_value: item to be compared with.
+        :param item_value: value to be examined.
+        '''
+        if type(base_value) is list:
+            base_value = np.array(base_value)
+            item_value = np.array(item_value)
+            
+        return np.isclose(np.linalg.norm(base_value-item_value), 0)
+
+    def new_item(self, item_value: any, item_type) -> tuple:
+        '''
+        Check if a value already exits in the index
+        :param item_value: value to be examined.
+        '''
+        for _, item in id_index.items():
+            if self.check_type_coincide(item["type"],item_type):
+                if self.check_value_repetition(item["value"], item_value):
+                    return False, item[f"{TYPE_INDEX[item_type]}"]
+        return True, None
 
 class TopoObj():
     def __init__(self) -> None:
@@ -34,6 +121,7 @@ class TopoObj():
         6: compound
         
         id: An unique identity number for every instance of topo_class
+        gid: An unique identity number for every instance of topo_class with the same type
         
         '''
         self.type = 0
@@ -44,7 +132,7 @@ class TopoObj():
         self.belong = {}
         self.property = {}
         self.property_enriched = False
-        
+    
     def __str__(self) -> str:
         own = ""
         for item_type, item_value in self.own.items():
@@ -68,49 +156,6 @@ class TopoObj():
             value = str(self.value)+"(IDs)"
         doc = f"\033[1mType\033[0m: {TYPE_INDEX[self.type]}\n\033[1mID\033[0m: {self.id}\n\033[1mValue\033[0m: {value}\n\033[1mOwn\033[0m: {own}\n\033[1mBelong\033[0m: {belong}\n"
         return doc
-        
-    def check_value_repetition(self, base_value:any, item_value:any) -> bool:
-        '''
-        Check if a value is close enough to the base value. True if repeated.
-        :param base_value: item to be compared with.
-        :param item_value: value to be examined.
-        '''
-        if type(base_value) is list:
-            base_value = np.array(base_value)
-            item_value = np.array(item_value)
-            
-        return np.isclose(np.linalg.norm(base_value-item_value), 0)
-   
-    def check_type_validity(self, item_type: int) -> bool:
-        """Check if given type if valid
-
-        :param item_type: The type to be examined
-        :type item_type: int
-        :raises Exception: Wrong geometry object type, perhaps a mistake made in development.
-        :return: True if valid
-        :rtype: bool
-        """
-        valid = item_type in TYPE_INDEX
-        if not valid:
-            raise Exception("Wrong geometry object type, perhaps a mistake made in development.")
-        return valid
-
-    def check_type_coincide(self, base_type: int, item_type: int) -> bool:
-        """Check if items has the same type with the base item.
-
-        :param base_type: The type referred
-        :type base_type: int
-        :param item_type: The type to be examined
-        :type item_type: int
-        :return: True if coincident.
-        :rtype: bool
-        """        
-        different = base_type != item_type
-        self.check_type_validity(item_type=item_type)
-        if different:
-            return False
-        else:
-            return True
     
     def enrich_property(self, new_property: dict):
         """Enrich the property out of the basic property.
@@ -124,21 +169,11 @@ class TopoObj():
         self.property.update(new_property)
         self.property_enriched = True
     
-    def new_item(self, item_value: any, item_type) -> tuple:
-        '''
-        Check if a value already exits in the index
-        :param item_value: value to be examined.
-        '''
-        for _, item in id_index.items():
-            if self.check_type_coincide(item["type"],item_type):
-                if self.check_value_repetition(item["value"], item_value):
-                    return False, item["id"]
-        return True, None
-    
     def update_basic_property(self):
         """Update basic properties
         """       
         self.property.update({"type": self.type,
+                        f"{TYPE_INDEX[self.type]}": self,
                         "id": self.id,
                         "gid": self.gid,
                         "own": self.own,
@@ -165,18 +200,19 @@ class TopoObj():
         Register an item to the index and return its id. Duplicate value will be filtered.
         :param item_value: value to be registered.
         '''
-        new, old_id = self.new_item(self.value, self.type)
+        # new, old_id = self.new_item(self.value, self.type)
         global count_id
-        if new:
-            self.id = count_id
-            self.gid = count_gid[self.type]
-            count_gid[self.type] += 1
-            self.update_basic_property()
-            id_index.update({self.id: self.property})
-            count_id += 1
-            return self.id
-        else:
-            return old_id
+        global count_gid
+        # if new:
+        self.id = count_id
+        self.gid = count_gid[self.type]
+        count_gid[self.type] += 1
+        self.update_basic_property()
+        id_index.update({self.id: self.property})
+        count_id += 1
+        return self.id
+        # else:
+        #     return old_id
     
     def update_dependency(self, *own: list):
         for item in own:
@@ -194,48 +230,83 @@ class TopoObj():
         # self.update_id_index()
         
 class Pnt(TopoObj):
+    '''
+    Create a point.
+    '''
+    
+    def __new__(cls, coord:list) -> None:
+        point = pnt(coord)
+        checker = DuplicationCheck(0, point)
+        if checker.new:
+            return super().__new__(cls)
+        else:
+            return checker.exist_object
+        
+        
     def __init__(self, coord: list) -> None:
         super().__init__()
         self.type = 0
-        self.coord = self.pnt(coord)
+        self.coord = pnt(coord)
         self.value = self.coord
         self.occ_pnt = gp_Pnt(*self.coord.tolist())
         self.enrich_property({"occ_pnt": self.occ_pnt})
-        self.register_item()
-        
-    def pnt(self, pt_coord) -> np.ndarray:
-        opt = np.array(pt_coord)
-        dim = len(pt_coord)
-        if dim > 3:
-            raise Exception(
-                f"Got wrong point {pt_coord}: Dimension more than 3rd provided.")
-        if dim < 3:
-            opt = np.lib.pad(opt, ((0, 3 - dim)),
-                             "constant", constant_values=0)
-        return opt
+        self.id = self.register_item()
 
 class Segment(TopoObj):
-    def __init__(self, pnt1: Pnt, pnt2: Pnt) -> None:
+    def __new__(cls, pnt2: Pnt, pnt1: Pnt = Pnt([])):
+        checker = DuplicationCheck(1, [pnt1.id, pnt2.id])
+        if checker.new:
+            return super().__new__(cls)
+        else:
+            return checker.exist_object
+    
+    def __init__(self, pnt2: Pnt, pnt1: Pnt = Pnt([])) -> None:
         super().__init__()
+        pnt1, pnt2 = self.check_input(pnt1=pnt1, pnt2=pnt2)
         self.start_pnt = pnt1.id
         self.end_pnt = pnt2.id
+        self.vector = pnt2.value - pnt1.value
+        self.length = np.linalg.norm(self.vector)
+        self.normal = self.vector / self.length
         self.type = 1
         self.value = [self.start_pnt, self.end_pnt]
         self.occ_edge = create_edge(pnt1.occ_pnt, pnt2.occ_pnt)
-        self.enrich_property({"occ_edge": self.occ_edge})
+        self.enrich_property({
+            "occ_edge": self.occ_edge,
+            "vector": self.vector,
+            "length": self.length,
+            "normal": self.normal
+            })
         self.register_item()
         self.update_dependency(pnt1, pnt2)
         
-    def add_relation_to(self, item: "Segment") -> None:
-        '''
-        Add relation to another segment.
-        :param item: item to be added.
-        :return: None
-        '''
-        pass
-        
+    def check_input(self, pnt1: Pnt, pnt2: Pnt) -> tuple:
+        if type(pnt2) is int:
+            if pnt2 not in id_index:
+                raise Exception(f"Unrecognized point id: {pnt2}.")
+            pnt2 = id_index[pnt2]["point"]
+        if type(pnt1) is int:
+            if pnt1 not in id_index:
+                raise Exception(f"Unrecognized point id: {pnt1}.")
+            pnt1 = id_index[pnt1]["point"]
+        if not isinstance(pnt1, Pnt):
+            raise Exception(f"Wrong type of point: {type(pnt1)}.")
+        if not isinstance(pnt2, Pnt):
+            raise Exception(f"Wrong type of point: {type(pnt2)}.")
+        if pnt1.id == pnt2.id:
+            raise Exception(f"Start point and end point are the same: {pnt1.id}.")
+        return pnt1, pnt2
+            
+            
 
 class Wire(TopoObj):
+    def __new__(cls, *segments: Segment):
+        checker = DuplicationCheck(2, [item.id for item in segments])
+        if checker.new:
+            return super().__new__(cls)
+        else:
+            return checker.exist_object
+    
     def __init__(self, *segments: Segment) -> None:
         super().__init__()
         self.type = 2
@@ -247,6 +318,13 @@ class Wire(TopoObj):
         self.register_item()
         
 class Surface(TopoObj):
+    def __new__(cls, *wire: Wire):
+        checker = DuplicationCheck(3, [item.id for item in wire])
+        if checker.new:
+            return super().__new__(cls)
+        else:
+            return checker.exist_object
+    
     def __init__(self, *wires: Wire) -> None:
         super().__init__()
         self.type = 3
@@ -258,6 +336,12 @@ class Surface(TopoObj):
         self.register_item()
         
 class Shell(TopoObj):
+    def __new__(cls, *surfaces: Surface):
+        checker = DuplicationCheck(4, [item.id for item in surfaces])
+        if checker.new:
+            return super().__new__(cls)
+        else:
+            return checker.exist_object
     def __init__(self, *surfaces: Surface) -> None:
         super().__init__()
         self.type = 4
@@ -269,6 +353,13 @@ class Shell(TopoObj):
         self.register_item()
         
 class Solid(TopoObj):
+    def __new__(cls, shell: Shell):
+        checker = DuplicationCheck(5, shell.id)
+        if checker.new:
+            return super().__new__(cls)
+        else:
+            return checker
+        
     def __init__(self, shell: Shell) -> None:
         super().__init__()
         self.type = 5
@@ -278,11 +369,105 @@ class Solid(TopoObj):
         self.update_dependency(shell)
         self.enrich_property({"occ_solid": self.occ_solid})
         self.register_item()
+
+def create_wire_by_points(points: list):
+    """
+     @brief Create a closed wire (loop) by points. The wire is defined by a list of points which are connected by an edge.
+     @param points A list of points. Each point is a gp_Pnt ( x y z) where x, y and z are the coordinates of a point.
+     @return A wire with the given points connected by an edge. This will be an instance of : class : `BRepBuilderAPI_MakeWire`
+    """
+    pts = points
+    # Create a wire for each point in the list of points.
+    for i, pt in enumerate(pts):
+        # Create a wire for the i th point.
+        if i == 0:
+            edge = create_edge(pt, pts[i+1])
+            wire = create_wire(edge)
+        # Create a wire for the given points.
+        if i != len(pts)-1:
+            edge = create_edge(pt, pts[i+1])
+            wire = create_wire(wire, edge)
+        else:
+            edge = create_edge(pts[i], pts[0])
+            wire = create_wire(wire, edge)
+    return wire
         
+def random_polygon_constructor(points: list, isface: bool = True) -> TopoDS_Face or TopoDS_Wire:
+    """
+     @brief Creates a polygon in any shape. If isface is True the polygon is made face - oriented otherwise it is wires
+     @param points List of points defining the polygon
+     @param isface True if you want to create a face - oriented
+     @return A polygon 
+    """
+    pb = BRepBuilderAPI_MakePolygon()
+    # Add points to the points.
+    for pt in points:
+        pb.Add(pt)
+    pb.Build()
+    pb.Close()
+    # Create a face or a wire.
+    if isface:
+        return create_face(pb.Wire())
+    else:
+        return pb.Wire()
+        
+def angle_of_two_arrays(a1: np.ndarray, a2: np.ndarray, rad: bool = True) -> float:
+    """
+     @brief Returns the angle between two vectors. This is useful for calculating the rotation angle between a vector and another vector
+     @param a1 1D array of shape ( n_features )
+     @param a2 2D array of shape ( n_features )
+     @param rad If True the angle is in radians otherwise in degrees
+     @return Angle between a1 and a2 in degrees or radians depending on rad = True or False
+    """
+    dot = np.dot(a1, a2)
+    norm = np.linalg.norm(a1)*np.linalg.norm(a2)
+    cos_value = np.round(dot / norm, 15)
+    if rad:
+        return np.arccos(cos_value)
+    else:
+        return np.rad2deg(np.arccos(cos_value))
+        
+def laterality_indicator(a: np.ndarray, d: bool):
+    """
+     @brief Compute laterality indicator of a vector. This is used to create a vector which is perpendicular to the based vector on its left side ( d = True ) or right side ( d = False )
+     @param a vector ( a )
+     @param d True if on left or False if on right
+     @return A vector.
+    """
+    z = np.array([0, 0, 1])
+    # cross product of z and a
+    if d:
+        na = np.cross(z, a)
+    else:
+        na = np.cross(-z, a)
+    norm = np.linalg.norm(na, na.shape[0])
+    return na / norm
+
+def angular_bisector(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
+    """
+     @brief Angular bisector between two vectors. The result is a vector splitting the angle between two vectors uniformly.
+     @param a1 1xN numpy array
+     @param a2 1xN numpy array
+     @return the bisector vector
+    """
+    norm1 = np.linalg.norm(a1)
+    norm2 = np.linalg.norm(a2)
+    bst = a1 / norm1 + a2 / norm2
+    norm3 = np.linalg.norm(bst)
+    # The laterality indicator a2 norm3 norm3
+    if norm3 == 0:
+        opt = laterality_indicator(a2, True)
+    else:
+        opt = bst / norm3
+    return opt
 # pnt1 = Pnt([2,3])
 # pnt2 = Pnt([2,3,3])
 # pnt3 = Pnt([2,3,5])
+# pnt31 = Pnt([2,3,5])
+# print(pnt31 is pnt3)
 # seg1 = Segment(pnt1, pnt2)
+# seg11 = Segment(pnt1, pnt2)
+# print(seg11 is seg1)
 # seg2 = Segment(pnt2, pnt3)
 # seg3 = Segment(pnt3, pnt1)
 # wire1 = Wire(seg1, seg2,seg3)
