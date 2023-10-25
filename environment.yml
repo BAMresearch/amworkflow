@@ -13,6 +13,7 @@ dependencies:
   - meshio
   - mpich
   - pyvista
+  - pytest
   - pip
   - pip:
     - gmsh==4.11.1

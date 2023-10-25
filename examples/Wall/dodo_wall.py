@@ -19,20 +19,23 @@ from amworkflow.meshing import MeshingGmsh
 logging.basicConfig(level=logging.INFO)
 
 # define required parameters
-params =   {# geometry parameters
-            "length": 200, # mm
-            "height": 200, # mm
-            "width": 200, # mm
-            "radius": 1000, # mm
-            "infill": "solid",
-            # mesh parameters (meshing by layer height)
-            "mesh_size_factor": 10,
-            "layer_height": 10, #mm
+params = {  # geometry parameters
+    "length": 200,  # mm
+    "height": 200,  # mm
+    "width": 200,  # mm
+    "radius": 1000,  # mm
+    "infill": "solid",
+    # mesh parameters (meshing by layer height)
+    "mesh_size_factor": 10,
+    "layer_height": 10,  # mm
 }
 
 # TODO datastore stuff??
 OUTPUT_NAME = Path(__file__).parent.name
-OUTPUT = Path(__file__).parent / 'output' #/ f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
+OUTPUT = (
+    Path(__file__).parent / "output"
+)  # / f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
+
 
 def task_create_design():
     """Create the design of the parametric wall."""
@@ -46,8 +49,8 @@ def task_create_design():
     geometry = GeometryParamWall(**params)
 
     return {
-        "actions": [(geometry.create, [out_file_step, out_file_stl, out_file_points])],
-        "targets": [out_file_step, out_file_stl, out_file_points],
+        "actions": [(geometry.create, [out_file_step, out_file_points, out_file_stl])],
+        "targets": [out_file_step, out_file_points, out_file_stl],
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],
     }
@@ -61,7 +64,7 @@ def task_meshing():
 
     in_file_step = OUTPUT / f"{OUTPUT_NAME}.stp"
     out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
-    out_file_vtk  = OUTPUT / f"{OUTPUT_NAME}.vtk"
+    out_file_vtk = OUTPUT / f"{OUTPUT_NAME}.vtk"
 
     meshing = MeshingGmsh(**params)
 
