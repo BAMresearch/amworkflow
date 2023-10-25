@@ -29,6 +29,6 @@ def test_geometry_paramwall_solid(tmp_path):
     assert file_stl.exists()
     # assert out_file_points.exists() #not yet implemented
 
-###
+##
 # if __name__ == "__main__":
 #     test_geometry_paramwall_solid(Path.cwd())
