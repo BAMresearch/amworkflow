@@ -1,17 +1,24 @@
 # add function you actually used from old simple_geometry.py
 import math as m
 
-from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge,
-                                     BRepBuilderAPI_MakeFace,
-                                     BRepBuilderAPI_MakeSolid,
-                                     BRepBuilderAPI_MakeWire,
-                                     BRepBuilderAPI_Sewing)
+from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_MakeEdge, 
+                                     BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace, BRepBuilderAPI_Sewing, BRepBuilderAPI_MakeSolid, BRepBuilderAPI_MakeShell, brepbuilderapi_Precision, BRepBuilderAPI_MakePolygon, BRepBuilderAPI_Copy)
 from OCC.Core.BRepPrimAPI import (BRepPrimAPI_MakeBox,
                                   BRepPrimAPI_MakePrism)
 from OCC.Core.GC import GC_MakeArcOfCircle
-from OCC.Core.gp import gp_Pnt, gp_Vec
-from OCC.Core.TopoDS import (TopoDS_Face, TopoDS_Shape, TopoDS_Shell,
-                             TopoDS_Solid, TopoDS_Wire)
+from OCC.Core.Geom import Geom_TrimmedCurve
+from OCC.Core.BRep import BRep_Builder
+from OCC.Core.gp import (gp_Pln, 
+                         gp_Pnt, 
+                         gp_Trsf, 
+                         gp_Vec)
+from OCC.Core.TopoDS import (TopoDS_Face, 
+                             TopoDS_Shape,
+                             TopoDS_Edge, 
+                             TopoDS_Shell,
+                             TopoDS_Solid,
+                             TopoDS_Wire,
+                             TopoDS_Compound)
 from OCCUtils.Topology import Topo
 
 from amworkflow import occ_helpers
@@ -19,6 +26,48 @@ from amworkflow import occ_helpers
 
 #(geom_copy, geometry_builder, reverse,
 #                                        sewer, translate)
+def create_edge(pnt1: gp_Pnt = None, pnt2: gp_Pnt = None, arch: Geom_TrimmedCurve = None) -> TopoDS_Edge:
+    """
+     @brief Create an edge between two points. This is a convenience function to be used in conjunction with : func : ` BRepBuilderAPI_MakeEdge `
+     @param pnt1 first point of the edge
+     @param pnt2 second point of the edge
+     @param arch arch edge ( can be None ). If arch is None it will be created from pnt1 and pnt2
+     @return an edge.
+    """
+    if isinstance(pnt1, gp_Pnt) and isinstance(pnt2, gp_Pnt):
+        edge = BRepBuilderAPI_MakeEdge(pnt1, pnt2).Edge()
+    elif isinstance(arch, Geom_TrimmedCurve):
+        edge = BRepBuilderAPI_MakeEdge(arch).Edge()
+    return edge
+
+def create_wire(*edge) -> TopoDS_Wire:
+    """
+     @brief Create a wire. Input at least one edge to build a wire. This is a convenience function to call BRepBuilderAPI_MakeWire with the given edge and return a wire.
+     @return A wire built from the given edge ( s ). The wire may be used in two ways : 1
+    """
+    return BRepBuilderAPI_MakeWire(*edge).Wire()
+
+def create_face(wire: TopoDS_Wire) -> TopoDS_Face:
+    """
+     @brief Create a BRep face from a TopoDS_Wire. This is a convenience function to use : func : ` BRepBuilderAPI_MakeFace ` and
+     @param wire The wire to create a face from. Must be a TopoDS_Wire.
+     @return A Face object with the properties specified
+    """
+    return BRepBuilderAPI_MakeFace(wire).Face()
+
+def create_solid(item: TopoDS_Shape) -> TopoDS_Shape:
+    return BRepBuilderAPI_MakeSolid(item).Shape()
+
+def create_compound(*args):
+    builder = BRep_Builder()
+    obj = TopoDS_Compound()
+    builder.MakeCompound(obj)
+    for item in args[0]: builder.Add(obj, item)
+    return obj
+
+def create_solid(item: TopoDS_Shape) -> TopoDS_Shape:
+    return BRepBuilderAPI_MakeSolid(item).Shape()
+
 
 
 def create_box(length: float,
@@ -42,7 +91,7 @@ def create_box(length: float,
             box = BRepPrimAPI_MakeBox(length, width, height).Shape()
             faces = list(Topo(TopoDS_Solid).faces_from_solids(box))
             print(isinstance(faces[0], TopoDS_Shape))
-            sewed_face = occ_helpers.sewer(faces)
+            sewed_face = occ_helpers.sew_face(faces)
             # make_shell = BRepBuilderAPI_MakeShell(sewed_face, False).Shell()
 
             return sewed_face
@@ -82,20 +131,16 @@ def create_box(length: float,
         sewed_shape = sewing.SewedShape()
         # shell = BRepBuilderAPI_MakeShell(sewed_shape)
         solid = BRepBuilderAPI_MakeSolid(sewed_shape).Shape()
-        curve_box = occ_helpers.geometry_builder(component)
+        print(solid)
+        curve_box = create_compound(component)
+        
         # Returns the shape of the shell.
         if shell:
             return sewed_shape
         else:
             return solid
 
-def create_face(wire: TopoDS_Wire) -> TopoDS_Face:
-    """
-     @brief Create a BRep face from a TopoDS_Wire. This is a convenience function to use : func : ` BRepBuilderAPI_MakeFace ` and
-     @param wire The wire to create a face from. Must be a TopoDS_Wire.
-     @return A Face object with the properties specified
-    """
-    return BRepBuilderAPI_MakeFace(wire).Face()
+
 
 def create_prism(shape: TopoDS_Shape,
                  vector: list,
@@ -111,4 +156,3 @@ def create_prism(shape: TopoDS_Shape,
                                                vector[1],
                                                vector[2]),
                                  copy).Shape()
-

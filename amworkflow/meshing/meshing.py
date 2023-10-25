@@ -84,7 +84,7 @@ class MeshingGmsh(Meshing):
 
         # two options of splitting geometry in layers checked above in assert
         geo = occ_helpers.split(
-            item=solid, layer_height=self.layer_height, nz=self.number_of_layers
+            item=shape, layer_height=self.layer_height, nz=self.number_of_layers
         )
 
         model = gmsh.model()

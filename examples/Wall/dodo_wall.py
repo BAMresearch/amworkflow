@@ -53,6 +53,7 @@ def task_create_design():
         "targets": [out_file_step, out_file_points, out_file_stl],
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],
+        "verbosity": 2,
     }
 
 
@@ -74,4 +75,5 @@ def task_meshing():
         "targets": [out_file_xdmf, out_file_vtk],
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],
+        "verbosity": 2,
     }
