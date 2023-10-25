@@ -13,7 +13,7 @@ def test_duplication_check():
     assert(pnt3 is pnt31)
     assert(pnt1 is not pnt2)
     
-def test_pnt_coord_auto_fill():
+def test_pnt_coord_auto_completion():
     point1 = pnt([2,3])
     point2 = pnt([])
     point3 = pnt([2])
