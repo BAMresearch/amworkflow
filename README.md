@@ -1,3 +1,8 @@
+[![tests](https://github.com/BAMresearch/amworkflow/actions/workflows/tests.yml/badge.svg)](https://github.com/BAMresearch/amworkflow/actions/workflows/tests.yml)
+[![wall example](https://github.com/BAMresearch/amworkflow/actions/workflows/wall.yml/badge.svg)](https://github.com/BAMresearch/amworkflow/actions/workflows/wall.yml)
+[![trussarc example](https://github.com/BAMresearch/amworkflow/actions/workflows/trussarc.yml/badge.svg)](https://github.com/BAMresearch/amworkflow/actions/workflows/trussarc.yml)
+
+
 ## Motivation
 
 This repository contains a module for creating automated workflows in the context of concrete additive manufacturing.
