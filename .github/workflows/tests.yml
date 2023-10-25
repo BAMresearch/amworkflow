@@ -1,5 +1,5 @@
 # This workflow will install the environment, run the example/Wall
-name: wall
+name: tests
 
 on:
   push:
@@ -50,5 +50,5 @@ jobs:
       - name: run tests
         shell: bash -l {0} #new shell
         run: |
-          pytest
+          cd tests/ && pytest
 
