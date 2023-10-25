@@ -1,3 +1,5 @@
+[![tests](https://github.com/BAMresearch/amworkflow/actions/workflows/tests.yml/badge.svg)](https://github.com/BAMresearch/amworkflow/actions/workflows/tests.yml)
+
 ## Motivation
 
 This repository contains a module for creating automated workflows in the context of concrete additive manufacturing.
@@ -55,10 +57,10 @@ cd examples/<example_name>
 doit -f dodo_<example_name>.py
 ```
 
-### Wall
+### Wall [![wall](https://github.com/BAMresearch/amworkflow/actions/workflows/wall.yml/badge.svg)](https://github.com/BAMresearch/amworkflow/actions/workflows/wall.yml)
 The workflow is created for a curved wall element with geometrical parameters like length, thickness, width and height with different infill structures.
 
-### TrussArc
+### TrussArc [![trussarc](https://github.com/BAMresearch/amworkflow/actions/workflows/trussarc.yml/badge.svg)](https://github.com/BAMresearch/amworkflow/actions/workflows/trussarc.yml)
 A arc with truss structure is given by a list of points defining the centerline.
 The design is created by those points and additional parameters like layer thickness and the gcode and simulation is set-up.
 
