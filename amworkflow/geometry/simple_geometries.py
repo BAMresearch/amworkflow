@@ -55,19 +55,6 @@ def create_face(wire: TopoDS_Wire) -> TopoDS_Face:
     """
     return BRepBuilderAPI_MakeFace(wire).Face()
 
-def create_solid(item: TopoDS_Shape) -> TopoDS_Shape:
-    return BRepBuilderAPI_MakeSolid(item).Shape()
-
-def create_compound(*args):
-    builder = BRep_Builder()
-    obj = TopoDS_Compound()
-    builder.MakeCompound(obj)
-    for item in args[0]: builder.Add(obj, item)
-    return obj
-
-def create_solid(item: TopoDS_Shape) -> TopoDS_Shape:
-    return BRepBuilderAPI_MakeSolid(item).Shape()
-
 
 
 def create_box(length: float,

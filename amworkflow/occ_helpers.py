@@ -16,7 +16,6 @@ from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.TopoDS import TopoDS_Compound, TopoDS_Face, TopoDS_Shape
 from OCCUtils.Construct import make_face, vec_to_dir
 from OCCUtils.Topology import Topo
-# from amworkflow.geometry.simple_geometries import (create_compound, create_edge,)
 
 
 def sew_face(*component) -> TopoDS_Shape:
@@ -27,8 +26,15 @@ def sew_face(*component) -> TopoDS_Shape:
     sewed_shape = sewing.SewedShape()
     return sewed_shape
 
+def create_solid(item: TopoDS_Shape) -> TopoDS_Shape:
+    return BRepBuilderAPI_MakeSolid(item).Shape()
 
-
+def create_compound(*args):
+    builder = BRep_Builder()
+    obj = TopoDS_Compound()
+    builder.MakeCompound(obj)
+    for item in args[0]: builder.Add(obj, item)
+    return obj
 
 def translate(item: TopoDS_Shape,
               vector: list):

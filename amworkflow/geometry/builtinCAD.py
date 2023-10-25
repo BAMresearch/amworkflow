@@ -1,8 +1,8 @@
 import numpy as np
 from pprint import pprint
 from OCC.Core.gp import gp_Pnt
-from amworkflow.geometry.simple_geometries import create_edge, create_wire, create_face, create_solid
-from amworkflow.occ_helpers import sew_face
+from amworkflow.geometry.simple_geometries import create_edge, create_wire, create_face
+from amworkflow.occ_helpers import sew_face, create_solid
 from OCC.Core.TopoDS import (TopoDS_Face, 
                              TopoDS_Shape,
                              TopoDS_Edge, 

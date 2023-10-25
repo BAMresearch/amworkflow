@@ -6,7 +6,7 @@ from amworkflow import occ_helpers
 
 def test_solid_maker():
     box = simple_geometries.create_box(1., 2., 3.)
-    solid = occ_helpers.solid_maker(box)
+    solid = occ_helpers.create_solid(box)
     assert isinstance(solid, TopoDS_Solid)
 
 def test_split_bynumber():
