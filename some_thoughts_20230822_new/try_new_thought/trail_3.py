@@ -1,6 +1,7 @@
 from amworkflow.src.geometries.composite_geometry import CreateWallByPointsUpdate
 import numpy as np
 from amworkflow.api import amWorkflow as aw
+import cv2 as cv
 
 th = 8
 l = 10
@@ -44,6 +45,40 @@ pout_nd = [i.Coord() for i in pout]
 pmfo = np.vstack((pmf, pout_nd))
 
 wall = CreateWallByPointsUpdate(pmfo, th, height)
-poly = wall.Shape()
-wall.visualize(all_polygons=False, display_central_path=True)
-aw.tool.write_stl(poly, "sucess_new_scheme",store_dir="/home/yhe/Documents/new_am2/amworkflow/some_thoughts_20230822_new/try_new_thought")
+lft_coords = wall.lft_coords
+rgt_coords = wall.rgt_coords
+pieces = []
+for i in range(len(lft_coords)-1):
+    pieces.append([lft_coords[i], lft_coords[i+1], rgt_coords[i+1], rgt_coords[i]])
+
+def create_canvas(width: float, height: float):
+    image = np.zeros((height, width), dtype=np.uint8)
+    return image
+
+def create_poly(pnts: list):
+    vertices = np.array(pnts, np.int32)
+    vertices = vertices.reshape((-1, 1, 2))
+    return vertices
+
+def add_poly(image: np.ndarray, poly: np.ndarray):
+    cv.fillPoly(image, [poly], 255)
+
+def find_contours(image):
+    contours, _ = cv.findContours(image, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    
+    return contours
+    
+# poly = wall.Shape()
+# wall.visualize(all_polygons=False, display_central_path=False)
+# aw.tool.write_stl(poly, "sucess_new_scheme",store_dir="/home/yhe/Documents/new_am2/amworkflow/some_thoughts_20230822_new/try_new_thought")
+image = create_canvas(150, 150)
+for p in pieces:
+    poly = create_poly(p)
+    add_poly(image, poly)
+contours = np.array(find_contours(image))[0].reshape(-1, 2)
+print(contours)
+# contour_image = cv.cvtColor(image, cv.COLOR_GRAY2BGR)
+# cv.drawContours(contour_image, contours, -1, (0, 255, 0), 2)
+# cv.imshow("Contours", contour_image)
+# cv.waitKey(0)
+# cv.destroyAllWindows()
