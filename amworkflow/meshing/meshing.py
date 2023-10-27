@@ -71,7 +71,7 @@ class MeshingGmsh(Meshing):
         assert step_file.is_file(), f"Step file {step_file} does not exist."
 
         shape = read_step_file(filename=str(step_file))
-        solid = occ_helpers.solid_maker(shape)
+        solid = occ_helpers.create_solid(shape)
 
         assert isinstance(solid, TopoDS_Solid), "Must be TopoDS_Shape object to mesh."
 
@@ -84,7 +84,7 @@ class MeshingGmsh(Meshing):
 
         # two options of splitting geometry in layers checked above in assert
         geo = occ_helpers.split(
-            item=solid, layer_height=self.layer_height, nz=self.number_of_layers
+            item=shape, layer_height=self.layer_height, nz=self.number_of_layers
         )
 
         model = gmsh.model()
@@ -114,7 +114,7 @@ class MeshingGmsh(Meshing):
         #     msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
         #     file.write_meshtags(facet_markers)
 
-        #workaround for since gmshio.model_to_mesh is not working
+        # workaround for since gmshio.model_to_mesh is not working
         out_msh = out_xdmf.with_suffix(".msh")
         gmsh.write(str(out_msh))
         msh = meshio.read(out_msh)
@@ -123,7 +123,6 @@ class MeshingGmsh(Meshing):
 
         if out_vtk:
             gmsh.write(str(out_vtk))
-
 
         return
 
@@ -143,6 +142,8 @@ class MeshingGmsh(Meshing):
         cell_data = mesh.get_cell_data("gmsh:physical", cell_type)
         points = mesh.points[:, :2] if prune_z else mesh.points
         out_mesh = meshio.Mesh(
-            points=points, cells={cell_type: cells}, cell_data={"name_to_read": [cell_data]}
+            points=points,
+            cells={cell_type: cells},
+            cell_data={"name_to_read": [cell_data]},
         )
         return out_mesh

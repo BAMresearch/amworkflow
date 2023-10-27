@@ -9,14 +9,14 @@ from amworkflow.meshing import MeshingGmsh
 def test_meshingGmsh(tmp_path):
     # define required parameters for simple design
     params = {  # geometry parameters
-    "length": 200,  # mm
-    "height": 200,  # mm
-    "width": 200,  # mm
-    "radius": 1000,  # mm
-    "infill": "solid",
-    # mesh parameters (meshing by layer height)
-    "mesh_size_factor": 10,
-    "layer_height": 10,  # mm
+        "length": 200,  # mm
+        "height": 200,  # mm
+        "width": 200,  # mm
+        "radius": 1000,  # mm
+        "infill": "solid",
+        # mesh parameters (meshing by layer height)
+        "mesh_size_factor": 10,
+        "layer_height": 10,  # mm
     }
 
     # output files in tmp directory
@@ -37,6 +37,7 @@ def test_meshingGmsh(tmp_path):
     # check if output files exist
     assert file_xdmf.exists()
     assert file_vtk.exists()
+
 
 ###
 # if __name__ == "__main__":
