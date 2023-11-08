@@ -439,7 +439,7 @@ def create_polygon_by_points(
     pb.Close()
     # Create a face or a wire.
     if isface:
-        return create_face(pb.Wire())
+        return sgeom.create_face(pb.Wire())
     else:
         return pb.Wire()
 

@@ -1,16 +1,15 @@
 import logging
+import multiprocessing
 import typing
 from pathlib import Path
 
-import meshio
-
 import gmsh
-import multiprocessing
-from OCC.Core.TopoDS import TopoDS_Solid
-from OCC.Extend.DataExchange import read_step_file
+import meshio
 from dolfinx.io import XDMFFile, gmshio
 from mpi4py import MPI
-
+from OCC.Core.TopoDS import TopoDS_Solid
+from OCC.Extend.DataExchange import read_step_file
+from amworkflow.geometry import simple_geometries as sgeom
 from amworkflow import occ_helpers
 
 typing.override = lambda x: x
@@ -67,11 +66,11 @@ class MeshingGmsh(Meshing):
         Returns:
 
         """
-        assert [self.number_of_layers, self.layer_height].count(None) == 1
+        # assert [self.number_of_layers, self.layer_height].count(None) == 1
         assert step_file.is_file(), f"Step file {step_file} does not exist."
 
         shape = read_step_file(filename=str(step_file))
-        solid = occ_helpers.solid_maker(shape)
+        solid = sgeom.create_solid(shape)
 
         assert isinstance(solid, TopoDS_Solid), "Must be TopoDS_Shape object to mesh."
 
@@ -114,7 +113,7 @@ class MeshingGmsh(Meshing):
         #     msh.topology.create_connectivity(msh.topology.dim - 1, msh.topology.dim)
         #     file.write_meshtags(facet_markers)
 
-        #workaround for since gmshio.model_to_mesh is not working
+        # workaround for since gmshio.model_to_mesh is not working
         out_msh = out_xdmf.with_suffix(".msh")
         gmsh.write(str(out_msh))
         msh = meshio.read(out_msh)
@@ -123,7 +122,6 @@ class MeshingGmsh(Meshing):
 
         if out_vtk:
             gmsh.write(str(out_vtk))
-
 
         return
 
@@ -143,6 +141,8 @@ class MeshingGmsh(Meshing):
         cell_data = mesh.get_cell_data("gmsh:physical", cell_type)
         points = mesh.points[:, :2] if prune_z else mesh.points
         out_mesh = meshio.Mesh(
-            points=points, cells={cell_type: cells}, cell_data={"name_to_read": [cell_data]}
+            points=points,
+            cells={cell_type: cells},
+            cell_data={"name_to_read": [cell_data]},
         )
         return out_mesh
