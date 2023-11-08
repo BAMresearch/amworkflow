@@ -1,10 +1,13 @@
+import logging
 import typing
 from pathlib import Path
-import logging
+
 import numpy as np
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Core.TopoDS import TopoDS_Shape
 from OCC.Extend.DataExchange import write_step_file, write_stl_file
+
+from amworkflow.geometry import composite_geometries as cgeom
 from amworkflow.geometry.simple_geometries import create_box
 
 typing.override = lambda x: x
@@ -14,7 +17,7 @@ class Geometry:
     """Base class with API for any geometry creation."""
 
     def __init__(self, *args, **kwargs) -> None:
-        self.logger = logging.getLogger(__name__+"."+self.__class__.__name__)
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
     @typing.override
     def create(
@@ -44,7 +47,6 @@ class GeometryOCC(Geometry):
         stl_angular_deflection: float = 0.1,
         **kwargs,
     ) -> None:
-
         self.stl_linear_deflection = stl_linear_deflection
         self.stl_angular_deflection = stl_angular_deflection
 
@@ -149,7 +151,7 @@ class GeometryParamWall(GeometryOCC):
         # assert self.layer_thickness is not None
 
         if self.infill == "solid":
-            shape = simple_geometries.create_box(
+            shape = create_box(
                 length=self.length,
                 width=self.width,
                 height=self.height,
@@ -177,7 +179,6 @@ class GeometryCenterline(GeometryOCC):
         layer_height: float | None = None,
         **kwargs,
     ) -> None:
-
         """OCC geometry class for creating a layer by layer geometry from a given array of centerline points (x,y,z)
         and following paramters:
 
@@ -193,7 +194,7 @@ class GeometryCenterline(GeometryOCC):
         self.layer_thickness = layer_thickness
         self.number_of_layers = number_of_layers
         self.layer_height = layer_height
-
+        # print(self.points)
         super().__init__(**kwargs)
 
     def geometry_spawn(self) -> TopoDS_Shape:
@@ -208,7 +209,12 @@ class GeometryCenterline(GeometryOCC):
 
         # where to put those geometry building function?
         # is_close as global parameter?
-        # wall_maker = CreateWallByPointsUpdate("", self.layer_thickness, self.layer_height*self.number_of_layers, is_close=False)
-        # design = wall_maker.Shape()
-        design = None
+        wall_maker = cgeom.CreateWallByPointsUpdate(
+            self.points,
+            self.layer_thickness,
+            self.layer_height * self.number_of_layers,
+            is_close=False,
+        )
+        design = wall_maker.Shape()
+        # design = None
         return design

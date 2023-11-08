@@ -2,6 +2,7 @@ import numpy as np
 from OCC.Core.Bnd import Bnd_Box
 from OCC.Core.BOPAlgo import BOPAlgo_Splitter
 from OCC.Core.BRep import BRep_Builder
+from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
 from OCC.Core.BRepBndLib import brepbndlib_Add
 from OCC.Core.BRepBuilderAPI import (BRepBuilderAPI_Copy,
                                      BRepBuilderAPI_MakeSolid,
@@ -16,7 +17,7 @@ from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.TopoDS import TopoDS_Compound, TopoDS_Face, TopoDS_Shape
 from OCCUtils.Construct import make_face, vec_to_dir
 from OCCUtils.Topology import Topo
-# from amworkflow.geometry.simple_geometries import (create_compound, create_edge,)
+from amworkflow.geometry import simple_geometries as sgeom
 
 
 def sew_face(*component) -> TopoDS_Shape:
@@ -27,7 +28,15 @@ def sew_face(*component) -> TopoDS_Shape:
     sewed_shape = sewing.SewedShape()
     return sewed_shape
 
-
+def cutter3D(shape1: TopoDS_Shape, shape2: TopoDS_Shape) -> TopoDS_Shape:
+    """
+     @brief Cut a TopoDS_Shape from shape1 by shape2. It is possible to use this function to cut an object in 3D
+     @param shape1 shape that is to be cut
+     @param shape2 shape that is to be cut. It is possible to use this function to cut an object in 3D
+     @return a shape that is the result of cutting shape1 by shape2 ( or None if shape1 and shape2 are equal
+    """
+    comm = BRepAlgoAPI_Cut(shape1, shape2)
+    return comm.Shape()
 
 
 def translate(item: TopoDS_Shape,
@@ -114,7 +123,7 @@ def split(item: TopoDS_Shape,
             bo.AddArgument(fc1)
     bo.Perform()
     top = Topo(bo.Shape())
-    geo = create_compound(top.solids())
+    geo = sgeom.create_compound(top.solids())
     return geo
 
 def get_face_center_of_mass(face: TopoDS_Face, gp_pnt: bool = False) -> tuple:
