@@ -89,8 +89,8 @@ def main(l, height, num):
         output_str += command(z_move)
         output_str += command(extrusion_reset)
         extrusion_ratio = 0.0041
+        E = 0
         for j, coord in enumerate(coordinates):
-            E = 0
             if j == 0:
                 m_command = move(coord[0], coord[1])
             else:
