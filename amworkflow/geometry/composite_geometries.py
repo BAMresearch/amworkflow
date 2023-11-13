@@ -190,15 +190,15 @@ class SegmentHandler:
         Initialize the boundary of the wall.
         """
 
-        if self.is_close:
-            self.lft_coords.append(self.lft_coords[0])
-            self.rgt_coords.append(self.rgt_coords[0])
-            self.rgt_coords = self.rgt_coords[::-1]
-            self.coords.append(self.coords[0])
-            self.side_coords = self.lft_coords + self.rgt_coords
-        else:
-            self.rgt_coords = self.rgt_coords[::-1]
-            self.side_coords = self.lft_coords + self.rgt_coords + [self.lft_coords[0]]
+        # if self.is_close:
+        #     self.lft_coords.append(self.lft_coords[0])
+        #     self.rgt_coords.append(self.rgt_coords[0])
+        #     self.rgt_coords = self.rgt_coords[::-1]
+        #     self.coords.append(self.coords[0])
+        #     self.side_coords = self.lft_coords + self.rgt_coords
+        # else:
+        #     self.rgt_coords = self.rgt_coords[::-1]
+        #     self.side_coords = self.lft_coords + self.rgt_coords + [self.lft_coords[0]]
 
     def update_digraph(
         self,
@@ -235,22 +235,21 @@ class SegmentHandler:
         Calculate the boundary of the wall.
         """
 
-
-pnt1 = bcad.Pnt([2, 3])
-pnt2 = bcad.Pnt([1, 5])
-pnt3 = bcad.Pnt([2, 4])
-pnt4 = bcad.Pnt([2, 9])
-seg1 = bcad.Segment(pnt1, pnt2)
-seg2 = bcad.Segment(pnt2, pnt3)
-seg3 = bcad.Segment(pnt3, pnt1)
-# wire1 = bcad.Wire(seg1, seg2,seg3)
-# surf1 = bcad.Surface(wire1)
-# pprint(bcad.id_index)
-# print(seg3)
-# print(pnt1.property["occ_vector"])
-# pnts_handler = PntHandler()
-# pnts_handler.init_center_points(pnt1, pnt2, pnt3)
-# pnts_handler.handle_boundary_point(pnt1, pnt4)
-# pprint(bcad.id_index)
-segments = SegmentHandler(pnt1, pnt2, pnt3, thickness=0.5, is_close=True)
-print(segments.center_line)
+# pnt1 = bcad.Pnt([2, 3])
+# pnt2 = bcad.Pnt([1, 5])
+# pnt3 = bcad.Pnt([2, 4])
+# pnt4 = bcad.Pnt([2, 9])
+# seg1 = bcad.Segment(pnt1, pnt2)
+# seg2 = bcad.Segment(pnt2, pnt3)
+# seg3 = bcad.Segment(pnt3, pnt1)
+# # wire1 = bcad.Wire(seg1, seg2,seg3)
+# # surf1 = bcad.Surface(wire1)
+# # pprint(bcad.id_index)
+# # print(seg3)
+# # print(pnt1.property["occ_vector"])
+# # pnts_handler = PntHandler()
+# # pnts_handler.init_center_points(pnt1, pnt2, pnt3)
+# # pnts_handler.handle_boundary_point(pnt1, pnt4)
+# # pprint(bcad.id_index)
+# segments = SegmentHandler(pnt1, pnt2, pnt3, thickness=0.5, is_close=True)
+# print(segments.center_line)
