@@ -83,7 +83,7 @@ def main(l, height, num):
     for i in range(num):
         z += height
         coordinates = hexagon_infill(8, l)[:, :2]
-
+        coordinates = np.vstack((coordinates, coordinates[0]))
         z_move = f"G1 Z{z} F3000"
         extrusion_reset = "G92 E0"
         output_str += command(z_move)
@@ -96,8 +96,8 @@ def main(l, height, num):
             else:
                 dist = distance(coord, coordinates[j - 1])
                 extrusion_length = dist * extrusion_ratio
-                m_command = move(coord[0], coord[1], extrusion_length)
                 E += extrusion_length
+                m_command = move(coord[0], coord[1], E)
             output_str += command(m_command)
     output_str += command(tail)
     write_path = os.path.join(os.getcwd(), "output.gcode")
