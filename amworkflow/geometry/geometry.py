@@ -143,7 +143,7 @@ class GeometryParamWall(GeometryOCC):
         assert self.height is not None
         assert self.length is not None
         assert self.width is not None
-        assert self.radius is not None
+        # assert self.radius is not None
         assert self.infill is not None
         # assert self.layer_thickness is not None
 
