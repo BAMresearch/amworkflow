@@ -1,6 +1,6 @@
 - UseMM: G21
 - UseInch: G20
-- LinearMove: [G1,G0]
+- LinearMove: G1
 - RapidMove: G0
 - ArcMove: 
 - Reset: G92
