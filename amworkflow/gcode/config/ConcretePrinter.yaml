@@ -1,0 +1,31 @@
+- UseMM: G21
+- UseInch: G20
+- LinearMove: [G1,G0]
+- RapidMove: G0
+- ArcMove: 
+- Reset: G92
+- Absolute: G90
+- Relative: G91
+- SetFeedRate: F
+- SetSpindleSpeed: S
+- SetTool: T
+- SetX: X
+- SetY: Y
+- SetZ: Z
+- SetXOffset: I
+- SetYOffset: J
+- SetZOffset: 
+- LengthOfExtrude: E
+- SetExtrudeSpeed: 
+- CommandParameter: [P, S]
+- MotorOn: M17
+- MotorOff: M84
+- FanON: M106
+- FanOFF: M107
+- ExtruderONForward: M101
+- ExtruderONReverse: M102
+- ExtruderAbsolute: M82
+- ExtruderOFF:
+- BedON: 
+- BedOFF: M140
+- SetBedTemperature: M140

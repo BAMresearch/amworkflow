@@ -529,6 +529,9 @@ def rotate(pts: np.ndarray, angle_x: float = 0, angle_y: float = 0, angle_z: flo
     r_pts = rt_pts - t_vec
     return r_pts
 
+def distance(p1: Pnt, p2: Pnt) -> float:
+    return np.linalg.norm(p1.value - p2.value)
+
 # pnt1 = Pnt([2,3])
 # pnt2 = Pnt([2,3,3])
 # pnt3 = Pnt([2,3,5])

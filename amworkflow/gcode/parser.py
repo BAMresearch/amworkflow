@@ -52,9 +52,11 @@ class GCodeParser:
             for key, value, _ in matches
         }
         return result
+    
+    
 
 
-gcodeparser = GCodeParser(
-    "/Users/yuxianghe/Documents/BAM/amworkflow_restructure/amworkflow/gcode/example.gcode"
-)
-print(gcodeparser.data)
+# gcodeparser = GCodeParser(
+#     "/Users/yuxianghe/Documents/BAM/amworkflow_restructure/amworkflow/gcode/example.gcode"
+# )
+# print(gcodeparser.data)
