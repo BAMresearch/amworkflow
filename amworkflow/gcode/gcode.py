@@ -106,7 +106,6 @@ class GcodeFromPoints(Gcode):
         feedrate: int = 1800,
         **kwargs,
     ) -> None:
-        super().__init__()
         self.width = width
         # Width of the entire model
         self.length = length
@@ -144,6 +143,7 @@ class GcodeFromPoints(Gcode):
         # Container of header of gcode
         self.tail = [self.ExtruderOFF, self.FanOFF, self.BedOFF, self.MotorOFF]
         # Container of tail of gcode
+        super().__init__(**kwargs)
 
     def create(self, in_file: Path, out_gcode: Path) -> None:
         """Create gcode file by given path point file
