@@ -6,6 +6,7 @@ from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Core.TopoDS import TopoDS_Shape
 from OCC.Extend.DataExchange import write_step_file, write_stl_file
 from amworkflow.geometry import simple_geometries
+import amworkflow.geometry.builtinCAD as bcad
 
 typing.override = lambda x: x
 
@@ -165,6 +166,51 @@ class GeometryParamWall(GeometryOCC):
             raise ValueError(f"Unknown infill type {self.infill}")
 
         return shape
+    
+    def honeycomb_infill(
+    length: float, width: float, line_width: float, honeycomb_num: int = 1
+    ) -> TopoDS_Shape:
+        """Create honeycomb geometry.
+
+        Args:
+            length: Length of the honeycomb infill.
+            width: Width of the honeycomb infill.
+            line_width: Width of the honeycomb lines.
+
+        Returns:
+            points: list of points defining the honeycomb geometry.
+
+        """
+        def half_honeycomb(origin: np.ndarray, side_length: float, line_width: float) -> np.ndarray:
+            """Create half of a honeycomb geometry.
+
+            Args:
+                origin: Origin of the half honeycomb.
+                length: Length of the honeycomb infill.
+                width: Width of the honeycomb infill.
+                line_width: Width of the honeycomb lines.
+
+            Returns:
+                points: list of points defining half of the honeycomb geometry.
+
+            """
+            points = np.zeros((4, 2))
+            points[0] = origin
+            points[1] = origin + np.array([0.5 * side_length, np.sqrt(3) * side_length / 2])
+            points[2] = origin + np.array([length, 0])
+            points[3] = origin + np.array([0.5 * length, -np.sqrt(3) * side_length / 2])
+            return points
+        
+        
+        
+        
+        
+        unit_length = 3 * length + line_width
+        unit_width = 4 * line_width + np.sqrt(3) * length
+        point_num = 16 + honeycomb_num * 10
+        points = np.zeros((point_num, 2))
+        
+
 
 
 class GeometryCenterline(GeometryOCC):
