@@ -29,6 +29,12 @@ class Gcode:
 
 
 class PrintState(Enum):
+    """Print state
+
+    :param Enum:
+    :type Enum: class
+    """
+
     UseMM = 1
     UseInch = 2
     LinearMove = auto()
@@ -64,6 +70,12 @@ class PrintState(Enum):
 
 
 def create_new_config(config_name):
+    """Create new config file
+
+    :param config_name: config file name
+    :type config_name: str
+    :raises FileExistsError: File already exists
+    """
     directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
     print(directory)
     file_path = os.path.join(directory, config_name)
@@ -76,6 +88,14 @@ def create_new_config(config_name):
 
 
 def read_config(config_name):
+    """Read config file
+
+    :param config_name: config file name
+    :type config_name: str
+    :raises FileNotFoundError: File not found
+    :return: config data
+    :rtype: dict
+    """
     directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
     file_path = os.path.join(directory, config_name)
     if not os.path.exists(file_path):
