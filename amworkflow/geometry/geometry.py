@@ -11,7 +11,6 @@ from amworkflow.geometry import simple_geometries
 
 typing.override = lambda x: x
 
-
 class Geometry:
     """Base class with API for any geometry creation."""
 
@@ -212,3 +211,4 @@ class GeometryCenterline(GeometryOCC):
         # design = wall_maker.Shape()
         design = None
         return design
+    
