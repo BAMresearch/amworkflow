@@ -257,18 +257,21 @@ class Pnt(TopoObj):
     Create a point.
     """
 
-    def __new__(cls, coord: list) -> None:
+    def __new__(cls, *coord: list[float]) -> None:
         point = pnt(coord)
         checker = DuplicationCheck(0, point)
-        if checker.new:
-            return super().__new__(cls)
-        else:
+        if not checker.new:
             return checker.exist_object
+        else:
+            return super().__new__(cls)
 
-    def __init__(self, coord: list) -> None:
+    def __init__(self, *coord: list[float]) -> None:
         super().__init__()
         self.type = 0
         self.coord = pnt(coord)
+        checker = DuplicationCheck(0, self.coord)
+        if not checker.new:
+            return None
         self.value = self.coord
         self.occ_pnt = gp_Pnt(*self.coord.tolist())
         self.enrich_property({"occ_pnt": self.occ_pnt})
@@ -276,14 +279,14 @@ class Pnt(TopoObj):
 
 
 class Segment(TopoObj):
-    def __new__(cls, pnt2: Pnt, pnt1: Pnt = Pnt([])):
+    def __new__(cls, pnt2: Pnt, pnt1: Pnt = Pnt()):
         checker = DuplicationCheck(1, [pnt1.id, pnt2.id])
         if checker.new:
             return super().__new__(cls)
         else:
             return checker.exist_object
 
-    def __init__(self, pnt2: Pnt, pnt1: Pnt = Pnt([])) -> None:
+    def __init__(self, pnt2: Pnt, pnt1: Pnt = Pnt()) -> None:
         super().__init__()
         pnt1, pnt2 = self.check_input(pnt1=pnt1, pnt2=pnt2)
         self.start_pnt = pnt1.id
