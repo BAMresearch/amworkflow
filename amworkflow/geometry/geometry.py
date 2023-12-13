@@ -1,14 +1,15 @@
+import logging
 import typing
 from pathlib import Path
-import logging
+
 import numpy as np
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Core.TopoDS import TopoDS_Shape
 from OCC.Extend.DataExchange import write_step_file, write_stl_file
+
 from amworkflow.geometry import simple_geometries
 
 typing.override = lambda x: x
-
 
 class Geometry:
     """Base class with API for any geometry creation."""
@@ -210,3 +211,4 @@ class GeometryCenterline(GeometryOCC):
         # design = wall_maker.Shape()
         design = None
         return design
+    
