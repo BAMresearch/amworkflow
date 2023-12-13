@@ -2,6 +2,7 @@ name: amworkflow
 channels:
   - conda-forge
   - defaults
+  - bam77
 dependencies:
   - pythonocc-core=7.7.0
   - python >= 3.10
