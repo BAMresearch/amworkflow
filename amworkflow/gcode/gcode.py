@@ -40,7 +40,7 @@ class GcodeFromPoints(Gcode):
         layer_num: float = 1,
         layer_height: float = 1,
         line_width: float = 1,
-        offset_from_origin: list = None,
+        offset_from_origin: np.ndarray = np.array([0, 0]),
         unit: str = "mm",
         standard: str = "ConcretePrinter",
         coordinate_system: str = "absolute",
@@ -142,24 +142,10 @@ class GcodeFromPoints(Gcode):
         Returns:
             points: List of points
         """
-        self.points = []
-        with open(csv_file, "r") as file:
-            csv_reader = csv.reader(file)
-            next(csv_reader)
-            for row in csv_reader:
-                # Convert each row to a tuple and append to the list
-                self.points.append((float(row[0]), float(row[1])))
-            if self.offset_from_origin is not None:
-                self.offset(self.offset_from_origin)
-
-    def offset(self, offset_value: list):
-        """Offset the points
-
-        :param offset: The offset
-        :type offset: list
-        """
-        self.points = np.array(self.points)
-        self.points += offset_value
+        self.points = (
+            np.genfromtxt(csv_file, delimiter=",", skip_header=1)
+            + self.offset_from_origin
+        ).tolist()
 
     def load_standard(self, std: str = None):
         """Load standard config file
@@ -330,4 +316,9 @@ class GcodeFromPoints(Gcode):
         self.gcode.append(comment(f"Unit: {self.unit}"))
         self.gcode.append(comment(f"Nozzle diameter: {self.nozzle_diameter}"))
 
-        self.gcode.append(comment(f"Material_consumption(L): {material_consumption}"))
+        self.gcode.append(comment(f"Material consumption(L): {material_consumption}"))
+        self.gcode.append(
+            comment(
+                f"Original point: ({self.offset_from_origin[0]},{self.offset_from_origin[1]})"
+            )
+        )
