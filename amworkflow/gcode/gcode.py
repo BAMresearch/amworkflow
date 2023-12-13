@@ -3,11 +3,11 @@ import logging
 import os
 import typing
 from datetime import datetime
-from enum import Enum, auto
 from pathlib import Path
 
 import numpy as np
-import yaml
+
+import amworkflow.gcode.printer_config as printer_config
 
 typing.override = lambda x: x
 
@@ -30,84 +30,6 @@ class Gcode:
 
         """
         raise NotImplementedError
-
-
-class PrintState(Enum):
-    """Print state
-
-    :param Enum:
-    :type Enum: class
-    """
-
-    UseMM = 1
-    UseInch = 2
-    LinearMove = auto()
-    RapidMove = auto()
-    ArcMove = auto()
-    Reset = auto()
-    Absolute = auto()
-    Relative = auto()
-    SetFeedRate = auto()
-    SetSpindleSpeed = auto()
-    SetTool = auto()
-    SetX = auto()
-    SetY = auto()
-    SetZ = auto()
-    SetXOffset = auto()
-    SetYOffset = auto()
-    SetZOffset = auto()
-    LengthOfExtrude = auto()
-    SetExtrudeSpeed = auto()
-    CommandParameter = auto()
-    MotorON = auto()
-    MotorOFF = auto()
-    FanON = auto()
-    FanOFF = auto()
-    ExtruderONForward = auto()
-    ExtruderONReverse = auto()
-    ExtruderAbsolute = auto()
-    ExtruderOFF = auto()
-    BedON = auto()
-    BedOFF = auto()
-    SetBedTemperature = auto()
-    SetExtruderTemperature = auto()
-
-
-def create_new_config(config_name):
-    """Create new config file
-
-    :param config_name: config file name
-    :type config_name: str
-    :raises FileExistsError: File already exists
-    """
-    directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
-    print(directory)
-    file_path = os.path.join(directory, config_name)
-    if os.path.exists(file_path):
-        raise FileExistsError(f"{config_name} already exists.")
-    enum_members_list = [state.name for state in PrintState]
-    # Write data to the YAML file
-    with open(file_path, "w", encoding="utf-8") as yaml_file:
-        yaml.dump(enum_members_list, yaml_file, default_flow_style=False)
-
-
-def read_config(config_name):
-    """Read config file
-
-    :param config_name: config file name
-    :type config_name: str
-    :raises FileNotFoundError: File not found
-    :return: config data
-    :rtype: dict
-    """
-    directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
-    file_path = os.path.join(directory, config_name)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"{config_name} does not exist.")
-    with open(file_path, "r", encoding="utf-8") as yaml_file:
-        loaded_data = yaml.safe_load(yaml_file)
-        flattened_data = {k: v for d in loaded_data for k, v in d.items()}
-        return flattened_data
 
 
 class GcodeFromPoints(Gcode):
@@ -254,9 +176,9 @@ class GcodeFromPoints(Gcode):
             self.standard = std
         if self.standard not in config_list_no_ext:
             raise ValueError(f"{self.standard} does not exist.")
-        config = read_config(self.standard + ".yaml")
+        config = printer_config.read_config(self.standard + ".yaml")
         logging.info(f"Load config {self.standard}")
-        for state in PrintState:
+        for state in printer_config.PrintState:
             if state.name in config:
                 setattr(self, state.name, config[state.name])
 

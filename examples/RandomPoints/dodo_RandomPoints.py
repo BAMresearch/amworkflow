@@ -1,7 +1,5 @@
 import logging
 from pathlib import Path
-
-from doit import get_var
 from doit.task import clean_targets
 from doit.tools import config_changed
 
@@ -37,7 +35,7 @@ params = {  # geometry parameters
     # Tool number of the extruder. Expected to be an integer
     "feedrate": 1800,
     # Feedrate of the extruder in mm/min. Expected to be an integer
-    "in_file_path": "",
+    "in_file_path": "/home/yhe/Documents/amworkflow_restruct/examples/RandomPoints/RandomPoints.csv",
     # Path to the input file
 }
 

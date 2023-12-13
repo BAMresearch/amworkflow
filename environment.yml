@@ -9,7 +9,7 @@ dependencies:
   - pandas
   - sqlite
   - numpy
-  - fenics-dolfinx=0.6.0
+  - fenicsxconcrete
   - meshio
   - mpich
   - pyvista
@@ -21,4 +21,4 @@ dependencies:
     - pyqt5
     - sphinx
     - sqlalchemy
-    - ruamel-yaml
+    - PyYAML
