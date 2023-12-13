@@ -41,7 +41,6 @@ class Geometry:
 
 
 class GeometryOCC(Geometry):
-
     def __init__(
         self,
         stl_linear_deflection: float = 0.001,

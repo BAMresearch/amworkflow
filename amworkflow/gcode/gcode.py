@@ -50,20 +50,6 @@ class GcodeFromPoints(Gcode):
         feedrate: int = 1800,
         **kwargs,
     ) -> None:
-        """Gcode writer from path points.
-        Args:
-            layer_num: Number of layers (default 1).
-            layer_height: Height of each layer (default 1).
-            line_width: Width of each line (default 1).
-            offset_from_origin: Offset of the points (default [0,0]).
-            unit: Unit (default mm).
-            standard: Standard config file (default ConcretePrinter).
-            coordinate_system: Coordinate system (default absolute).
-            nozzle_diameter: Nozzle diameter (default 0.4).
-            kappa: Coefficient of rectifying the extrusion length (default 1).
-            tool_number: Tool number (default 0).
-            feedrate: Feed rate (default 1800).
-        """
         self.line_width = line_width
         # Width of the line
         self.layer_num = layer_num

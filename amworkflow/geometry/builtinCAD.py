@@ -1,10 +1,16 @@
 import logging
+import logging
 from pprint import pprint
+
+import numpy as np
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
 
 import numpy as np
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
 from OCC.Core.gp import gp_Pnt
 from OCC.Core.TopoDS import (
+    TopoDS_Compound,
+    TopoDS_Edge,
     TopoDS_Compound,
     TopoDS_Edge,
     TopoDS_Face,
@@ -18,11 +24,13 @@ from amworkflow.geometry.simple_geometries import create_edge, create_face, crea
 from amworkflow.occ_helpers import create_solid, sew_face
 
 level = logging.WARNING
+level = logging.WARNING
 logging.basicConfig(
+    level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("amworkflow.geometry.builtinCAD")
-# logger.setLevel(logging.INFO)
+# # logger.setLevel(logging.INFO)
 
 count_id = 0
 count_gid = [0 for i in range(7)]
