@@ -1,12 +1,15 @@
 import csv
 import logging
 import os
+import typing
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 
 import numpy as np
 import yaml
+
+typing.override = lambda x: x
 
 
 class Gcode:
@@ -15,6 +18,7 @@ class Gcode:
     def __init__(self, *args, **kwargs) -> None:
         self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 
+    @typing.override
     def create(self, in_file: Path, out_gcode: Path) -> None:
         """Create gcode file by given path file or geometry file
 
@@ -111,8 +115,6 @@ class GcodeFromPoints(Gcode):
 
     def __init__(
         self,
-        length: float = 1,
-        width: float = 1,
         layer_num: float = 1,
         layer_height: float = 1,
         line_width: float = 1,
@@ -126,10 +128,6 @@ class GcodeFromPoints(Gcode):
         feedrate: int = 1800,
         **kwargs,
     ) -> None:
-        self.width = width
-        # Width of the entire model
-        self.length = length
-        # Length of the entire model
         self.line_width = line_width
         # Width of the line
         self.layer_num = layer_num
@@ -165,6 +163,7 @@ class GcodeFromPoints(Gcode):
         # Container of tail of gcode
         super().__init__(**kwargs)
 
+    @typing.override
     def create(self, in_file: Path, out_gcode: Path) -> None:
         """Create gcode file by given path point file
 
@@ -380,9 +379,23 @@ class GcodeFromPoints(Gcode):
         def distance(p0, p1):
             return np.linalg.norm(np.array(p0) - np.array(p1))
 
+        print_length = 0
+        for i, pt in enumerate(self.points):
+            if i == 0:
+                print_length += distance(pt, self.points[-1])
+            else:
+                print_length += distance(pt, self.points[i - 1])
+        material_consumption = (
+            print_length * self.line_width * self.layer_height * self.layer_num * 1e-3
+        )
+
+        points_trans = np.array(self.points).T
+        length = np.max(points_trans[0]) - np.min(points_trans[0]) + self.line_width
+        width = np.max(points_trans[1]) - np.min(points_trans[1]) + self.line_width
+
         self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
-        self.gcode.append(comment(f"Length: {self.length}"))
-        self.gcode.append(comment(f"Width: {self.width}"))
+        self.gcode.append(comment(f"Length: {length}"))
+        self.gcode.append(comment(f"Width: {width}"))
         self.gcode.append(comment(f"Height: {self.layer_height * self.layer_num}"))
         self.gcode.append(comment(f"Layer height: {self.layer_height}"))
         self.gcode.append(comment(f"Layer number: {self.layer_num}"))
@@ -394,13 +407,5 @@ class GcodeFromPoints(Gcode):
         self.gcode.append(comment(f"Coordinate system: {self.coordinate_system}"))
         self.gcode.append(comment(f"Unit: {self.unit}"))
         self.gcode.append(comment(f"Nozzle diameter: {self.nozzle_diameter}"))
-        length = 0
-        for i, pt in enumerate(self.points):
-            if i == 0:
-                length += distance(pt, self.points[-1])
-            else:
-                length += distance(pt, self.points[i - 1])
-        material_consumption = (
-            length * self.line_width * self.layer_height * self.layer_num * 1e-3
-        )
+
         self.gcode.append(comment(f"Material_consumption(L): {material_consumption}"))
