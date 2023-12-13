@@ -15,6 +15,7 @@ dependencies:
   - mpich
   - pyvista
   - pytest
+  - pyyaml
   - pip
   - pip:
     - gmsh==4.11.1
@@ -22,4 +23,3 @@ dependencies:
     - pyqt5
     - sphinx
     - sqlalchemy
-    - PyYAML
