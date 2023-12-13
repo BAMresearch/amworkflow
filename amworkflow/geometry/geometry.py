@@ -202,7 +202,7 @@ class GeometryParamWall(GeometryOCC):
             regular: Regular honeycomb or not. A regular honeycomb has a fixed side length.
             side_len: Side length of the honeycomb.
             expand_factor: Factor to expand the honeycomb geometry.
-            
+
 
         Returns:
             np.ndarray: Array of points defining the honeycomb geometry.
