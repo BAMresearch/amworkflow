@@ -167,8 +167,8 @@ class GeometryParamWall(GeometryOCC):
 
         return shape
     
-    def honeycomb_infill(
-    length: float, width: float, line_width: float, honeycomb_num: int = 1
+    def honeycomb_infill(self, 
+    overall_length: float, line_width: float, honeycomb_num: int = 1
     ) -> TopoDS_Shape:
         """Create honeycomb geometry.
 
@@ -181,7 +181,7 @@ class GeometryParamWall(GeometryOCC):
             points: list of points defining the honeycomb geometry.
 
         """
-        def half_honeycomb(origin: np.ndarray, side_length: float, line_width: float) -> np.ndarray:
+        def half_honeycomb(origin: np.ndarray, side_length: float) -> np.ndarray:
             """Create half of a honeycomb geometry.
 
             Args:
@@ -199,16 +199,30 @@ class GeometryParamWall(GeometryOCC):
             points[1] = origin + np.array([0.5 * side_length, np.sqrt(3) * side_length / 2])
             points[2] = origin + np.array([length, 0])
             points[3] = origin + np.array([0.5 * length, -np.sqrt(3) * side_length / 2])
+            points[4] = origin + np.array([0.5 * length, 0])
             return points
         
-        
-        
-        
-        
-        unit_length = 3 * length + line_width
-        unit_width = 4 * line_width + np.sqrt(3) * length
+        length = (overall_length / 3 - line_width) / honeycomb_num
+        start_point = np.array([0, line_width * 0.5])
+        offset = np.array([2 * line_width,0])
+        # unit_width = 4 * line_width + np.sqrt(3) * length
         point_num = 16 + honeycomb_num * 10
-        points = np.zeros((point_num, 2))
+        half_points = np.zeros((point_num / 2, 2))
+        half_points[0] = start_point
+        for i in range(honeycomb_num):
+            if i == 0:
+                start = start_point+offset
+                honeycomb_unit = half_honeycomb(start, length)
+            else:
+                start = start_point+offset+np.array([3*length*i,0])
+                honeycomb_unit = half_honeycomb(start, length)
+            half_points[i*5+1:i*5+6] = honeycomb_unit
+        another_half = half_points.copy()
+        another_half[:, 1] = -another_half[:, 1]
+        another_half = np.flipud(another_half)
+        points = np.concatenate((half_points, another_half), axis=0)
+        return points
+            
         
 
 
