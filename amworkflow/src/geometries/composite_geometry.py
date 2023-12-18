@@ -1,18 +1,46 @@
-from amworkflow.src.geometries.simple_geometry import create_edge, create_wire, create_face, create_prism, random_polygon_constructor, angle_of_two_arrays, laterality_indicator, angular_bisector, p_center_of_mass, linear_interpolate, Pnt, Segments
-from amworkflow.src.geometries.operator import reverse, geom_copy, translate, rotate_face, fuser, hollow_carver, cutter3D, bender
-from amworkflow.src.geometries.property import topo_explorer, p_bounding_box,shortest_distance_point_line, p_get_face_area
-from amworkflow.src.geometries.builder import solid_maker
-from OCC.Core.gp import gp_Pnt
-import numpy as np
-from OCC.Core.TopoDS import TopoDS_Face, TopoDS_Shell, TopoDS_Shape
-from OCC.Core.BRepFilletAPI import BRepFilletAPI_MakeFillet
-from amworkflow.src.geometries.property import get_face_center_of_mass
-from amworkflow.src.geometries.builder import sewer
-import matplotlib.pyplot as plt
-from matplotlib.patches import Polygon
-import itertools
 import copy as cp
+import itertools
+
+import matplotlib.pyplot as plt
 import networkx as nx
+import numpy as np
+from matplotlib.patches import Polygon
+from OCC.Core.BRepFilletAPI import BRepFilletAPI_MakeFillet
+from OCC.Core.gp import gp_Pnt
+from OCC.Core.TopoDS import TopoDS_Face, TopoDS_Shape, TopoDS_Shell
+
+from amworkflow.src.geometries.builder import sewer, solid_maker
+from amworkflow.src.geometries.operator import (
+    bender,
+    cutter3D,
+    fuser,
+    geom_copy,
+    hollow_carver,
+    reverse,
+    rotate_face,
+    translate,
+)
+from amworkflow.src.geometries.property import (
+    get_face_center_of_mass,
+    p_bounding_box,
+    p_get_face_area,
+    shortest_distance_point_line,
+    topo_explorer,
+)
+from amworkflow.src.geometries.simple_geometry import (
+    Pnt,
+    Segments,
+    angle_of_two_arrays,
+    angular_bisector,
+    create_edge,
+    create_face,
+    create_prism,
+    create_wire,
+    laterality_indicator,
+    linear_interpolate,
+    p_center_of_mass,
+    random_polygon_constructor,
+)
 from amworkflow.src.utils.meter import timer
 
 
@@ -273,7 +301,7 @@ class CreateWallByPointsUpdate():
     def __init__(self, coords: list, th: float, height: float, is_close: bool = True):
         self.coords = Pnt(coords).coords
         self.height = height
-        self.R = 300
+        self.R = None
         self.interpolate = 8
         self.th = th
         self.is_close = is_close
@@ -288,12 +316,12 @@ class CreateWallByPointsUpdate():
         self.rgt_coords = []
         self.side_coords: list
         self.create_sides()
-        # self.pnts = Segments(self.side_coords)
-        # self.G = nx.from_dict_of_lists(self.pnts.pts_digraph, create_using=nx.DiGraph)
+        self.pnts = Segments(self.side_coords)
+        self.G = nx.from_dict_of_lists(self.pnts.pts_digraph, create_using=nx.DiGraph)
         # self.all_loops = list(nx.simple_cycles(self.H)) # Dangerous! Ran out of memory.
-        # self.loop_generator = nx.simple_cycles(self.G)
-        # self.check_pnt_in_wall()
-        # self.postprocessing()
+        self.loop_generator = nx.simple_cycles(self.G)
+        self.check_pnt_in_wall()
+        self.postprocessing()
         
     def create_sides(self):
         if self.R is not None:
