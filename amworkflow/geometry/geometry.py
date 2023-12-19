@@ -181,7 +181,7 @@ class GeometryParamWall(GeometryOCC):
             points: list of points defining the honeycomb geometry.
 
         """
-        def half_honeycomb(origin: np.ndarray, side_length: float) -> np.ndarray:
+        def half_honeycomb(origin: np.ndarray, side_length1: float, side_length2, angle: float) -> np.ndarray:
             """Create half of a honeycomb geometry.
 
             Args:
@@ -196,10 +196,14 @@ class GeometryParamWall(GeometryOCC):
             """
             points = np.zeros((4, 2))
             points[0] = origin
-            points[1] = origin + np.array([0.5 * side_length, np.sqrt(3) * side_length / 2])
-            points[2] = origin + np.array([length, 0])
-            points[3] = origin + np.array([0.5 * length, -np.sqrt(3) * side_length / 2])
-            points[4] = origin + np.array([0.5 * length, 0])
+            # points[1] = origin + np.array([0.5 * side_length, np.sqrt(3) * side_length / 2])
+            # points[2] = origin + np.array([length, 0])
+            # points[3] = origin + np.array([0.5 * length, -np.sqrt(3) * side_length / 2])
+            # points[4] = origin + np.array([0.5 * length, 0])
+            points[1] = origin + np.array([side_length1 * np.cos(angle), side_length1 * np.sin(angle)])
+            points[2] = points[1] + np.array([side_length2, 0])
+            points[3] = points[2] + np.array([side_length1 * np.cos(angle), -side_length1 * np.sin(angle)])
+            points[4] = points[1] + np.array([side_length1 * np.cos(angle), 0])
             return points
         
         length = (overall_length / 3 - line_width) / honeycomb_num
@@ -212,10 +216,10 @@ class GeometryParamWall(GeometryOCC):
         for i in range(honeycomb_num):
             if i == 0:
                 start = start_point+offset
-                honeycomb_unit = half_honeycomb(start, length)
+                honeycomb_unit = half_honeycomb(start, length, length, 1.1468)
             else:
                 start = start_point+offset+np.array([3*length*i,0])
-                honeycomb_unit = half_honeycomb(start, length)
+                honeycomb_unit = half_honeycomb(start, length, length, 1.1468)
             half_points[i*5+1:i*5+6] = honeycomb_unit
         another_half = half_points.copy()
         another_half[:, 1] = -another_half[:, 1]
