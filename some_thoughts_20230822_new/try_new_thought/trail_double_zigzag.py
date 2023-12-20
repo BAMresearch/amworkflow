@@ -1,3 +1,7 @@
+import csv
+import os
+from pathlib import Path
+
 import numpy as np
 from scipy.optimize import fsolve
 
@@ -155,13 +159,24 @@ ppt = zigzag_infill(overall_length=150, overall_width=150, line_width=th, zigzag
 # 60 degree: 1.04719
 # 150x150x150x10: volume(L): 1.3706792917581947
 # 150x150x150x11: volume(L): 1.4895852945607906
-wall = CreateWallByPointsUpdate(ppt, th, 150)
-print(ppt)
-wall.visualize(all_polygons=False, display_central_path=True)
-wall_shape = wall.Shape()
-stl_writer(
-    wall_shape,
-    "doublezigzag_150x150x11x150",
-    store_dir="/Users/yuxianghe/Documents/BAM/amworkflow_restructure",
+# wall = CreateWallByPointsUpdate(ppt, th, 150)
+# print(ppt)
+# wall.visualize(all_polygons=False, display_central_path=True)
+# wall_shape = wall.Shape()
+# stl_writer(
+#     wall_shape,
+#     "doublezigzag_150x150x11x150",
+#     store_dir="/Users/yuxianghe/Documents/BAM/amworkflow_restructure",
+# )
+# print(wall.volume)
+file_path = (
+    "/Users/yuxianghe/Documents/BAM/amworkflow_restructure/cube_zigzag_150x150x150x11"
 )
-print(wall.volume)
+with open(file_path, "w", newline="") as file:
+    writer = csv.writer(file)
+
+    # Writing the header
+    writer.writerow(["x", "y"])
+
+    # Writing the data
+    writer.writerows(ppt)

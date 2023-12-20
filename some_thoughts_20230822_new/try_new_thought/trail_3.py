@@ -1,3 +1,5 @@
+import csv
+
 import numpy as np
 from scipy.optimize import fsolve
 
@@ -200,21 +202,32 @@ def honeycomb_infill(
 #     regular=True, side_len=63.26, angle=np.deg2rad(84.79), honeycomb_num=2, line_width=8
 # )
 ppt = honeycomb_infill(
-    overall_length=700, overall_width=150, line_width=10, honeycomb_num=3
+    overall_length=150, overall_width=150, line_width=10, honeycomb_num=1
 )
+print(ppt)
+# Writing to a CSV file
+file_path = "/Users/yuxianghe/Documents/BAM/amworkflow_restructure/cube_honeycomb_150x150x150x10"
+with open(file_path, "w", newline="") as file:
+    writer = csv.writer(file)
+
+    # Writing the header
+    writer.writerow(["x", "y"])
+
+    # Writing the data
+    writer.writerows(ppt)
 # 60 degree: 1.04719
 # 150x150x150x10: volume (L): 1.520399999948474
 # 700x150x10x150: volume (L): 5.014000002962625
-wall = CreateWallByPointsUpdate(ppt, 10, 150)
-print(ppt)
-wall.visualize(all_polygons=False, display_central_path=True)
-wall_shape = wall.Shape()
+# wall = CreateWallByPointsUpdate(ppt, 10, 150)
+# print(ppt)
+# wall.visualize(all_polygons=False, display_central_path=True)
+# wall_shape = wall.Shape()
 # stl_writer(
 #     wall_shape,
 #     "honeycomb_700x150x10x150",
 #     store_dir="/Users/yuxianghe/Documents/BAM/amworkflow_restructure",
 # )
-print("volume (L):", wall.volume)
+# print("volume (L):", wall.volume)
 # lft_coords = wall.lft_coords
 # rgt_coords = wall.rgt_coords
 # pieces = []
