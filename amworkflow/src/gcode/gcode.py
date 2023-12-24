@@ -85,11 +85,10 @@ class GcodeFromPoints(Gcode):
             self.Absolute,
             self.ExtruderAbsolute,
             self.set_fanspeed(0),
-            self.set_temperature(0),
             self.set_tool(0),
         ]
         # Container of header of gcode
-        self.tail = [self.ExtruderOFF, self.FanOFF, self.BedOFF, self.MotorOFF]
+        self.tail = [self.ExtruderOFF, self.FanOFF, self.MotorOFF]
         # Container of tail of gcode
         super().__init__(**kwargs)
 
@@ -107,16 +106,17 @@ class GcodeFromPoints(Gcode):
         self.read_points(in_file)
         self.init_gcode()
         z = 0
-        for i in range(len(self.points)):
+        for j in range(self.layer_num):
             z += self.layer_height
+            self.elevate(z)
+            self.reset_extrusion()
             coordinates = self.points
             coordinates = np.round(np.vstack((coordinates, coordinates[0])), 5)
             if not self.fixed_feedrate:
                 feedrate = self.compute_feedrate()
             else:
                 feedrate = self.feedrate
-            self.elevate(z, feedrate)
-            self.reset_extrusion()
+
             E = 0
             for j, coord in enumerate(coordinates):
                 if j == 0:

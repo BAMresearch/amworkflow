@@ -1,7 +1,21 @@
 import os
 from pathlib import Path
 
+import numpy as np
+
 from amworkflow.src.gcode.gcode import GcodeFromPoints
+
+honeycomb_path = (
+    "/home/yuxiang/Documents/BAM/amworkflow/cube_honeycomb_150x150x150x10.csv"
+)
+zigzag_path = "/home/yuxiang/Documents/BAM/amworkflow/cube_zigzag_150x150x150x10.csv"
+
+platform_length = 1188
+platform_width = 772
+unit_length = int(platform_length / 4)
+unit_width = int(platform_width / 3)
+offset = [5, 80 + 5]
+
 
 params = {  # geometry parameters
     "layer_num": 50,
@@ -10,7 +24,7 @@ params = {  # geometry parameters
     # Layer height in mm
     "line_width": 11,
     # Line width in mm
-    "offset_from_origin": [0, 0],
+    "offset_from_origin": [50, 50],
     # Offset from origin in mm
     "unit": "mm",
     # Unit of the geometry
@@ -27,16 +41,33 @@ params = {  # geometry parameters
     "delta": 25.9,
     "tool_number": 0,
     # Tool number of the extruder. Expected to be an integer
-    "feedrate": 3000,
+    "feedrate": 1800,
     # Feedrate of the extruder in mm/min. Expected to be an integer
     "in_file_path": "/home/yhe/Documents/amworkflow_restruct/examples/RandomPoints/RandomPoints.csv",
     # Path to the input file
-    "fixed_feedrate": False,
+    "fixed_feedrate": True,
 }
 
-mypath = "/Users/yuxianghe/Documents/BAM/amworkflow_restructure/beam700x150x150x10.csv"
+mypath = "/home/yuxiang/Documents/BAM/amworkflow/cube_honeycomb_150x150x150x10.csv"
 file_gcode = (
-    "/Users/yuxianghe/Documents/BAM/amworkflow_restructure/beam700x150x150x10.gcode"
+    "/home/yuxiang/Documents/BAM/amworkflow/cube_honeycomb_150x150x150x10_P2.gcode"
 )
-gcd = GcodeFromPoints(**params)
-gcd.create(mypath, file_gcode)
+serial_num = 0
+for i in range(0, 4):
+    for j in range(0, 3):
+        serial_num += 1
+        if serial_num <= 6:
+            infill_type = "honeycomb"
+            line_width = 10
+        else:
+            infill_type = "zigzag"
+            line_width = 11.3
+        data_path = f"/home/yuxiang/Documents/BAM/amworkflow/cube_{infill_type}_150x150x150x{line_width}.csv"
+        file_path = f"/home/yuxiang/Documents/BAM/amworkflow/cube_{infill_type}_150x150x150x{line_width}_P{serial_num}.gcode"
+        x_coord = i * unit_length
+        y_coord = j * unit_width
+        coordinate = np.array([x_coord, y_coord]) + np.array(offset)
+        params["offset_from_origin"] = coordinate
+        params["line_width"] = line_width
+        gcd = GcodeFromPoints(**params)
+        gcd.create(data_path, file_path)
