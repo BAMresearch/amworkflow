@@ -186,3 +186,6 @@ examples/*/output/
 # usecases
 usecases/*
 !usecases/readme.md
+
+# MacOS files
+.DS_Store
