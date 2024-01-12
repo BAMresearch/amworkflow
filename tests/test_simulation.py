@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import os
 import pytest
 import h5py
 from dolfinx.io import XDMFFile
@@ -12,7 +13,15 @@ from amworkflow.simulation import SimulationFenicsXConcrete
 
 
 
-def simulation_structure(file_xdmf, file_xdmf_sim):
+def test_simulation_structure(tmp_path):
+
+    # tmp output files directory
+    d = tmp_path / f"test_sim"
+    d.mkdir(parents=True, exist_ok=True)
+    file_xdmf_sim = d / f"test_sim.xdmf"
+
+    # use existing meshing file (the one from example Wall dodo_wall.py)
+    file_xdmf = Path(os.path.dirname(__file__)) / "test_simple_mesh.xdmf"
 
     # define required parameters for simulation step
     params_sim_structure = {
@@ -50,7 +59,15 @@ def simulation_structure(file_xdmf, file_xdmf_sim):
 
 
 
-def simulation_process(file_xdmf, file_xdmf_sim):
+def test_simulation_process(tmp_path):
+
+    # tmp output files directory
+    d = tmp_path / f"test_sim"
+    d.mkdir(parents=True, exist_ok=True)
+    file_xdmf_sim = d / f"test_sim.xdmf"
+
+    # use existing meshing file (the one from example Wall dodo_wall.py)
+    file_xdmf = Path(os.path.dirname(__file__)) / "test_simple_mesh.xdmf"
 
     # define required parameters for simulation step
     params_sim_process = {
@@ -92,50 +109,15 @@ def simulation_process(file_xdmf, file_xdmf_sim):
         # print('disp max', y[:].max())
         # print('disp min', y[:].min())
         assert abs(y[:]).max() > 0.0
-
-def test_simulation(tmp_path):
-    # test process and structure simulation right after each other at the same geometry mesh
-
-    # Set UP
-    # tmp output files directory
-    d = tmp_path / f"test"
-    d.mkdir(parents=True, exist_ok=True)
-    file_step = d / f"test.stp"
-    file_points = d / f"test.csv"
-    file_xdmf = d / f"test.xdmf"
-    file_vtk = d / f"test.vtk"
-    file_xdmf_sim = d / f"test_sim.xdmf"
-
-    # need geometry and meshing step file to create mesh file
-    params = {  # geometry parameters
-        "length": 200,  # mm
-        "height": 200,  # mm
-        "width": 200,  # mm
-        "radius": None,  # mm
-        "infill": "solid",
-        # mesh parameters (meshing by layer height)
-        "mesh_size_factor": 10,
-        "layer_height": 10,  # mm
-    }
-
-    geometry = GeometryParamWall(**params)
-    geometry.create(file_step, file_points)
-
-    meshing = MeshingGmsh(**params)
-    meshing.create(file_step, file_xdmf, file_vtk)
-
-    ## simulation tests:
-
-    simulation_process(file_xdmf, file_xdmf_sim)
-
-    simulation_structure(file_xdmf, file_xdmf_sim)
+#
 
 
 
-
-
+#
 # ###
 # if __name__ == "__main__":
-#     test_simulation(Path.cwd())
-
+#
+#     test_simulation_structure(Path.cwd())
+#     test_simulation_process(Path.cwd())
+#
 
