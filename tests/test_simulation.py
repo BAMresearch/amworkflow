@@ -41,6 +41,8 @@ def test_simulation_structure(tmp_path):
     }
 
     simulation = SimulationFenicsXConcrete(params_sim_structure)
+    print('check parameters needed', simulation.parameter_description())
+
     simulation.run(file_xdmf, file_xdmf_sim)
 
     # check if output files exist
@@ -93,6 +95,8 @@ def test_simulation_process(tmp_path):
     }
 
     simulation = SimulationFenicsXConcrete(params_sim_process)
+    print('check parameters needed', simulation.parameter_description())
+
     simulation.run(file_xdmf, file_xdmf_sim)
 
     # check if output files exist
@@ -113,11 +117,11 @@ def test_simulation_process(tmp_path):
 
 
 
-#
-# ###
-# if __name__ == "__main__":
-#
-#     test_simulation_structure(Path.cwd())
-#     test_simulation_process(Path.cwd())
-#
+
+###
+if __name__ == "__main__":
+
+    test_simulation_structure(Path.cwd())
+    test_simulation_process(Path.cwd())
+
 
