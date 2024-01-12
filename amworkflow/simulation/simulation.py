@@ -72,7 +72,7 @@ class SimulationFenicsXConcrete(Simulation):
         # if self.pint_parameters["material_type"].magnitude == "linear":
             # parameter_description['Material Parameters'] = LinearElasticity.parameter_description() # not in current FenicsXConcrete version
         if self.pint_parameters["material_type"].magnitude == "thixo":
-            parameter_description['Material Parameters'] = ConcreteThixElasticModel.parameter_description()
+            parameter_description['Material Parameters'] = ConcreteAM.parameter_description()
 
         return parameter_description
 
