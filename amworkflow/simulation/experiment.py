@@ -74,7 +74,7 @@ class ExperimentProcess(Experiment):
         # dimension of problem, only 3D implemented
         default_parameters["dim"] = 3 * ureg("")
         # path name of the mesh file in xdmf format
-        default_parameters["mesh_file"] = "bla/test.xdmf" * ureg("")
+        default_parameters["mesh_file"] = "bla/test_files.xdmf" * ureg("")
         # unit of the mesh file
         default_parameters["mesh_unit"] = "mm" * ureg("")
 
@@ -145,7 +145,7 @@ class ExperimentProcess(Experiment):
         element activation via pseudo density and incremental loading via parameter ["load_time"] computed in class concrete_am
 
         Args:
-            v: test function
+            v: test_files function
             q_fd: quadrature function given the loading increment where elements are active
             rule: rule for the quadrature function
 
@@ -229,7 +229,7 @@ class ExperimentStructure(Experiment):
         # dimension of problem, only 3D implemented
         default_parameters["dim"] = 3 * ureg("")
         # path name of the mesh file in xdmf format
-        default_parameters["mesh_file"] = "bla/test.xdmf" * ureg("")
+        default_parameters["mesh_file"] = "bla/test_files.xdmf" * ureg("")
         # unit of the mesh file
         default_parameters["mesh_unit"] = "mm" * ureg("")
 
@@ -323,7 +323,7 @@ class ExperimentStructure(Experiment):
     #     """defines body force
     #
     #     Args:
-    #         v: test function
+    #         v: test_files function
     #
     #     Returns:
     #         form for body force
