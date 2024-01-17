@@ -46,6 +46,13 @@ def pnt(pt_coord) -> np.ndarray:
     :return: The coordinate of the point.
     :rtype: np.ndarray
     """
+    """
+    Create a point.
+    :param pt_coord: The coordinate of the point. If the dimension is less than 3, the rest will be padded with 0. If the dimension is more than 3, an exception will be raised.
+    :type pt_coord: list
+    :return: The coordinate of the point.
+    :rtype: np.ndarray
+    """
     opt = np.array(pt_coord)
     dim = np.shape(pt_coord)[0]
     if dim > 3:
@@ -731,6 +738,77 @@ def bisect_angle(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
     else:
         opt = bst / norm3
     return opt
+
+
+def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+    pts = [i + direct for i in pts]
+    return list(pts)
+
+
+def center_of_mass(pts: np.ndarray) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+
+    return np.mean(pts.T, axis=1)
+
+
+def rotate(
+    pts: np.ndarray,
+    angle_x: float = 0,
+    angle_y: float = 0,
+    angle_z: float = 0,
+    cnt: np.ndarray = None,
+) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+    com = center_of_mass(pts)
+    if cnt is None:
+        cnt = np.array([0, 0, 0])
+    t_vec = cnt - com
+    pts += t_vec
+    rot_x = np.array(
+        [
+            [1, 0, 0],
+            [0, np.cos(angle_x), -np.sin(angle_x)],
+            [0, np.sin(angle_x), np.cos(angle_x)],
+        ]
+    )
+    rot_y = np.array(
+        [
+            [np.cos(angle_y), 0, np.sin(angle_y)],
+            [0, 1, 0],
+            [-np.sin(angle_y), np.cos(angle_y), 0],
+        ]
+    )
+    rot_z = np.array(
+        [
+            [np.cos(angle_z), -np.sin(angle_z), 0],
+            [np.sin(angle_z), np.cos(angle_z), 0],
+            [0, 0, 1],
+        ]
+    )
+    R = rot_x @ rot_y @ rot_z
+    rt_pts = pts @ R
+    r_pts = rt_pts - t_vec
+    return r_pts
+
+
+def distance(p1: Pnt, p2: Pnt) -> float:
+    return np.linalg.norm(p1.value - p2.value)
 
 
 def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:

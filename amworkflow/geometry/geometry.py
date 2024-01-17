@@ -3,7 +3,6 @@ import typing
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-
 import numpy as np
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Core.TopoDS import TopoDS_Shape
@@ -14,6 +13,7 @@ import amworkflow.geometry.builtinCAD as bcad
 from amworkflow.geometry import composite_geometries, simple_geometries
 
 typing.override = lambda x: x
+
 
 class Geometry:
     """Base class with API for any geometry creation."""
@@ -31,8 +31,10 @@ class Geometry:
 
         Args:
             out_step: File path of step file.
+            out_path: File path of file containing the print path points (csv) (csv).
             out_path: File path of file containing the print path points (csv).
             out_path: File path of file containing the print path points (csv).
+
 
             out_stl: Optional file path of stl file.
 
@@ -62,7 +64,12 @@ class GeometryOCC(Geometry):
             stl_linear_deflection: Linear deflection parameter of OCC stl export (Lower, more accurate mesh; OCC default is 0.001)
             stl_angular_deflection: Angular deflection parameter of OCC stl export (Lower, more accurate_mesh: OCC default is 0.5).
         """
+        """Geometry case class for OCC geometry creation.
 
+        Args:
+            stl_linear_deflection: Linear deflection parameter of OCC stl export (Lower, more accurate mesh; OCC default is 0.001)
+            stl_angular_deflection: Angular deflection parameter of OCC stl export (Lower, more accurate_mesh: OCC default is 0.5).
+        """
 
         self.stl_linear_deflection = stl_linear_deflection
         self.stl_angular_deflection = stl_angular_deflection
@@ -125,6 +132,7 @@ class GeometryParamWall(GeometryOCC):
         length: float | None = None,
         width: float | None = None,
         line_width: float | None = None,
+        line_width: float | None = None,
         radius: float | None = None,
         infill: typing.Literal["solid", "honeycomb", "zigzag"] | None = None,
         layer_thickness: float | None = None,
@@ -147,6 +155,7 @@ class GeometryParamWall(GeometryOCC):
         self.width = width
         self.radius = radius
         self.infill = infill
+        self.line_width = line_width
         self.line_width = line_width
         self.layer_thickness = layer_thickness
 
@@ -183,7 +192,17 @@ class GeometryParamWall(GeometryOCC):
                 points, th=self.line_width, height=self.height
             )
             shape = creator.Shape()
+            points = self.honeycomb_infill(self.length, self.width, self.line_width)
+            creator = composite_geometries.CreateWallByPoints(
+                points, th=self.line_width, height=self.height
+            )
+            shape = creator.Shape()
         elif self.infill == "zigzag":
+            points = self.zigzag_infill(self.length, self.width, self.line_width)
+            creator = composite_geometries.CreateWallByPoints(
+                points, th=self.line_width, height=self.height
+            )
+            shape = creator.Shape()
             points = self.zigzag_infill(self.length, self.width, self.line_width)
             creator = composite_geometries.CreateWallByPoints(
                 points, th=self.line_width, height=self.height
@@ -193,6 +212,263 @@ class GeometryParamWall(GeometryOCC):
             raise ValueError(f"Unknown infill type {self.infill}")
 
         return shape
+
+    def honeycomb_infill(
+        self,
+        overall_length: float,
+        overall_width: float,
+        line_width: float,
+        honeycomb_num: int = 1,
+        angle: float = 1.1468,
+        regular: bool = False,
+        side_len: float = None,
+        expand_factor: float = 0,
+    ):
+        """
+        Create honeycomb geometry.
+
+        Args:
+            overall_length: Length of the honeycomb infill.
+            overall_width: Width of the honeycomb infill.
+            line_width: Width of the honeycomb lines.
+            honeycomb_num: Number of honeycomb units.
+            angle: Angle of the honeycomb lines.
+            regular: Regular honeycomb or not. A regular honeycomb has a fixed side length.
+            side_len: Side length of the honeycomb.
+            expand_factor: Factor to expand the honeycomb geometry.
+
+
+        Returns:
+            np.ndarray: Array of points defining the honeycomb geometry.
+        """
+
+        def calculate_lengths_and_widths(angle_length_pair):
+            x_rad = np.radians(angle_length_pair[0])
+            equation1 = (
+                (2 * np.cos(x_rad) + 2) * angle_length_pair[1] * honeycomb_num
+                + 1.5 * line_width
+                - overall_length
+            )
+            equation2 = (
+                3 * line_width
+                + 2 * angle_length_pair[1] * np.sin(x_rad)
+                - overall_width
+            )
+            return [equation1, equation2]
+
+        def create_half_honeycomb(origin, side_length1, side_length2, angle):
+            points = np.zeros((5, 2))
+            points[0] = origin
+            points[1] = origin + np.array(
+                [side_length1 * np.cos(angle), side_length1 * np.sin(angle)]
+            )
+            points[2] = points[1] + np.array([side_length2, 0])
+            points[3] = points[2] + np.array(
+                [side_length1 * np.cos(angle), -side_length1 * np.sin(angle)]
+            )
+            points[4] = points[3] + np.array([side_length2 * 0.5, 0])
+            return points
+
+        if not regular:
+            if overall_width is not None:
+                overall_length -= int(line_width)
+                overall_width -= int(line_width)
+                initial_guesses = [
+                    (x, y)
+                    for x in range(0, 89, 10)
+                    for y in range(1, overall_length, 10)
+                ]
+                updated_solutions = {
+                    (round(sol[0], 10), round(sol[1], 10))
+                    for guess in initial_guesses
+                    for sol in [fsolve(calculate_lengths_and_widths, guess)]
+                    if 0 <= sol[0] <= 90 and 0 <= sol[1] <= 150
+                }
+                if updated_solutions:
+                    ideal_solution = min(
+                        updated_solutions, key=lambda x: np.abs(x[0] - 45)
+                    )
+                else:
+                    raise ValueError("No solution found")
+                length = ideal_solution[1]
+                angle = np.radians(ideal_solution[0])
+            else:
+                length = (
+                    (overall_length - 1.5 * line_width)
+                    / (2 * np.cos(angle) + 2)
+                    / honeycomb_num
+                )
+                overall_width = 3 * line_width + 2 * np.sin(angle) * length
+        else:
+            length = side_len
+            overall_length = (
+                1.5 * line_width + (2 * np.cos(angle) + 2) * side_len * honeycomb_num
+            )
+            overall_width = 3 * line_width + 2 * np.sin(angle) * length
+
+        start_point = np.array([0, line_width * 0.5])
+        offset = np.array([line_width * 0.5 + length * 0.5, 0])
+
+        half_points = np.zeros((int((12 + (honeycomb_num - 1) * 10) / 2), 2))
+        half_points[0] = start_point
+        for i in range(honeycomb_num):
+            start = (
+                start_point
+                + offset
+                + np.array([(2 * np.cos(angle) + 2) * length * i, 0])
+            )
+            honeycomb_unit = create_half_honeycomb(start, length, length, angle)
+            half_points[i * 5 + 1 : i * 5 + 6] = honeycomb_unit
+
+        another_half = np.flipud(np.copy(half_points) * [1, -1])
+        points = np.concatenate((half_points, another_half), axis=0)
+        outer_points = np.array(
+            [
+                [0, -overall_width * 0.5],
+                [overall_length, -overall_width * 0.5],
+                [overall_length, overall_width * 0.5],
+                [0, overall_width * 0.5],
+            ]
+        )
+        points = np.concatenate((points, outer_points), axis=0)
+        if expand_factor != 0:
+            cnt = np.mean(points, axis=0)
+            points[2:-6] = (points[2:-6] - cnt) * (1 + expand_factor) + cnt
+        return points
+
+    def zigzag_infill(
+        self,
+        overall_length: float,
+        overall_width: float,
+        line_width: float,
+        zigzag_num: int = 1,
+        angle: float = 1.1468,
+        regular: bool = False,
+        side_len: float = None,
+        expand_factor: float = 0,
+    ):
+        """
+        Create zigzag geometry.
+
+        Args:
+            overall_length: Length of the zigzag infill.
+            overall_width: Width of the zigzag infill.
+            line_width: Width of the zigzag lines.
+            zigzag_num: Number of zigzag units.
+            angle: Angle of the zigzag lines.
+            regular: Regular zigzag or not. A regular zigzag is equivalent to a diamond.
+            side_len: Side length of the zigzag.
+            expand_factor: Factor to expand the zigzag geometry.
+
+        Returns:
+            np.ndarray: Array of points defining the zigzag geometry.
+        """
+
+        def calculate_lengths_and_widths(angle_length_pair):
+            x_rad = np.radians(angle_length_pair[0])
+            eq1 = (
+                (
+                    (2 * np.cos(x_rad)) * angle_length_pair[1]
+                    + line_width * np.sin(x_rad) * 2
+                )
+                * zigzag_num
+                + 2 * line_width
+                - overall_length
+            )
+            eq2 = (
+                3 * line_width
+                + 2 * angle_length_pair[1] * np.sin(x_rad)
+                - overall_width
+            )
+            return [eq1, eq2]
+
+        def create_half_zigzag(origin, side_length1, side_length2, angle):
+            points = np.zeros((5, 2))
+            points[0] = origin
+            points[1] = origin + np.array(
+                [side_length1 * np.cos(angle), side_length1 * np.sin(angle)]
+            )
+            points[2] = points[1] + np.array([side_length2, 0])
+            points[3] = points[2] + np.array(
+                [side_length1 * np.cos(angle), -side_length1 * np.sin(angle)]
+            )
+            points[4] = points[3] + np.array([side_length2 * 0.5, 0])
+            return points
+
+        if not regular:
+            if overall_width is not None:
+                overall_length -= line_width
+                overall_width -= line_width
+                initial_guesses = [
+                    (x, y)
+                    for x in range(0, 89, 10)
+                    for y in range(1, int(overall_length), 10)
+                ]
+                updated_solutions = {
+                    (round(sol[0], 16), round(sol[1], 16))
+                    for guess in initial_guesses
+                    for sol in [fsolve(calculate_lengths_and_widths, guess)]
+                    if 0 <= sol[0] <= 90 and 0 <= sol[1] <= 150
+                }
+                if updated_solutions:
+                    ideal_solution = min(
+                        updated_solutions, key=lambda x: np.abs(x[0] - 45)
+                    )
+                else:
+                    raise ValueError("No solution found")
+                length = ideal_solution[1]
+                angle = np.radians(ideal_solution[0])
+            else:
+                length = (
+                    overall_length - 1.5 * line_width
+                ) / zigzag_num - 2 * line_width * np.sin(angle) / (2 * np.cos(angle))
+                overall_width = 3 * line_width + 2 * np.sin(angle) * length
+        else:
+            length = side_len
+            overall_length = (
+                1.5 * line_width + (2 * np.cos(angle) + 2) * side_len * zigzag_num
+            )
+            overall_width = 3 * line_width + 2 * np.sin(angle) * length
+
+        start_point = np.array([0, line_width * 0.5])
+        offset = np.array([line_width * 1 + line_width * np.sin(angle) * 0.5, 0])
+
+        point_num = 12 + (zigzag_num - 1) * 10
+        half_points = np.zeros((int(point_num / 2), 2))
+        half_points[0] = start_point
+        for i in range(zigzag_num):
+            start = (
+                start_point
+                + offset
+                + np.array(
+                    [
+                        (2 * np.cos(angle) * length + 2 * line_width * np.sin(angle))
+                        * i,
+                        0,
+                    ]
+                )
+            )
+            zigzag_unit = create_half_zigzag(
+                start, length, line_width * np.sin(angle), angle
+            )
+            half_points[i * 5 + 1 : i * 5 + 6] = zigzag_unit
+
+        another_half = np.flipud(np.copy(half_points) * [1, -1])
+        points = np.concatenate((half_points, another_half), axis=0)
+        outer_points = np.array(
+            [
+                [0, -overall_width * 0.5],
+                [overall_length, -overall_width * 0.5],
+                [overall_length, overall_width * 0.5],
+                [0, overall_width * 0.5],
+            ]
+        )
+        points = np.concatenate((points, outer_points), axis=0)
+        if expand_factor != 0:
+            cnt = np.mean(points, axis=0)
+            points[2:-6] = (points[2:-6] - cnt) * (1 + expand_factor) + cnt
+
+        return points
 
     def honeycomb_infill(
         self,
@@ -491,8 +767,12 @@ class GeometryCenterline(GeometryOCC):
 
         # where to put those geometry building function?
         # is_close as global parameter?
-        # wall_maker = CreateWallByPoints("", self.layer_thickness, self.layer_height*self.number_of_layers, is_close=False)
-        # design = wall_maker.Shape()
-        design = None
+        wall_maker = composite_geometries.CreateWallByPoints(
+            self.points,
+            self.layer_thickness,
+            self.layer_height * self.number_of_layers,
+            is_close=False,
+        )
+        design = wall_maker.Shape()
+        # design = None
         return design
-    
