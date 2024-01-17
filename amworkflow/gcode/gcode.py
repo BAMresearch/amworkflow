@@ -58,6 +58,7 @@ class GcodeFromPoints(Gcode):
         rotate: bool = False,
         density: float = 1,
         in_file_path: str = None,
+        fixed_feedrate: bool = False,
         **kwargs,
     ) -> None:
         """Gcode writer from path points.
@@ -105,6 +106,7 @@ class GcodeFromPoints(Gcode):
         # Density of the material
         self.fixed_feedrate = fixed_feedrate
         # switch of fixed feedrate
+        self.fixed_feedrate = fixed_feedrate
         self.offset_from_origin = offset_from_origin
         # Offset of the points
         self.print_length = 0
@@ -209,35 +211,10 @@ class GcodeFromPoints(Gcode):
         if self.kappa == 0:
             logging.warning("Kappa is zero, set to 1")
             self.kappa = 1
-        rect_E = E / self.kappa
-        self.log_consumption(L, self.feedrate, E)
-        return rect_E
-
-    def log_consumption(self, dist, speed, material_consumption):
-        time_consumption = dist / (speed / 60)
-        volume = material_consumption * self.nozzle_area * 1e-6  # in L
-        if len(self.extrusion_tracker) == 0:
-            aggregate_volume = volume
-            aggregate_time = time_consumption
-        else:
-            aggregate_volume = self.extrusion_tracker[-1][2] + volume
-            aggregate_time = self.extrusion_tracker[-1][0] + time_consumption
-        mass = aggregate_volume * self.density  # in g
-        self.extrusion_tracker.append(
-            [aggregate_time, volume, aggregate_volume, mass, speed]
-        )
-
-    def write_log(self, filename: str):
-        with open(filename, "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(
-                ["time", "volume", "aggregate volume", "aggregate mass", "speed(F)"]
-            )
-            writer.writerows(self.extrusion_tracker)
+        return E / self.kappa
 
     def compute_feedrate(self):
-        rect_width = self.line_width * self.delta
-        return self.gamma * 60 / (self.layer_height * rect_width * self.density * 1e-6)
+        return int((self.line_width - self.delta) / (-self.gamma))
 
     def read_points(self, csv_file: str):
         """Read points from file
@@ -437,12 +414,38 @@ class GcodeFromPoints(Gcode):
         def comment(text):
             return f"; {text}\n"
 
+        def distance(p0, p1):
+            return np.linalg.norm(np.array(p0) - np.array(p1))
+
+        print_length = 0
+        for i, pt in enumerate(self.points):
+            if i == 0:
+                print_length += distance(pt, self.points[-1])
+            else:
+                print_length += distance(pt, self.points[i - 1])
+        material_consumption = (
+            print_length * self.line_width * self.layer_height * self.layer_num * 1e-6
+        )
+
+        time_consumption = (
+            print_length * self.layer_num / self.feedrate * 60
+        )  # in seconds
+        time_delta = timedelta(seconds=time_consumption)
+
         # Format hours, minutes, and seconds
-        hours, remainder = divmod(self.timedelta.seconds, 3600)
+        hours, remainder = divmod(time_delta.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
-        length = self.bbox_length
-        width = self.bbox_width
+
+        points_trans = np.array(self.points).T
+        length = np.max(points_trans[0]) - np.min(points_trans[0]) + self.line_width
+        width = np.max(points_trans[1]) - np.min(points_trans[1]) + self.line_width
+        self.length = length
+        self.width = width
+
         info_feedrate = self.feedrate
+        if not self.fixed_feedrate:
+            info_feedrate = self.compute_feedrate()
+
         self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
         self.gcode.append(comment(f"Length: {length}"))
         self.gcode.append(comment(f"Width: {width}"))
@@ -471,6 +474,9 @@ class GcodeFromPoints(Gcode):
         )
         print(self.time_consumption)
         print(self.feedrate)
+        self.gcode.append(
+            comment(f"Estimated time consumption: {hours}hr:{minutes}min:{seconds}sec")
+        )
         self.gcode.append(
             comment(
                 f"Original point: ({self.offset_from_origin[0]},{self.offset_from_origin[1]})"
