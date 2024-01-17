@@ -28,7 +28,7 @@ class Geometry:
 
         Args:
             out_step: File path of step file.
-            out_path: File path of file containing the print path points.
+            out_path: File path of file containing the print path points (csv).
             out_stl: Optional file path of stl file.
 
         Returns:
@@ -38,7 +38,6 @@ class Geometry:
 
 
 class GeometryOCC(Geometry):
-    """Geometry base class for OCC geometry creation."""
 
     def __init__(
         self,
@@ -46,6 +45,13 @@ class GeometryOCC(Geometry):
         stl_angular_deflection: float = 0.1,
         **kwargs,
     ) -> None:
+        """Geometry case class for OCC geometry creation.
+
+        Args:
+            stl_linear_deflection: Linear deflection parameter of OCC stl export (Lower, more accurate mesh; OCC default is 0.001)
+            stl_angular_deflection: Angular deflection parameter of OCC stl export (Lower, more accurate_mesh: OCC default is 0.5).
+        """
+
         self.stl_linear_deflection = stl_linear_deflection
         self.stl_angular_deflection = stl_angular_deflection
 

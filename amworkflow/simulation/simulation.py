@@ -35,15 +35,48 @@ class Simulation:
 
 
 class SimulationFenicsXConcrete(Simulation):
-    """Simulation class using FenicsXConcrete."""
 
     def __init__(
         self,
         pint_parameters: dict,
         **kwargs,
     ) -> None:
+        """Simulation class using FenicsXConcrete.
+        Args:
+            pint_parameters: Dictionary with pint parameters according to FencisXConcrete interface.
+        """
         self.pint_parameters = pint_parameters
         super().__init__(**kwargs)
+
+    def parameter_description(self) -> dict[str, str]:
+        """description of the required parameters for the simulation"""
+
+        parameter_description = {
+            "experiment_type": "type of experiment, possible cases: structure or process",
+            "material_type": "type of material, e.g. linear or thixo",
+
+            "for structure simulation": {"top_displacement": "displacement of top surface",},
+            "for process simulation": {
+            "num_layers": "number of layers",
+            "layer_height": "height of each layer",
+            "time_per_layer": "time to build one layer (either this or print_velocity)",
+            "print_velocity": "print velocity (either this or time_per_layer)",
+            "num_time_steps_per_layer": "number of time steps per layer",}
+        }
+
+        if self.pint_parameters["experiment_type"].magnitude == "structure":
+            parameter_description['ExperimentStructure Parameters'] = ExperimentStructure.parameter_description()
+        elif self.pint_parameters["experiment_type"].magnitude == "process":
+            parameter_description['ExperimentProcess Parameters'] = ExperimentProcess.parameter_description()
+
+        # if self.pint_parameters["material_type"].magnitude == "linear":
+            # parameter_description['Material Parameters'] = LinearElasticity.parameter_description() # not in current FenicsXConcrete version
+        if self.pint_parameters["material_type"].magnitude == "thixo":
+            parameter_description['Material Parameters'] = ConcreteAM.parameter_description()
+
+        return parameter_description
+
+
 
     def run(self, mesh_file: Path, out_xdmf: Path) -> None:
         """Run simulation and save results in simulation result file (xdmf file).
