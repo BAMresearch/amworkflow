@@ -155,9 +155,9 @@ def zigzag_infill(
     return points
 
 
-th = 11.3
+th = 12  # 5.659
 
-ppt = zigzag_infill(overall_length=150, overall_width=150, line_width=th, zigzag_num=1)
+ppt = zigzag_infill(overall_length=700, overall_width=150, line_width=th, zigzag_num=3)
 # 60 degree: 1.04719
 # 150x150x150x10: volume(L): 1.3706792917581947
 # 150x150x150x11: volume(L): 1.4895852945607906
@@ -167,11 +167,11 @@ wall.visualize(all_polygons=False, display_central_path=True)
 wall_shape = wall.Shape()
 stl_writer(
     wall_shape,
-    "double_zigzag_150x150x11.3x150",
-    store_dir="/home/yuxiang/Documents/BAM/amworkflow",
+    "double_zigzag_700x150x11.3x150",
+    store_dir="/Users/yuxianghe/Documents/BAM/amworkflow_restructure",
 )
 print(wall.volume)
-file_path = "/home/yuxiang/Documents/BAM/amworkflow/cube_zigzag_150x150x150x11.3.csv"
+file_path = "/Users/yuxianghe/Documents/BAM/amworkflow_restructure/beam_zigzag_700x150x150x12.csv"
 with open(file_path, "w", newline="") as file:
     writer = csv.writer(file)
 

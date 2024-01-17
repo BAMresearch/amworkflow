@@ -117,8 +117,8 @@ def honeycomb_infill(
 
     if not regular:
         if overall_width is not None:
-            overall_length -= line_width
-            overall_width -= line_width
+            overall_length -= int(line_width)
+            overall_width -= int(line_width)
             initial_guesses = [
                 (x, y) for x in range(0, 89, 10) for y in range(1, overall_length, 10)
             ]
@@ -197,16 +197,17 @@ def honeycomb_infill(
     return points
 
 
+th = 11.4  # 5.652
 # ppt = honeycomb_infill(150, 8, 3)
 # ppt = honeycomb_infill(
 #     regular=True, side_len=63.26, angle=np.deg2rad(84.79), honeycomb_num=2, line_width=8
 # )
 ppt = honeycomb_infill(
-    overall_length=150, overall_width=150, line_width=10, honeycomb_num=1
+    overall_length=700, overall_width=150, line_width=th, honeycomb_num=3
 )
 print(ppt)
 # Writing to a CSV file
-file_path = "/Users/yuxianghe/Documents/BAM/amworkflow_restructure/cube_honeycomb_150x150x150x10"
+file_path = "/Users/yuxianghe/Documents/BAM/amworkflow_restructure/beam_honeycomb_700x150x150x11.4"
 with open(file_path, "w", newline="") as file:
     writer = csv.writer(file)
 
@@ -218,16 +219,16 @@ with open(file_path, "w", newline="") as file:
 # 60 degree: 1.04719
 # 150x150x150x10: volume (L): 1.520399999948474
 # 700x150x10x150: volume (L): 5.014000002962625
-# wall = CreateWallByPointsUpdate(ppt, 10, 150)
-# print(ppt)
-# wall.visualize(all_polygons=False, display_central_path=True)
-# wall_shape = wall.Shape()
-# stl_writer(
-#     wall_shape,
-#     "honeycomb_700x150x10x150",
-#     store_dir="/Users/yuxianghe/Documents/BAM/amworkflow_restructure",
-# )
-# print("volume (L):", wall.volume)
+wall = CreateWallByPointsUpdate(ppt, th, 150)
+print(ppt)
+wall.visualize(all_polygons=False, display_central_path=True)
+wall_shape = wall.Shape()
+stl_writer(
+    wall_shape,
+    "honeycomb_700x150x10x150",
+    store_dir="/Users/yuxianghe/Documents/BAM/amworkflow_restructure",
+)
+print("volume (L):", wall.volume)
 # lft_coords = wall.lft_coords
 # rgt_coords = wall.rgt_coords
 # pieces = []

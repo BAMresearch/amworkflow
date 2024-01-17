@@ -341,7 +341,7 @@ class CreateWallByPointsUpdate:
         self.G = nx.from_dict_of_lists(self.pnts.pts_digraph, create_using=nx.DiGraph)
         # self.all_loops = list(nx.simple_cycles(self.H)) # Dangerous! Ran out of memory.
         self.loop_generator = nx.simple_cycles(self.G)
-        self.check_pnt_in_wall()
+        # self.check_pnt_in_wall()
         self.postprocessing()
 
     def create_sides(self):
@@ -546,7 +546,7 @@ class CreateWallByPointsUpdate:
                     if (
                         (in_wall_pt_count > 0)
                         or (virtual_vector_count > 1)
-                        or ((in_wall_pt_count == 0) and (virtual_vector_count > 0))
+                        # or ((in_wall_pt_count == 0) and (virtual_vector_count > 0))
                     ):
                         # if (in_wall_pt_count > 0):
                         visible_loop = False
