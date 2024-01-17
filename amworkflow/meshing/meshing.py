@@ -29,7 +29,7 @@ class Meshing:
 
         Args:
             step_file: File path to input geometry step file.
-            out_xdmf: File path of output xdmf file.
+            out_xdmf: File path of output xdmf file (maybe others if other mesh engine).
             out_vtk: Optional file path of output vtk file.
 
         Returns:
@@ -39,7 +39,6 @@ class Meshing:
 
 
 class MeshingGmsh(Meshing):
-    """Meshing class using gmsh."""
 
     def __init__(
         self,
@@ -48,6 +47,13 @@ class MeshingGmsh(Meshing):
         number_of_layers: float | None = None,
         **kwargs,
     ) -> None:
+        """Meshing class using gmsh.
+
+        Args:
+            mesh_size_factor: Factor for mesh size (default 0.1).
+            layer_height: Height of each layer (default None).
+            number_of_layers: Number of layers (default None).
+        """
         self.mesh_size_factor = mesh_size_factor
         self.layer_height = layer_height
         self.number_of_layers = number_of_layers
