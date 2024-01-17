@@ -2,7 +2,7 @@ import csv
 import logging
 import os
 import typing
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -46,8 +46,11 @@ class GcodeFromPoints(Gcode):
         coordinate_system: str = "absolute",
         nozzle_diameter: float = 0.4,
         kappa: float = 1,
+        gamma: float = -1,
+        delta: float = 0,
         tool_number: int = 0,
         feedrate: int = 1800,
+        fixed_feedrate: bool = False,
         **kwargs,
     ) -> None:
         self.line_width = line_width
@@ -63,10 +66,15 @@ class GcodeFromPoints(Gcode):
         self.nozzle_diameter = nozzle_diameter
         self.kappa = kappa
         # Coefficient of rectifying the extrusion length
+        self.gamma = gamma
+        # Coefficient of rectifying the feedrate, as well as the line width
+        self.delta = delta
+        # Coefficient of rectifying the feedrate, as well as the line width
         self.tool_number = tool_number
         # Tool number
         self.feedrate = feedrate
         # Feed rate
+        self.fixed_feedrate = fixed_feedrate
         self.offset_from_origin = offset_from_origin
         # Offset of the points
         self.gcode = []
@@ -77,11 +85,10 @@ class GcodeFromPoints(Gcode):
             self.Absolute,
             self.ExtruderAbsolute,
             self.set_fanspeed(0),
-            self.set_temperature(0),
             self.set_tool(0),
         ]
         # Container of header of gcode
-        self.tail = [self.ExtruderOFF, self.FanOFF, self.BedOFF, self.MotorOFF]
+        self.tail = [self.ExtruderOFF, self.FanOFF, self.MotorOFF]
         # Container of tail of gcode
         super().__init__(**kwargs)
 
@@ -99,20 +106,25 @@ class GcodeFromPoints(Gcode):
         self.read_points(in_file)
         self.init_gcode()
         z = 0
-        for i in range(len(self.points)):
+        for j in range(self.layer_num):
             z += self.layer_height
+            self.elevate(z)
+            self.reset_extrusion()
             coordinates = self.points
             coordinates = np.round(np.vstack((coordinates, coordinates[0])), 5)
-            self.elevate(z, self.feedrate)
-            self.reset_extrusion()
+            if not self.fixed_feedrate:
+                feedrate = self.compute_feedrate()
+            else:
+                feedrate = self.feedrate
+
             E = 0
             for j, coord in enumerate(coordinates):
                 if j == 0:
-                    self.move(coord, 0, self.feedrate)
+                    self.move(coord, 0, feedrate)
                 else:
                     extrusion_length = self.compute_extrusion(coord, coordinates[j - 1])
                     E += extrusion_length
-                    self.move(coord, np.round(E, 5), self.feedrate)
+                    self.move(coord, np.round(E, 5), feedrate)
         self.write_gcode(out_gcode, self.gcode)
 
     def compute_extrusion(self, p0: list, p1: list):
@@ -132,6 +144,9 @@ class GcodeFromPoints(Gcode):
             logging.warning("Kappa is zero, set to 1")
             self.kappa = 1
         return E / self.kappa
+
+    def compute_feedrate(self):
+        return int((self.line_width - self.delta) / (-self.gamma))
 
     def read_points(self, csv_file: str):
         """Read points from file
@@ -294,12 +309,27 @@ class GcodeFromPoints(Gcode):
             else:
                 print_length += distance(pt, self.points[i - 1])
         material_consumption = (
-            print_length * self.line_width * self.layer_height * self.layer_num * 1e-3
+            print_length * self.line_width * self.layer_height * self.layer_num * 1e-6
         )
+
+        time_consumption = (
+            print_length * self.layer_num / self.feedrate * 60
+        )  # in seconds
+        time_delta = timedelta(seconds=time_consumption)
+
+        # Format hours, minutes, and seconds
+        hours, remainder = divmod(time_delta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
 
         points_trans = np.array(self.points).T
         length = np.max(points_trans[0]) - np.min(points_trans[0]) + self.line_width
         width = np.max(points_trans[1]) - np.min(points_trans[1]) + self.line_width
+        self.length = length
+        self.width = width
+
+        info_feedrate = self.feedrate
+        if not self.fixed_feedrate:
+            info_feedrate = self.compute_feedrate()
 
         self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
         self.gcode.append(comment(f"Length: {length}"))
@@ -309,14 +339,19 @@ class GcodeFromPoints(Gcode):
         self.gcode.append(comment(f"Layer number: {self.layer_num}"))
         self.gcode.append(comment(f"Line width: {self.line_width}"))
         self.gcode.append(comment(f"Tool number: {self.tool_number}"))
-        self.gcode.append(comment(f"Feed rate: {self.feedrate}"))
+        self.gcode.append(comment(f"Feed rate: {info_feedrate}"))
         self.gcode.append(comment(f"Kappa: {self.kappa}"))
+        self.gcode.append(comment(f"Gamma: {self.gamma}"))
+        self.gcode.append(comment(f"Delta: {self.delta}"))
         self.gcode.append(comment(f"Standard: {self.standard}"))
         self.gcode.append(comment(f"Coordinate system: {self.coordinate_system}"))
         self.gcode.append(comment(f"Unit: {self.unit}"))
         self.gcode.append(comment(f"Nozzle diameter: {self.nozzle_diameter}"))
 
         self.gcode.append(comment(f"Material consumption(L): {material_consumption}"))
+        self.gcode.append(
+            comment(f"Estimated time consumption: {hours}hr:{minutes}min:{seconds}sec")
+        )
         self.gcode.append(
             comment(
                 f"Original point: ({self.offset_from_origin[0]},{self.offset_from_origin[1]})"
