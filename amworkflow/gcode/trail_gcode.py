@@ -11,16 +11,17 @@ honeycomb_path = (
     "/home/yuxiang/Documents/BAM/amworkflow/cube_honeycomb_150x150x150x10.csv"
 )
 zigzag_path = "/home/yuxiang/Documents/BAM/amworkflow/cube_zigzag_150x150x150x10.csv"
-
-platform_length = 1188
-platform_width = 772
-division_horizant = 4
-division_vertic = 3
+rotate = False
+beam = True
+platform_length = 900
+platform_width = 750
+division_horizant = 2
+division_vertic = 1
 tape_width = 8
 unit_length = int(platform_length / division_horizant)
 unit_width = int(platform_width / division_vertic)
-offset_horizant = 5
-offset_vertic = 5
+offset_horizant = 10
+offset_vertic = 80
 offset = (
     np.array([offset_horizant, offset_vertic]) + np.array([tape_width, tape_width]) / 2
 )
@@ -61,6 +62,7 @@ params = {  # geometry parameters
     "in_file_path": "/home/yhe/Documents/amworkflow_restruct/examples/RandomPoints/RandomPoints.csv",
     # Path to the input file
     "fixed_feedrate": True,
+    "rotate": rotate,
 }
 
 # mypath = "/home/yuxiang/Documents/BAM/amworkflow/cube_honeycomb_150x150x150x10.csv"
@@ -89,10 +91,20 @@ for i in range(0, division_vertic):
         data_path = os.path.join(
             current_directory, f"cube_{infill_type}_150x150x150x{line_width}.csv"
         )
+        if beam:
+            data_path = os.path.join(
+                current_directory,
+                f"/home/yuxiang/Documents/BAM/amworkflow/beam700x150x150x10.csv",
+            )
         file_path = os.path.join(
             output_directory,
             f"cube_{infill_type}_150x150x150x{line_width}_P{serial_num}.gcode",
         )
+        if beam:
+            file_path = os.path.join(
+                output_directory,
+                "beam_{infill_type}_150x150x150x{line_width}_P{serial_num}.gcode",
+            )
         params["offset_from_origin"] = grid[i * division_horizant + j] + offset
         params["line_width"] = line_width
         gcd = GcodeFromPoints(**params)

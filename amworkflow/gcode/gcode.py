@@ -147,6 +147,8 @@ class GcodeFromPoints(Gcode):
         self.diff_geo_per_layer = False
         # switch of different geometry per layer
         self.read_points(self.in_file_path)
+        self.rotate = rotate
+        # rotate the model in 90 degree
         super().__init__(**kwargs)
 
     def create(self, in_file: Path, out_gcode: str, out_gcode_dir: Path = None) -> None:
@@ -167,6 +169,12 @@ class GcodeFromPoints(Gcode):
             if not os.path.exists(out_gcode_dir):
                 os.makedirs(out_gcode_dir)
         out_gcode_dir = Path(out_gcode_dir)
+        if self.rotate:
+            from amworkflow.geometry.builtinCAD import rotate
+
+            points_zero = np.zeros((np.array(self.points).shape[0], 3))
+            points_zero[:, :2] = self.points
+            self.points = rotate(points_zero, angle_z=90, cnt=points_zero[0])
         self.init_gcode()
         z = 0
         for i in range(self.layer_num):
