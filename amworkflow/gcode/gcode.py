@@ -112,7 +112,9 @@ class GcodeFromPoints(Gcode):
 
             points_zero = np.zeros((np.array(self.points).shape[0], 3))
             points_zero[:, :2] = self.points
-            self.points = rotate(points_zero, angle_z=90, cnt=points_zero[0])
+            self.points = rotate(
+                points_zero, angle_z=np.deg2rad(90), cnt=points_zero[0]
+            )
         self.init_gcode()
         z = 0
         for j in range(self.layer_num):
