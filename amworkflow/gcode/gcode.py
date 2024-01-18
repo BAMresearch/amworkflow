@@ -51,6 +51,7 @@ class GcodeFromPoints(Gcode):
         tool_number: int = 0,
         feedrate: int = 1800,
         fixed_feedrate: bool = False,
+        rotate: bool = False,
         **kwargs,
     ) -> None:
         self.line_width = line_width
@@ -90,6 +91,8 @@ class GcodeFromPoints(Gcode):
         # Container of header of gcode
         self.tail = [self.ExtruderOFF, self.FanOFF, self.MotorOFF]
         # Container of tail of gcode
+        self.rotate = rotate
+        # rotate the model in 90 degree
         super().__init__(**kwargs)
 
     @typing.override
@@ -104,6 +107,12 @@ class GcodeFromPoints(Gcode):
 
         """
         self.read_points(in_file)
+        if self.rotate:
+            from amworkflow.geometry.builtinCAD import rotate
+
+            points_zero = np.zeros((np.array(self.points).shape[0], 3))
+            points_zero[:, :2] = self.points
+            self.points = rotate(points_zero, angle_z=90, cnt=points_zero[0])
         self.init_gcode()
         z = 0
         for j in range(self.layer_num):
