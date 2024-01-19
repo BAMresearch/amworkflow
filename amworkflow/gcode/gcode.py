@@ -57,6 +57,7 @@ class GcodeFromPoints(Gcode):
         fixed_feedrate: bool = False,
         rotate: bool = False,
         density: float = 1,
+        density: float = 1,
         in_file_path: str = None,
         fixed_feedrate: bool = False,
         **kwargs,
@@ -102,6 +103,7 @@ class GcodeFromPoints(Gcode):
         # Tool number
         self.feedrate = feedrate
         # Feed rate
+        self.density = density
         self.density = density
         # Density of the material
         self.fixed_feedrate = fixed_feedrate
@@ -162,6 +164,7 @@ class GcodeFromPoints(Gcode):
         Returns:
 
         """
+        out_gcode = Path(out_gcode)
         if out_gcode_dir is None:
             current_directory = os.getcwd()
             root_directory = os.path.dirname(current_directory)
@@ -185,10 +188,8 @@ class GcodeFromPoints(Gcode):
             coordinates = np.round(np.vstack((coordinates, coordinates[0])), 5)
             E = 0
             for j, coord in enumerate(coordinates):
-                if i == 0 and j == 0:
-                    extrusion_length = self.compute_extrusion(
-                        coord, np.zeros_like(coord)
-                    )
+                if j == 0:
+                    self.move(coord, 0, self.feedrate)
                 else:
                     extrusion_length = (
                         self.compute_extrusion(coord, coordinates[j - 1])
@@ -196,9 +197,10 @@ class GcodeFromPoints(Gcode):
                         else 0
                     )
                 E += extrusion_length
-                self.move(coord, np.round(E, 5), self.feedrate)
+                self.move(coord, np.round(E, 5), self.self.feedrate)
         gcode_file_path = out_gcode_dir / out_gcode
         self.write_gcode(gcode_file_path, self.gcode)
+        self.write_log(out_gcode.stem)
         out_log = f"log_{out_gcode}.csv"
         log_file_path = out_gcode_dir / out_log
         self.write_log(log_file_path)
@@ -216,17 +218,38 @@ class GcodeFromPoints(Gcode):
         self.nozzle_area = 0.25 * np.pi * self.nozzle_diameter**2
         L = np.linalg.norm(p0 - p1)
         E = np.round(L * self.line_width * self.layer_height / self.nozzle_area, 4)
-        self.extrusion_tracker.append(E*self.nozzle_area)
         if self.kappa == 0:
             logging.warning("Kappa is zero, set to 1")
             self.kappa = 1
-        return E / self.kappa
-    
-    def consumption_logger():
-        time_consumption = 
+        rect_E = E / self.kappa
+        self.log_consumption(L, self.feedrate, E)
+        return rect_E
+
+    def log_consumption(self, dist, speed, material_consumption):
+        time_consumption = dist / speed * 60
+        volume = material_consumption * self.nozzle_area * 1e-6  # in L
+        if len(self.extrusion_tracker) == 0:
+            aggregate_volume = volume
+            aggregate_time = time_consumption
+        else:
+            aggregate_volume = self.extrusion_tracker[-1][2] + volume
+            aggregate_time = self.extrusion_tracker[-1][0] + time_consumption
+        mass = aggregate_volume * self.density  # in g
+        self.extrusion_tracker.append(
+            [aggregate_time, volume, aggregate_volume, mass, speed]
+        )
+
+    def write_log(self, filename: str):
+        log_filename = f"log_{filename}.csv"
+        with open(f"log_{filename}.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(
+                ["time", "volume", "aggregate volume", "aggregate mass", "speed(F)"]
+            )
+            writer.writerows(self.extrusion_tracker)
 
     def compute_feedrate(self):
-        return int((self.line_width - self.delta) / (-self.gamma))
+        return self.gamma / (self.layer_height * self.line_width * self.density * 1e-6)
 
     def read_points(self, csv_file: str):
         """Read points from file
@@ -364,6 +387,8 @@ class GcodeFromPoints(Gcode):
 
     def init_gcode(self):
         """Initialize gcode"""
+        if not self.fixed_feedrate:
+            self.feedrate = self.compute_feedrate()
 
         def distance(p0, p1):
             return np.linalg.norm(np.array(p0) - np.array(p1))
@@ -442,6 +467,7 @@ class GcodeFromPoints(Gcode):
         time_consumption = (
             print_length * self.layer_num / self.feedrate * 60
         )  # in seconds
+        print("feedrate", self.feedrate)
         time_delta = timedelta(seconds=time_consumption)
 
         # Format hours, minutes, and seconds
@@ -456,8 +482,6 @@ class GcodeFromPoints(Gcode):
         self.btmlftpt = np.array([np.min(points_trans[0]), np.min(points_trans[1])])
 
         info_feedrate = self.feedrate
-        if not self.fixed_feedrate:
-            info_feedrate = self.compute_feedrate()
 
         self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
         self.gcode.append(comment(f"Length: {length}"))

@@ -52,8 +52,8 @@ params = {  # geometry parameters
     # Diameter of the nozzle in mm
     "kappa": 181.5954,
     # Parameter for the calculation of the extrusion length
-    "gamma": 0.0043,
-    # Parameter for the calculation of the extrusion width
+    "gamma": 1.4,
+    # Parameter for the calculation of the extrusion width. Unit: g/mm^3
     "delta": 25.9,
     "tool_number": 0,
     # Tool number of the extruder. Expected to be an integer
@@ -61,8 +61,10 @@ params = {  # geometry parameters
     # Feedrate of the extruder in mm/min. Expected to be an integer
     "in_file_path": "/home/yhe/Documents/amworkflow_restruct/examples/RandomPoints/RandomPoints.csv",
     # Path to the input file
-    "fixed_feedrate": True,
+    "fixed_feedrate": False,
     "rotate": rotate,
+    "density": 2200
+    # density of the material in kg/m^3
 }
 
 # mypath = "/home/yuxiang/Documents/BAM/amworkflow/cube_honeycomb_150x150x150x10.csv"
