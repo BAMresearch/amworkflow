@@ -7,17 +7,17 @@ import numpy as np
 
 from amworkflow.gcode.gcode import GcodeFromPoints
 
-rotate = True
+rotate = False
 beam = True
 platform_length = 900
 platform_width = 750
-division_horizant = 5
-division_vertic = 1
+division_horizant = 1
+division_vertic = 2
 tape_width = 8
 unit_length = int(platform_length / division_horizant)
 unit_width = int(platform_width / division_vertic)
-offset_horizant = 10
-offset_vertic = 10
+offset_horizant = 50
+offset_vertic = 80
 offset = (
     np.array([offset_horizant, offset_vertic]) + np.array([tape_width, tape_width]) / 2
 )
@@ -73,6 +73,7 @@ if not os.path.exists(output_directory):
     os.makedirs(output_directory)
 
 target_bbox = np.zeros((total_num, 2))
+target_stdpt = np.zeros((total_num, 2))
 
 
 def create_cube_gcode():
@@ -102,7 +103,8 @@ def create_cube_gcode():
 
 
 def create_beam_gcode(infill: str):
-    for i in range(division_horizant):
+    # for i in range(division_horizant):
+    for i in range(division_vertic):
         honeycomb_data_path = os.path.join(
             current_directory, "beam_honeycomb_700x150x150x11.4.csv"
         )
@@ -121,9 +123,14 @@ def create_beam_gcode(infill: str):
             f"beam_{infill}_700x150x150x{params['line_width']}_P{i+1}.gcode",
         )
         params["offset_from_origin"] = grid[i] + offset
+        params["kappa"] = 1124.4
         gcd = GcodeFromPoints(**params)
         gcd.create(data_path, file_path)
         target_bbox[i] = np.array([gcd.length, gcd.width])
+        target_stdpt[i] = np.array(gcd.btmlftpt)
+
+
+print(target_stdpt)
 
 
 def plot(coordinates, total_length, total_width):
@@ -157,6 +164,8 @@ def plot(coordinates, total_length, total_width):
 
     for i, pt in enumerate(coordinates):
         pt += offset
+        # rect_start_x = target_stdpt[i][0] + pt[0]
+        # rect_start_y = target_bbox[i][1] + pt[1]
         rect_start_x = pt[0]
         rect_start_y = pt[1]
         length = target_bbox[i][0]
@@ -178,5 +187,5 @@ def plot(coordinates, total_length, total_width):
     plt.show()
 
 
-create_beam_gcode("honeycomb")
+create_beam_gcode("zigzag")
 plot(grid, platform_length, platform_width)
