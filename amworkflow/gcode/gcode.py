@@ -216,10 +216,14 @@ class GcodeFromPoints(Gcode):
         self.nozzle_area = 0.25 * np.pi * self.nozzle_diameter**2
         L = np.linalg.norm(p0 - p1)
         E = np.round(L * self.line_width * self.layer_height / self.nozzle_area, 4)
+        self.extrusion_tracker.append(E*self.nozzle_area)
         if self.kappa == 0:
             logging.warning("Kappa is zero, set to 1")
             self.kappa = 1
         return E / self.kappa
+    
+    def consumption_logger():
+        time_consumption = 
 
     def compute_feedrate(self):
         return int((self.line_width - self.delta) / (-self.gamma))
@@ -449,6 +453,7 @@ class GcodeFromPoints(Gcode):
         width = np.max(points_trans[1]) - np.min(points_trans[1]) + self.line_width
         self.length = length
         self.width = width
+        self.btmlftpt = np.array([np.min(points_trans[0]), np.min(points_trans[1])])
 
         info_feedrate = self.feedrate
         if not self.fixed_feedrate:

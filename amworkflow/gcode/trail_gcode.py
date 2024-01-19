@@ -78,20 +78,19 @@ if not os.path.exists(output_directory):
 
 target_bbox = np.zeros((total_num, 2))
 
-serial_num = 0
-for i in range(0, division_vertic):
-    for j in range(0, division_horizant):
-        serial_num += 1
-        if serial_num <= 6:
-            infill_type = "honeycomb"
-            line_width = 10
-        else:
-            infill_type = "zigzag"
-            line_width = 11.3
-        data_path = os.path.join(
-            current_directory, f"cube_{infill_type}_150x150x150x{line_width}.csv"
-        )
-        if beam:
+
+def create_cube_gcode():
+    serial_num = 0
+    for i in range(0, division_vertic):
+        for j in range(0, division_horizant):
+            serial_num += 1
+            if serial_num <= 6:
+                infill_type = "honeycomb"
+                line_width = 10
+            else:
+                infill_type = "zigzag"
+                line_width = 11.3
+
             data_path = os.path.join(
                 current_directory,
                 f"/home/yuxiang/Documents/BAM/amworkflow/beam700x150x150x10.csv",
@@ -110,6 +109,37 @@ for i in range(0, division_vertic):
         gcd = GcodeFromPoints(**params)
         gcd.create(data_path, file_path)
         target_bbox[i * division_horizant + j] = np.array([gcd.length, gcd.width])
+
+
+def create_beam_gcode(infill: str):
+    # for i in range(division_horizant):
+    for i in range(division_vertic):
+        honeycomb_data_path = os.path.join(
+            current_directory, "beam_honeycomb_700x150x150x11.4.csv"
+        )
+        zigzag_data_path = os.path.join(
+            current_directory, "beam_zigzag_700x150x150x12.csv"
+        )
+
+        if infill == "honeycomb":
+            data_path = honeycomb_data_path
+            params["line_width"] = 11.4
+        else:
+            data_path = zigzag_data_path
+            params["line_width"] = 12
+        file_path = os.path.join(
+            output_directory,
+            f"beam_{infill}_700x150x150x{params['line_width']}_P{i+1}.gcode",
+        )
+        params["offset_from_origin"] = grid[i] + offset
+        params["kappa"] = 1124.4
+        gcd = GcodeFromPoints(**params)
+        gcd.create(data_path, file_path)
+        target_bbox[i] = np.array([gcd.length, gcd.width])
+        target_stdpt[i] = np.array(gcd.btmlftpt)
+
+
+print(target_stdpt)
 
 
 def plot(coordinates, total_length, total_width):
@@ -143,6 +173,8 @@ def plot(coordinates, total_length, total_width):
 
     for i, pt in enumerate(coordinates):
         pt += offset
+        # rect_start_x = target_stdpt[i][0] + pt[0]
+        # rect_start_y = target_bbox[i][1] + pt[1]
         rect_start_x = pt[0]
         rect_start_y = pt[1]
         length = target_bbox[i][0]
@@ -164,4 +196,5 @@ def plot(coordinates, total_length, total_width):
     plt.show()
 
 
+create_beam_gcode("zigzag")
 plot(grid, platform_length, platform_width)
