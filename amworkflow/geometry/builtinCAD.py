@@ -2,6 +2,7 @@ import logging
 from pprint import pprint
 
 import numpy as np
+from amworkflow.occ_helpers import create_solid, sew_face
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
 from OCC.Core.gp import gp_Pnt
 from OCC.Core.TopoDS import (
@@ -15,7 +16,6 @@ from OCC.Core.TopoDS import (
 )
 
 from amworkflow.geometry.simple_geometries import create_edge, create_face, create_wire
-from amworkflow.occ_helpers import create_solid, sew_face
 
 level = logging.WARNING
 logging.basicConfig(
@@ -951,6 +951,14 @@ def rotate(
 
 def distance(p1: Pnt, p2: Pnt) -> float:
     return np.linalg.norm(p1.value - p2.value)
+
+
+def bounding_box(pts: list):
+    pts = np.array(pts)
+    coord_t = np.array(pts).T
+    mx_pt = np.max(coord_t, 1)
+    mn_pt = np.min(coord_t, 1)
+    return mx_pt, mn_pt
 
 
 def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:

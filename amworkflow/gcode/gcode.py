@@ -57,6 +57,7 @@ class GcodeFromPoints(Gcode):
         fixed_feedrate: bool = False,
         rotate: bool = False,
         density: float = 1,
+        in_file_path: str = None,
         density: float = 1,
         in_file_path: str = None,
         fixed_feedrate: bool = False,
@@ -104,11 +105,13 @@ class GcodeFromPoints(Gcode):
         self.feedrate = feedrate
         # Feed rate
         self.density = density
+        # Density of the material
         self.density = density
         # Density of the material
         self.fixed_feedrate = fixed_feedrate
         # switch of fixed feedrate
         self.fixed_feedrate = fixed_feedrate
+        # switch of fixed feedrate
         self.offset_from_origin = offset_from_origin
         # Offset of the points
         self.print_length = 0
@@ -146,6 +149,10 @@ class GcodeFromPoints(Gcode):
         # Container of extrusion logs
         self.in_file_path = in_file_path
         # Path to the input file
+        self.read_points(self.in_file_path)
+        # Container of extrusion logs
+        self.in_file_path = in_file_path
+        # Path to the input file
         self.diff_geo_per_layer = False
         # switch of different geometry per layer
         self.read_points(self.in_file_path)
@@ -164,7 +171,6 @@ class GcodeFromPoints(Gcode):
         Returns:
 
         """
-        out_gcode = Path(out_gcode)
         if out_gcode_dir is None:
             current_directory = os.getcwd()
             root_directory = os.path.dirname(current_directory)
@@ -172,12 +178,6 @@ class GcodeFromPoints(Gcode):
             if not os.path.exists(out_gcode_dir):
                 os.makedirs(out_gcode_dir)
         out_gcode_dir = Path(out_gcode_dir)
-        if self.rotate:
-            from amworkflow.geometry.builtinCAD import rotate
-
-            points_zero = np.zeros((np.array(self.points).shape[0], 3))
-            points_zero[:, :2] = self.points
-            self.points = rotate(points_zero, angle_z=90, cnt=points_zero[0])
         self.init_gcode()
         z = 0
         for i in range(self.layer_num):
@@ -188,19 +188,15 @@ class GcodeFromPoints(Gcode):
             coordinates = np.round(np.vstack((coordinates, coordinates[0])), 5)
             E = 0
             for j, coord in enumerate(coordinates):
-                if j == 0:
-                    self.move(coord, 0, self.feedrate)
-                else:
-                    extrusion_length = (
-                        self.compute_extrusion(coord, coordinates[j - 1])
-                        if j > 0
-                        else 0
-                    )
+                extrusion_length = (
+                    self.compute_extrusion(coord, coordinates[j - 1])
+                    if j > 0
+                    else self.compute_extrusion(coord, np.zeros_like(coord))
+                )
                 E += extrusion_length
-                self.move(coord, np.round(E, 5), self.self.feedrate)
+                self.move(coord, np.round(E, 5), self.feedrate)
         gcode_file_path = out_gcode_dir / out_gcode
         self.write_gcode(gcode_file_path, self.gcode)
-        self.write_log(out_gcode.stem)
         out_log = f"log_{out_gcode}.csv"
         log_file_path = out_gcode_dir / out_log
         self.write_log(log_file_path)
@@ -240,8 +236,7 @@ class GcodeFromPoints(Gcode):
         )
 
     def write_log(self, filename: str):
-        log_filename = f"log_{filename}.csv"
-        with open(f"log_{filename}.csv", "w") as f:
+        with open(filename, "w") as f:
             writer = csv.writer(f)
             writer.writerow(
                 ["time", "volume", "aggregate volume", "aggregate mass", "speed(F)"]
@@ -264,6 +259,27 @@ class GcodeFromPoints(Gcode):
             np.genfromtxt(csv_file, delimiter=",", skip_header=1)
             + self.offset_from_origin
         ).tolist()
+        if self.rotate:
+            points_3d = np.zeros((np.array(self.points).shape[0], 3))
+            points_3d[:, :2] = self.points
+            self.points = bcad.rotate(
+                points_3d, angle_z=np.deg2rad(-90), cnt=points_3d[0]
+            )
+        self.points_t = np.array(self.points).T
+        self.bbox = np.array(
+            [
+                [
+                    np.min(self.points_t[0]) - self.line_width * 0.5,
+                    np.min(self.points_t[1]) - self.line_width * 0.5,
+                ],
+                [
+                    np.max(self.points_t[0]) + self.line_width * 0.5,
+                    np.max(self.points_t[1]) + self.line_width * 0.5,
+                ],
+            ]
+        )
+        self.bbox_length = self.bbox[1][0] - self.bbox[0][0]
+        self.bbox_width = self.bbox[1][1] - self.bbox[0][1]
         if self.rotate:
             points_3d = np.zeros((np.array(self.points).shape[0], 3))
             points_3d[:, :2] = self.points
@@ -387,8 +403,31 @@ class GcodeFromPoints(Gcode):
 
     def init_gcode(self):
         """Initialize gcode"""
+
+        def distance(p0, p1):
+            return np.linalg.norm(np.array(p0) - np.array(p1))
+
         if not self.fixed_feedrate:
             self.feedrate = self.compute_feedrate()
+        self.print_length = 0
+        for i in range(len(self.points)):
+            current_pt = self.points[i]
+            next_pt = self.points[
+                (i + 1) % len(self.points)
+            ]  # next point or the first point for the last one
+            self.print_length += distance(current_pt, next_pt)
+
+        self.material_consumption = (
+            self.print_length
+            * self.line_width
+            * self.layer_height
+            * self.layer_num
+            * 1e-6
+        )  # in Liters
+        self.time_consumption = (
+            self.print_length * self.layer_num / self.feedrate * 60
+        )  # in seconds
+        self.timedelta = timedelta(seconds=self.time_consumption)
 
         def distance(p0, p1):
             return np.linalg.norm(np.array(p0) - np.array(p1))
@@ -451,38 +490,12 @@ class GcodeFromPoints(Gcode):
         def comment(text):
             return f"; {text}\n"
 
-        def distance(p0, p1):
-            return np.linalg.norm(np.array(p0) - np.array(p1))
-
-        print_length = 0
-        for i, pt in enumerate(self.points):
-            if i == 0:
-                print_length += distance(pt, self.points[-1])
-            else:
-                print_length += distance(pt, self.points[i - 1])
-        material_consumption = (
-            print_length * self.line_width * self.layer_height * self.layer_num * 1e-6
-        )
-
-        time_consumption = (
-            print_length * self.layer_num / self.feedrate * 60
-        )  # in seconds
-        print("feedrate", self.feedrate)
-        time_delta = timedelta(seconds=time_consumption)
-
         # Format hours, minutes, and seconds
-        hours, remainder = divmod(time_delta.seconds, 3600)
+        hours, remainder = divmod(self.timedelta.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
-
-        points_trans = np.array(self.points).T
-        length = np.max(points_trans[0]) - np.min(points_trans[0]) + self.line_width
-        width = np.max(points_trans[1]) - np.min(points_trans[1]) + self.line_width
-        self.length = length
-        self.width = width
-        self.btmlftpt = np.array([np.min(points_trans[0]), np.min(points_trans[1])])
-
+        length = self.bbox_length
+        width = self.bbox_width
         info_feedrate = self.feedrate
-
         self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
         self.gcode.append(comment(f"Length: {length}"))
         self.gcode.append(comment(f"Width: {width}"))
@@ -504,7 +517,7 @@ class GcodeFromPoints(Gcode):
         self.gcode.append(comment(f"Nozzle diameter: {self.nozzle_diameter}"))
 
         self.gcode.append(
-            comment(f"Material consumption(L): {self.material_consumption}")
+            comment(f"Material consumption(L): {self.self.material_consumption}")
         )
         self.gcode.append(
             comment(f"Estimated time consumption: {hours}hr:{minutes}min:{seconds}sec")
@@ -519,6 +532,181 @@ class GcodeFromPoints(Gcode):
                 f"Original point: ({self.offset_from_origin[0]},{self.offset_from_origin[1]})"
             )
         )
+
+
+class GcodeMultiplier(object):
+    def __init__(
+        self,
+        num_horizant: int,
+        num_vertic: int,
+        plate_length: float,
+        plate_width: float,
+        gcode_params: dict,
+    ) -> None:
+        self.num_horizant = num_horizant
+        self.num_vertic = num_vertic
+        self.plate_length = plate_length
+        self.plate_width = plate_width
+        self.gcode_params = gcode_params
+        self.need_tune = False
+        self.unit_length = 0
+        self.unit_width = 0
+        self.gcodelist = []
+        self.grid = []
+        self.visualize_cache = []
+        for i in range(num_horizant * num_vertic):
+            self.gcodelist.append(GcodeFromPoints(**self.gcode_params))
+        self.divide_plate()
+
+    def divide_plate(self):
+        unit_length = self.plate_length / self.num_horizant
+        unit_width = self.plate_width / self.num_vertic
+        sample_length = self.gcodelist[0].bbox_length
+        sample_width = self.gcodelist[0].bbox_width
+        if unit_length < sample_length or unit_width < sample_width:
+            raise ValueError("The plate is too small to be divided. Perhaps rotate it?")
+        else:
+            self.unit_length = unit_length
+            self.unit_width = unit_width
+            for i in range(0, self.num_vertic):
+                for j in range(0, self.num_horizant):
+                    self.grid.append(
+                        np.array(
+                            [
+                                [j * unit_length, i * unit_width],
+                                [
+                                    (j + 1) * unit_length,
+                                    (i + 1) * unit_width,
+                                ],
+                            ]
+                        )
+                    )
+
+    def auto_balance(self, grid: np.ndarray, points: np.ndarray):
+        """Auto balance the points in the grid"""
+
+        cnt_points = bcad.center_of_mass(points)
+        cnt_grid = bcad.center_of_mass(grid)
+        offset = cnt_grid - cnt_points
+        return offset + points
+
+    def keep_distance(self, dist_hori: float, dist_vert: float):
+        """Keep the distance between the structures"""
+        if self.num_horizant > 2:
+            if self.unit_length - dist_hori < self.gcodelist[0].bbox_length:
+                raise ValueError(
+                    f"The horizontal distance is too large, at least {self.gcodelist[0].bbox_length - self.unit_length + dist_hori}mm short"
+                )
+        else:
+            if self.unit_length - dist_hori * 0.5 < self.gcodelist[0].bbox_length:
+                raise ValueError(
+                    f"The horizontal distance is too large, at least {self.gcodelist[0].bbox_length - self.unit_length + dist_hori}mm short"
+                )
+        if self.num_vertic > 2:
+            if self.unit_width - dist_vert < self.gcodelist[0].bbox_width:
+                raise ValueError(
+                    f"The vertical distance is too large, at least {self.gcodelist[0].bbox_width - self.unit_width + dist_vert}mm short"
+                )
+        else:
+            if self.unit_width - dist_vert * 0.5 < self.gcodelist[0].bbox_width:
+                raise ValueError(
+                    f"The vertical distance is too large, at least {self.gcodelist[0].bbox_width - self.unit_width + dist_vert}mm short"
+                )
+        for i in range(0, self.num_vertic):
+            new_box = np.array([[0, 0], [0, 0]])
+            if i == 0:
+                new_box[1][1] = -dist_vert * 0.5
+            elif i == self.num_vertic - 1:
+                new_box[0][1] = dist_vert * 0.5
+            for j in range(0, self.num_horizant):
+                if j == 0:
+                    new_box[1][0] = -dist_hori * 0.5
+                elif j == self.num_horizant - 1:
+                    new_box[0][0] = dist_hori * 0.5
+                bbox = self.gcodelist[i * self.num_horizant + j].bbox
+                new_grid = self.grid[i * self.num_horizant + j] + new_box
+                cnt_bbox = bcad.center_of_mass(bbox)
+                cnt_grid = bcad.center_of_mass(new_grid)
+                offset = cnt_grid - cnt_bbox
+                self.gcodelist[i * self.num_horizant + j].points += offset
+                self.visualize_cache.append(
+                    bcad.bounding_box(self.gcodelist[i * self.num_horizant + j].points)
+                )
+
+    def create(
+        self,
+        auto_balance: bool = True,
+        dist_horizont: float = 0,
+        dist_vertic: float = 0,
+    ):
+        """Create multiple gcode files in one plate.
+        Args:
+            auto_balance: Auto balance the points in the grid
+            dist_horizont: The distance between the structures in horizontal direction
+            dist_vertic: The distance between the structures in vertical direction
+        """
+
+        if auto_balance:
+            for i in range(0, self.num_vertic):
+                for j in range(0, self.num_horizant):
+                    self.gcodelist[i * self.num_horizant + j].points = (
+                        self.auto_balance(
+                            self.grid[i * self.num_horizant + j],
+                            self.gcodelist[i * self.num_horizant + j].points,
+                        )
+                    )
+                    self.visualize_cache.append(
+                        bcad.bounding_box(
+                            self.gcodelist[i * self.num_horizant + j].points
+                        )
+                    )
+        else:
+            self.keep_distance(dist_horizont, dist_vertic)
+        for ind, gcd in enumerate(self.gcodelist):
+            gcd.create(
+                gcd.in_file_path, f"{self.gcode_params['standard']}_P{ind+1}.gcode"
+            )
+
+    def visualize(self):
+        """Visualize the gcode files in one plate"""
+        # Create a figure and axis
+        fig, ax = plt.subplots()
+
+        # Create a rectangle patch
+        rect = Rectangle(
+            (0, 0),
+            self.plate_length,
+            self.plate_width,
+            edgecolor="red",
+            facecolor="none",
+        )
+
+        # Add the rectangle to the Axes
+        ax.add_patch(rect)
+
+        for bottom_left, upper_right in self.visualize_cache:
+            # Calculate width and height
+            width = upper_right[0] - bottom_left[0]
+            height = upper_right[1] - bottom_left[1]
+
+            # Create a rectangle patch
+            rect = Rectangle(
+                (bottom_left[0], bottom_left[1]),
+                width,
+                height,
+                edgecolor="blue",
+                facecolor="none",
+            )
+
+            # Add the rectangle to the Axes
+            ax.add_patch(rect)
+
+        # Set limits to display the rectangle
+        ax.set_xlim(-1, self.plate_length + 1)
+        ax.set_ylim(-1, self.plate_width + 1)
+
+        # Display the plot
+        plt.show()
 
 
 class GcodeMultiplier(object):
