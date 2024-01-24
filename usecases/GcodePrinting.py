@@ -14,7 +14,7 @@ params = {  # geometry parameters
     # Number of printed layers. expected to be an integer
     "layer_height": 3,
     # Layer height in mm
-    "line_width": 11,
+    "line_width": 10,
     # Line width in mm
     "offset_from_origin": [0, 0],
     # Offset from origin in mm
@@ -28,7 +28,7 @@ params = {  # geometry parameters
     # Diameter of the nozzle in mm
     "kappa": 181.5954,
     # Parameter for the calculation of the extrusion length
-    "gamma": 1.4,
+    "gamma": 1.816667,
     # Parameter for the calculation of the extrusion width. Unit: g/mm^3
     "delta": 25.9,
     "tool_number": 0,
@@ -44,6 +44,6 @@ params = {  # geometry parameters
 }
 
 multiGCD = GcodeMultiplier(2, 3, 1020, 800, params)
-multiGCD.create(auto_balance=False, dist_horizont=250, dist_vertic=100)
-print(multiGCD.visualize_cache)
+multiGCD.create(auto_balance=False, dist_horizont=250, dist_vertic=115)
 multiGCD.visualize()
+# multiGCD.create(auto_balance=False, dist_horizont=250, dist_vertic=100)

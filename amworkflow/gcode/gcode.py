@@ -215,7 +215,11 @@ class GcodeFromPoints(Gcode):
             writer.writerows(self.extrusion_tracker)
 
     def compute_feedrate(self):
-        return self.gamma / (self.layer_height * self.line_width * self.density * 1e-6)
+        return (
+            self.gamma
+            * 60
+            / (self.layer_height * self.line_width * self.density * 1e-6)
+        )
 
     def read_points(self, csv_file: str):
         """Read points from file
