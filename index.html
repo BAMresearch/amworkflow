@@ -1,0 +1,773 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+                <link href="lib/tom-select/tom-select.css" rel="stylesheet">
+                <script src="lib/tom-select/tom-select.complete.min.js"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 800px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+             #loadingBar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width: 100%;
+                 height: 800px;
+                 background-color:rgba(200,200,200,0.8);
+                 -webkit-transition: all 0.5s ease;
+                 -moz-transition: all 0.5s ease;
+                 -ms-transition: all 0.5s ease;
+                 -o-transition: all 0.5s ease;
+                 transition: all 0.5s ease;
+                 opacity:1;
+             }
+
+             #bar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width:20px;
+                 height:20px;
+                 margin:auto auto auto auto;
+                 border-radius:11px;
+                 border:2px solid rgba(30,30,30,0.05);
+                 background: rgb(0, 173, 246); /* Old browsers */
+                 box-shadow: 2px 0px 4px rgba(0,0,0,0.4);
+             }
+
+             #border {
+                 position:absolute;
+                 top:10px;
+                 left:10px;
+                 width:500px;
+                 height:23px;
+                 margin:auto auto auto auto;
+                 box-shadow: 0px 0px 4px rgba(0,0,0,0.2);
+                 border-radius:10px;
+             }
+
+             #text {
+                 position:absolute;
+                 top:8px;
+                 left:530px;
+                 width:30px;
+                 height:50px;
+                 margin:auto auto auto auto;
+                 font-size:22px;
+                 color: #000000;
+             }
+
+             div.outerBorder {
+                 position:relative;
+                 top:400px;
+                 width:600px;
+                 height:44px;
+                 margin:auto auto auto auto;
+                 border:8px solid rgba(0,0,0,0.1);
+                 background: rgb(252,252,252); /* Old browsers */
+                 background: -moz-linear-gradient(top,  rgba(252,252,252,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+                 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(252,252,252,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+                 background: -webkit-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+                 background: -o-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Opera 11.10+ */
+                 background: -ms-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* IE10+ */
+                 background: linear-gradient(to bottom,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+                 filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+                 border-radius:72px;
+                 box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+             }
+             
+
+             
+             #config {
+                 float: left;
+                 width: 400px;
+                 height: 600px;
+             }
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+                <div id="select-menu" class="card-header">
+                    <div class="row no-gutters">
+                        <div class="col-10 pb-2">
+                            <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="selectNode([value]);"
+                            id="select-node"
+                            placeholder="Select node..."
+                            >
+                                <option selected>Select a Node by ID</option>
+                                
+                                    <option value="amworkflow">amworkflow</option>
+                                
+                                    <option value="__init__.py">__init__.py</option>
+                                
+                                    <option value="api.py">api.py</option>
+                                
+                                    <option value="src">src</option>
+                                
+                                    <option value="core">core</option>
+                                
+                                    <option value="workflow.py">workflow.py</option>
+                                
+                                    <option value="constants">constants</option>
+                                
+                                    <option value="data_model.py">data_model.py</option>
+                                
+                                    <option value="exceptions.py">exceptions.py</option>
+                                
+                                    <option value="enums.py">enums.py</option>
+                                
+                                    <option value="__init__ .py">__init__ .py</option>
+                                
+                                    <option value="utils">utils</option>
+                                
+                                    <option value="visualizer.py">visualizer.py</option>
+                                
+                                    <option value="writer.py">writer.py</option>
+                                
+                                    <option value="parser.py">parser.py</option>
+                                
+                                    <option value="system.py">system.py</option>
+                                
+                                    <option value="reader.py">reader.py</option>
+                                
+                                    <option value="db_io.py">db_io.py</option>
+                                
+                                    <option value="sanity_check.py">sanity_check.py</option>
+                                
+                                    <option value="meter.py">meter.py</option>
+                                
+                                    <option value="permutator.py">permutator.py</option>
+                                
+                                    <option value="db_calib.py">db_calib.py</option>
+                                
+                                    <option value="database">database</option>
+                                
+                                    <option value="cruds">cruds</option>
+                                
+                                    <option value="crud.py">crud.py</option>
+                                
+                                    <option value="engine">engine</option>
+                                
+                                    <option value="config.py">config.py</option>
+                                
+                                    <option value="engine.py">engine.py</option>
+                                
+                                    <option value="models">models</option>
+                                
+                                    <option value="model.py">model.py</option>
+                                
+                                    <option value="geometries">geometries</option>
+                                
+                                    <option value="infiller.py">infiller.py</option>
+                                
+                                    <option value="mesher.py">mesher.py</option>
+                                
+                                    <option value="property.py">property.py</option>
+                                
+                                    <option value="builder.py">builder.py</option>
+                                
+                                    <option value="simple_geometry.py">simple_geometry.py</option>
+                                
+                                    <option value="operator.py">operator.py</option>
+                                
+                                    <option value="composite_geometry.py">composite_geometry.py</option>
+                                
+                                    <option value="interface">interface</option>
+                                
+                                    <option value="cli">cli</option>
+                                
+                                    <option value="display.py">display.py</option>
+                                
+                                    <option value="cli_workflow.py">cli_workflow.py</option>
+                                
+                                    <option value="gui">gui</option>
+                                
+                                    <option value="Qt">Qt</option>
+                                
+                                    <option value="draft_ui.py">draft_ui.py</option>
+                                
+                                    <option value="sub_window.py">sub_window.py</option>
+                                
+                                    <option value="web">web</option>
+                                
+                                    <option value="stl_viewer.py">stl_viewer.py</option>
+                                
+                                    <option value="tests">tests</option>
+                                
+                                    <option value="test_base_workflow.py">test_base_workflow.py</option>
+                                
+                                    <option value="test.py">test.py</option>
+                                
+                                    <option value="amWorkflow">amWorkflow</option>
+                                
+                                    <option value="db">db</option>
+                                
+                                    <option value="geom">geom</option>
+                                
+                                    <option value="mesh">mesh</option>
+                                
+                                    <option value="tool">tool</option>
+                                
+                                    <option value="CreateWallByPoints">CreateWallByPoints</option>
+                                
+                                    <option value="BaseWorkflow">BaseWorkflow</option>
+                                
+                                    <option value="MapParamModel">MapParamModel</option>
+                                
+                                    <option value="DeepMapParamModel">DeepMapParamModel</option>
+                                
+                                    <option value="DimensionViolationException">DimensionViolationException</option>
+                                
+                                    <option value="GmshUseBeforeInitializedException">GmshUseBeforeInitializedException</option>
+                                
+                                    <option value="DimensionInconsistencyException">DimensionInconsistencyException</option>
+                                
+                                    <option value="NoDataInDatabaseException">NoDataInDatabaseException</option>
+                                
+                                    <option value="InvalidGeometryException">InvalidGeometryException</option>
+                                
+                                    <option value="InvalidFileFormatException">InvalidFileFormatException</option>
+                                
+                                    <option value="InsufficientDataException">InsufficientDataException</option>
+                                
+                                    <option value="Directory">Directory</option>
+                                
+                                    <option value="Timestamp">Timestamp</option>
+                                
+                                    <option value="Label">Label</option>
+                                
+                                    <option value="Base">Base</option>
+                                
+                                    <option value="GeometryFile">GeometryFile</option>
+                                
+                                    <option value="SliceFile">SliceFile</option>
+                                
+                                    <option value="MeshFile">MeshFile</option>
+                                
+                                    <option value="GCode">GCode</option>
+                                
+                                    <option value="FEResult">FEResult</option>
+                                
+                                    <option value="ModelProfile">ModelProfile</option>
+                                
+                                    <option value="ModelParameter">ModelParameter</option>
+                                
+                                    <option value="ParameterToProfile">ParameterToProfile</option>
+                                
+                                    <option value="ParameterValue">ParameterValue</option>
+                                
+                                    <option value="ImportedFile">ImportedFile</option>
+                                
+                                    <option value="Task">Task</option>
+                                
+                                    <option value="PolygonInfiller">PolygonInfiller</option>
+                                
+                                    <option value="Pnt">Pnt</option>
+                                
+                                    <option value="Segments">Segments</option>
+                                
+                                    <option value="CreateWallByPointsUpdate">CreateWallByPointsUpdate</option>
+                                
+                                    <option value="Worker">Worker</option>
+                                
+                                    <option value="App">App</option>
+                                
+                                    <option value="wrapped">wrapped</option>
+                                
+                                    <option value="task_id_creator">task_id_creator</option>
+                                
+                                    <option value="batch_data_parser">batch_data_parser</option>
+                                
+                                    <option value="simple_permutator">simple_permutator</option>
+                                
+                                    <option value="path_valid_check">path_valid_check</option>
+                                
+                                    <option value="yaml_parser">yaml_parser</option>
+                                
+                                    <option value="shortest_distance_line_line">shortest_distance_line_line</option>
+                                
+                                    <option value="yaml_translater">yaml_translater</option>
+                                
+                                    <option value="get_filename">get_filename</option>
+                                
+                                    <option value="get_file_md5">get_file_md5</option>
+                                
+                                    <option value="query_multi_data">query_multi_data</option>
+                                
+                                    <option value="convert_to_datetime">convert_to_datetime</option>
+                                
+                                    <option value="mk_dir">mk_dir</option>
+                                
+                                    <option value="worker">worker</option>
+                                
+                                    <option value="delete_dir">delete_dir</option>
+                                
+                                    <option value="copyer">copyer</option>
+                                
+                                    <option value="delete_data">delete_data</option>
+                                
+                                    <option value="db_calib">db_calib</option>
+                                
+                                    <option value="transcation_rollback">transcation_rollback</option>
+                                
+                                    <option value="query_data_object">query_data_object</option>
+                                
+                                    <option value="get_geom_pointer">get_geom_pointer</option>
+                                
+                                    <option value="split">split</option>
+                                
+                                    <option value="generate_link">generate_link</option>
+                                
+                                    <option value="shortest_distance_point_line">shortest_distance_point_line</option>
+                                
+                                    <option value="p_center_of_mass">p_center_of_mass</option>
+                                
+                                    <option value="random_pnt_gen">random_pnt_gen</option>
+                                
+                                    <option value="geom_copy">geom_copy</option>
+                                
+                                    <option value="translate">translate</option>
+                                
+                                    <option value="create_prism">create_prism</option>
+                                
+                                    <option value="create_face">create_face</option>
+                                
+                                    <option value="reverse">reverse</option>
+                                
+                                    <option value="geometry_builder">geometry_builder</option>
+                                
+                                    <option value="create_edge">create_edge</option>
+                                
+                                    <option value="laterality_indicator">laterality_indicator</option>
+                                
+                                    <option value="sewer">sewer</option>
+                                
+                                    <option value="create_wire">create_wire</option>
+                                
+                                    <option value="check_parallel_line_line">check_parallel_line_line</option>
+                                
+                                    <option value="check_overlap">check_overlap</option>
+                                
+                                    <option value="get_occ_bounding_box">get_occ_bounding_box</option>
+                                
+                                    <option value="get_face_center_of_mass">get_face_center_of_mass</option>
+                                
+                                    <option value="scaler">scaler</option>
+                                
+                                    <option value="topo_explorer">topo_explorer</option>
+                                
+                                    <option value="cutter3D">cutter3D</option>
+                                
+                                    <option value="linear_interpolate">linear_interpolate</option>
+                                
+                                    <option value="random_polygon_constructor">random_polygon_constructor</option>
+                                
+                                    <option value="rotate_face">rotate_face</option>
+                                
+                                    <option value="fuser">fuser</option>
+                                
+                                    <option value="hollow_carver">hollow_carver</option>
+                                
+                                    <option value="multiplier_unit">multiplier_unit</option>
+                                
+                                    <option value="deter_dum">deter_dum</option>
+                                
+                                    <option value="polygon_interpolater">polygon_interpolater</option>
+                                
+                                    <option value="bender">bender</option>
+                                
+                                    <option value="solid_maker">solid_maker</option>
+                                
+                                    <option value="p_get_face_area">p_get_face_area</option>
+                                
+                                    <option value="polygon_maker">polygon_maker</option>
+                                
+                                    <option value="angular_bisector">angular_bisector</option>
+                                
+                                    <option value="angle_of_two_arrays">angle_of_two_arrays</option>
+                                
+                                    <option value="intersector">intersector</option>
+                                
+                                    <option value="create_box">create_box</option>
+                                
+                                    <option value="is_hex">is_hex</option>
+                                
+                                    <option value="namer">namer</option>
+                                
+                            </select>
+                        </div>
+                        <div class="col-2 pb-2">
+                            <button type="button" class="btn btn-primary btn-block" onclick="neighbourhoodHighlight({nodes: []});">Reset Selection</button>
+                        </div>
+                    </div>
+                </div>
+            
+            
+              <div id="filter-menu" class="card-header">
+                <div class="row no-gutters">
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'item')"
+                            id="select-item"
+                        >
+                        <option value="">Select a network item</option>
+                        <option value="edge">edge</option>
+                        <option value="node">node</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'property')"
+                            id="select-property"
+                        >
+                        <option value="">Select a property...</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            id="select-value"
+                        >
+                        <option value="">Select value(s)...</option>
+                    </select>
+                  </div>
+                  <div class="col-1 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="highlightFilter(filter);">Filter</button>
+                  </div>
+                  <div class="col-2 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="clearFilter(true)">Reset Selection</button>
+                  </div>
+                </div>
+              </div>
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+            <div id="loadingBar">
+              <div class="outerBorder">
+                <div id="text">0%</div>
+                <div id="border">
+                  <div id="bar"></div>
+                </div>
+              </div>
+            </div>
+        
+        
+            <div id="config"></div>
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+                  new TomSelect("#select-node",{
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      }
+                  });
+              
+
+              
+                  // explicitly using onItemAdd and this function as we need to save multiple values
+                  let updateValueFilter = function() {
+                      return function () {
+                      filter['value'].push(arguments[0])
+                      }
+                  }
+
+                  let valueControl = new TomSelect("#select-value",{
+                      maxItems: null,
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: updateValueFilter()
+                  });
+
+                  let addValues = function() {
+                      return function () {
+                          // clear the current value options and add the selected attribute values
+                          // tom-select handles duplicates
+                          let selectedProperty = arguments[0];
+                          valueControl.clear();
+                          valueControl.clearOptions();
+                          filter['value'] = []
+                          if (filter['item'] === 'node') {
+                              for (let each in allNodes) {
+                                  valueControl.addOption({
+                                      id:allNodes[each][selectedProperty],
+                                      title:allNodes[each][selectedProperty]
+                                  })
+                              }
+                          }
+                          else if (filter['item'] === 'edge') {
+                              for (let each in allEdges) {
+                                  valueControl.addOption({
+                                      id:allEdges[each][selectedProperty],
+                                      title:allEdges[each][selectedProperty]
+                                  })
+                              }
+                          }
+                      }
+                  };
+
+                  let propControl = new TomSelect("#select-property",{
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addValues()
+                  });
+
+                  let addProperties = function() {
+                      return function () {
+                          // loops through the selected network item and adds the attributes to dropdown
+                          // tom-select handles duplicates
+                          clearFilter(false)
+                          if (arguments[0] === 'edge') {
+                              for (let each in allEdges) {
+                                  if (allEdges.hasOwnProperty(each)) {
+                                      for (let eachProp in allEdges[each]) {
+                                          if (allEdges[each].hasOwnProperty(eachProp)) {
+                                              propControl.addOption({id: eachProp, title: eachProp})
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                          else if (arguments[0] === 'node') {
+                              for (let each in allNodes) {
+                                  if (allNodes.hasOwnProperty(each)) {
+                                      for (let eachProp in allNodes[each]) {
+                                          if (allNodes[each].hasOwnProperty(eachProp)
+                                              && (eachProp !== 'hidden' && eachProp !== 'savedLabel'
+                                                  && eachProp !== 'hiddenLabel')) {
+                                              propControl.addOption({id: eachProp, title: eachProp})
+
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  };
+
+                  let itemControl = new TomSelect("#select-item",{
+                      create: false,
+                      sortField:{
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addProperties()
+                  });
+
+                  function clearFilter(reset) {
+                      // utility function to clear all the selected filter options
+                      // if reset is set to true, the existing filter will be removed
+                      // else, only the dropdown options are cleared
+                      propControl.clear();
+                      propControl.clearOptions();
+                      valueControl.clear();
+                      valueControl.clearOptions();
+                      filter = {
+                          item : '',
+                          property : '',
+                          value : []
+                      }
+                      if (reset) {
+                          itemControl.clear();
+                          filterHighlight({nodes: []})
+                      }
+                  }
+
+                  function updateFilter(value, key) {
+                      // key could be 'item' or 'property' and value is as selected in dropdown
+                      filter[key] = value
+                  }
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "lightblue", "id": "amworkflow", "label": "amworkflow", "shape": "dot"}, {"color": "gray", "id": "__init__.py", "label": "__init__.py", "shape": "dot"}, {"color": "gray", "id": "api.py", "label": "api.py", "shape": "dot"}, {"color": "lightblue", "id": "src", "label": "src", "shape": "dot"}, {"color": "lightblue", "id": "core", "label": "core", "shape": "dot"}, {"color": "gray", "id": "workflow.py", "label": "workflow.py", "shape": "dot"}, {"color": "lightblue", "id": "constants", "label": "constants", "shape": "dot"}, {"color": "gray", "id": "data_model.py", "label": "data_model.py", "shape": "dot"}, {"color": "gray", "id": "exceptions.py", "label": "exceptions.py", "shape": "dot"}, {"color": "gray", "id": "enums.py", "label": "enums.py", "shape": "dot"}, {"color": "gray", "id": "__init__ .py", "label": "__init__ .py", "shape": "dot"}, {"color": "lightblue", "id": "utils", "label": "utils", "shape": "dot"}, {"color": "gray", "id": "visualizer.py", "label": "visualizer.py", "shape": "dot"}, {"color": "gray", "id": "writer.py", "label": "writer.py", "shape": "dot"}, {"color": "gray", "id": "parser.py", "label": "parser.py", "shape": "dot"}, {"color": "gray", "id": "system.py", "label": "system.py", "shape": "dot"}, {"color": "gray", "id": "reader.py", "label": "reader.py", "shape": "dot"}, {"color": "gray", "id": "db_io.py", "label": "db_io.py", "shape": "dot"}, {"color": "gray", "id": "sanity_check.py", "label": "sanity_check.py", "shape": "dot"}, {"color": "gray", "id": "meter.py", "label": "meter.py", "shape": "dot"}, {"color": "gray", "id": "permutator.py", "label": "permutator.py", "shape": "dot"}, {"color": "gray", "id": "db_calib.py", "label": "db_calib.py", "shape": "dot"}, {"color": "lightblue", "id": "database", "label": "database", "shape": "dot"}, {"color": "lightblue", "id": "cruds", "label": "cruds", "shape": "dot"}, {"color": "gray", "id": "crud.py", "label": "crud.py", "shape": "dot"}, {"color": "lightgreen", "id": "engine", "label": "engine", "shape": "dot"}, {"color": "gray", "id": "config.py", "label": "config.py", "shape": "dot"}, {"color": "gray", "id": "engine.py", "label": "engine.py", "shape": "dot"}, {"color": "lightblue", "id": "models", "label": "models", "shape": "dot"}, {"color": "gray", "id": "model.py", "label": "model.py", "shape": "dot"}, {"color": "lightblue", "id": "geometries", "label": "geometries", "shape": "dot"}, {"color": "gray", "id": "infiller.py", "label": "infiller.py", "shape": "dot"}, {"color": "gray", "id": "mesher.py", "label": "mesher.py", "shape": "dot"}, {"color": "gray", "id": "property.py", "label": "property.py", "shape": "dot"}, {"color": "gray", "id": "builder.py", "label": "builder.py", "shape": "dot"}, {"color": "gray", "id": "simple_geometry.py", "label": "simple_geometry.py", "shape": "dot"}, {"color": "gray", "id": "operator.py", "label": "operator.py", "shape": "dot"}, {"color": "gray", "id": "composite_geometry.py", "label": "composite_geometry.py", "shape": "dot"}, {"color": "lightblue", "id": "interface", "label": "interface", "shape": "dot"}, {"color": "lightsteelblue", "id": "cli", "label": "cli", "shape": "dot"}, {"color": "gray", "id": "display.py", "label": "display.py", "shape": "dot"}, {"color": "gray", "id": "cli_workflow.py", "label": "cli_workflow.py", "shape": "dot"}, {"color": "lightblue", "id": "gui", "label": "gui", "shape": "dot"}, {"color": "lightblue", "id": "Qt", "label": "Qt", "shape": "dot"}, {"color": "gray", "id": "draft_ui.py", "label": "draft_ui.py", "shape": "dot"}, {"color": "gray", "id": "sub_window.py", "label": "sub_window.py", "shape": "dot"}, {"color": "lightblue", "id": "web", "label": "web", "shape": "dot"}, {"color": "gray", "id": "stl_viewer.py", "label": "stl_viewer.py", "shape": "dot"}, {"color": "lightblue", "id": "tests", "label": "tests", "shape": "dot"}, {"color": "gray", "id": "test_base_workflow.py", "label": "test_base_workflow.py", "shape": "dot"}, {"color": "gray", "id": "test.py", "label": "test.py", "shape": "dot"}, {"color": "lightgreen", "id": "amWorkflow", "label": "amWorkflow", "shape": "dot"}, {"color": "lightgreen", "id": "db", "label": "db", "shape": "dot"}, {"color": "lightgreen", "id": "geom", "label": "geom", "shape": "dot"}, {"color": "lightgreen", "id": "mesh", "label": "mesh", "shape": "dot"}, {"color": "lightgreen", "id": "tool", "label": "tool", "shape": "dot"}, {"color": "lightgreen", "id": "CreateWallByPoints", "label": "CreateWallByPoints", "shape": "dot"}, {"color": "lightgreen", "id": "BaseWorkflow", "label": "BaseWorkflow", "shape": "dot"}, {"color": "lightgreen", "id": "MapParamModel", "label": "MapParamModel", "shape": "dot"}, {"color": "lightgreen", "id": "DeepMapParamModel", "label": "DeepMapParamModel", "shape": "dot"}, {"color": "lightgreen", "id": "DimensionViolationException", "label": "DimensionViolationException", "shape": "dot"}, {"color": "lightgreen", "id": "GmshUseBeforeInitializedException", "label": "GmshUseBeforeInitializedException", "shape": "dot"}, {"color": "lightgreen", "id": "DimensionInconsistencyException", "label": "DimensionInconsistencyException", "shape": "dot"}, {"color": "lightgreen", "id": "NoDataInDatabaseException", "label": "NoDataInDatabaseException", "shape": "dot"}, {"color": "lightgreen", "id": "InvalidGeometryException", "label": "InvalidGeometryException", "shape": "dot"}, {"color": "lightgreen", "id": "InvalidFileFormatException", "label": "InvalidFileFormatException", "shape": "dot"}, {"color": "lightgreen", "id": "InsufficientDataException", "label": "InsufficientDataException", "shape": "dot"}, {"color": "lightgreen", "id": "Directory", "label": "Directory", "shape": "dot"}, {"color": "lightgreen", "id": "Timestamp", "label": "Timestamp", "shape": "dot"}, {"color": "lightgreen", "id": "Label", "label": "Label", "shape": "dot"}, {"color": "lightgreen", "id": "Base", "label": "Base", "shape": "dot"}, {"color": "lightgreen", "id": "GeometryFile", "label": "GeometryFile", "shape": "dot"}, {"color": "lightgreen", "id": "SliceFile", "label": "SliceFile", "shape": "dot"}, {"color": "lightgreen", "id": "MeshFile", "label": "MeshFile", "shape": "dot"}, {"color": "lightgreen", "id": "GCode", "label": "GCode", "shape": "dot"}, {"color": "lightgreen", "id": "FEResult", "label": "FEResult", "shape": "dot"}, {"color": "lightgreen", "id": "ModelProfile", "label": "ModelProfile", "shape": "dot"}, {"color": "lightgreen", "id": "ModelParameter", "label": "ModelParameter", "shape": "dot"}, {"color": "lightgreen", "id": "ParameterToProfile", "label": "ParameterToProfile", "shape": "dot"}, {"color": "lightgreen", "id": "ParameterValue", "label": "ParameterValue", "shape": "dot"}, {"color": "lightgreen", "id": "ImportedFile", "label": "ImportedFile", "shape": "dot"}, {"color": "lightgreen", "id": "Task", "label": "Task", "shape": "dot"}, {"color": "lightgreen", "id": "PolygonInfiller", "label": "PolygonInfiller", "shape": "dot"}, {"color": "lightgreen", "id": "Pnt", "label": "Pnt", "shape": "dot"}, {"color": "lightgreen", "id": "Segments", "label": "Segments", "shape": "dot"}, {"color": "lightgreen", "id": "CreateWallByPointsUpdate", "label": "CreateWallByPointsUpdate", "shape": "dot"}, {"color": "lightgreen", "id": "Worker", "label": "Worker", "shape": "dot"}, {"color": "lightgreen", "id": "App", "label": "App", "shape": "dot"}, {"color": "lightsteelblue", "id": "wrapped", "label": "wrapped", "shape": "dot"}, {"color": "lightsteelblue", "id": "task_id_creator", "label": "task_id_creator", "shape": "dot"}, {"color": "lightsteelblue", "id": "batch_data_parser", "label": "batch_data_parser", "shape": "dot"}, {"color": "lightsteelblue", "id": "simple_permutator", "label": "simple_permutator", "shape": "dot"}, {"color": "lightsteelblue", "id": "path_valid_check", "label": "path_valid_check", "shape": "dot"}, {"color": "lightsteelblue", "id": "yaml_parser", "label": "yaml_parser", "shape": "dot"}, {"color": "lightsteelblue", "id": "shortest_distance_line_line", "label": "shortest_distance_line_line", "shape": "dot"}, {"color": "lightsteelblue", "id": "yaml_translater", "label": "yaml_translater", "shape": "dot"}, {"color": "lightsteelblue", "id": "get_filename", "label": "get_filename", "shape": "dot"}, {"color": "lightsteelblue", "id": "get_file_md5", "label": "get_file_md5", "shape": "dot"}, {"color": "lightsteelblue", "id": "query_multi_data", "label": "query_multi_data", "shape": "dot"}, {"color": "lightsteelblue", "id": "convert_to_datetime", "label": "convert_to_datetime", "shape": "dot"}, {"color": "lightsteelblue", "id": "mk_dir", "label": "mk_dir", "shape": "dot"}, {"color": "lightsteelblue", "id": "worker", "label": "worker", "shape": "dot"}, {"color": "lightsteelblue", "id": "delete_dir", "label": "delete_dir", "shape": "dot"}, {"color": "lightsteelblue", "id": "copyer", "label": "copyer", "shape": "dot"}, {"color": "lightsteelblue", "id": "delete_data", "label": "delete_data", "shape": "dot"}, {"color": "lightsteelblue", "id": "db_calib", "label": "db_calib", "shape": "dot"}, {"color": "lightsteelblue", "id": "transcation_rollback", "label": "transcation_rollback", "shape": "dot"}, {"color": "lightsteelblue", "id": "query_data_object", "label": "query_data_object", "shape": "dot"}, {"color": "lightsteelblue", "id": "get_geom_pointer", "label": "get_geom_pointer", "shape": "dot"}, {"color": "lightsteelblue", "id": "split", "label": "split", "shape": "dot"}, {"color": "lightsteelblue", "id": "generate_link", "label": "generate_link", "shape": "dot"}, {"color": "lightsteelblue", "id": "shortest_distance_point_line", "label": "shortest_distance_point_line", "shape": "dot"}, {"color": "lightsteelblue", "id": "p_center_of_mass", "label": "p_center_of_mass", "shape": "dot"}, {"color": "lightsteelblue", "id": "random_pnt_gen", "label": "random_pnt_gen", "shape": "dot"}, {"color": "lightsteelblue", "id": "geom_copy", "label": "geom_copy", "shape": "dot"}, {"color": "lightsteelblue", "id": "translate", "label": "translate", "shape": "dot"}, {"color": "lightsteelblue", "id": "create_prism", "label": "create_prism", "shape": "dot"}, {"color": "lightsteelblue", "id": "create_face", "label": "create_face", "shape": "dot"}, {"color": "lightsteelblue", "id": "reverse", "label": "reverse", "shape": "dot"}, {"color": "lightsteelblue", "id": "geometry_builder", "label": "geometry_builder", "shape": "dot"}, {"color": "lightsteelblue", "id": "create_edge", "label": "create_edge", "shape": "dot"}, {"color": "lightsteelblue", "id": "laterality_indicator", "label": "laterality_indicator", "shape": "dot"}, {"color": "lightsteelblue", "id": "sewer", "label": "sewer", "shape": "dot"}, {"color": "lightsteelblue", "id": "create_wire", "label": "create_wire", "shape": "dot"}, {"color": "lightsteelblue", "id": "check_parallel_line_line", "label": "check_parallel_line_line", "shape": "dot"}, {"color": "lightsteelblue", "id": "check_overlap", "label": "check_overlap", "shape": "dot"}, {"color": "lightsteelblue", "id": "get_occ_bounding_box", "label": "get_occ_bounding_box", "shape": "dot"}, {"color": "lightsteelblue", "id": "get_face_center_of_mass", "label": "get_face_center_of_mass", "shape": "dot"}, {"color": "lightsteelblue", "id": "scaler", "label": "scaler", "shape": "dot"}, {"color": "lightsteelblue", "id": "topo_explorer", "label": "topo_explorer", "shape": "dot"}, {"color": "lightsteelblue", "id": "cutter3D", "label": "cutter3D", "shape": "dot"}, {"color": "lightsteelblue", "id": "linear_interpolate", "label": "linear_interpolate", "shape": "dot"}, {"color": "lightsteelblue", "id": "random_polygon_constructor", "label": "random_polygon_constructor", "shape": "dot"}, {"color": "lightsteelblue", "id": "rotate_face", "label": "rotate_face", "shape": "dot"}, {"color": "lightsteelblue", "id": "fuser", "label": "fuser", "shape": "dot"}, {"color": "lightsteelblue", "id": "hollow_carver", "label": "hollow_carver", "shape": "dot"}, {"color": "lightsteelblue", "id": "multiplier_unit", "label": "multiplier_unit", "shape": "dot"}, {"color": "lightsteelblue", "id": "deter_dum", "label": "deter_dum", "shape": "dot"}, {"color": "lightsteelblue", "id": "polygon_interpolater", "label": "polygon_interpolater", "shape": "dot"}, {"color": "lightsteelblue", "id": "bender", "label": "bender", "shape": "dot"}, {"color": "lightsteelblue", "id": "solid_maker", "label": "solid_maker", "shape": "dot"}, {"color": "lightsteelblue", "id": "p_get_face_area", "label": "p_get_face_area", "shape": "dot"}, {"color": "lightsteelblue", "id": "polygon_maker", "label": "polygon_maker", "shape": "dot"}, {"color": "lightsteelblue", "id": "angular_bisector", "label": "angular_bisector", "shape": "dot"}, {"color": "lightsteelblue", "id": "angle_of_two_arrays", "label": "angle_of_two_arrays", "shape": "dot"}, {"color": "lightsteelblue", "id": "intersector", "label": "intersector", "shape": "dot"}, {"color": "lightsteelblue", "id": "create_box", "label": "create_box", "shape": "dot"}, {"color": "lightsteelblue", "id": "is_hex", "label": "is_hex", "shape": "dot"}, {"color": "lightsteelblue", "id": "namer", "label": "namer", "shape": "dot"}]);
+                  edges = new vis.DataSet([{"color": "blue", "from": "amworkflow", "to": "__init__.py"}, {"color": "blue", "from": "amworkflow", "to": "api.py"}, {"color": "green", "from": "__init__.py", "to": "amWorkflow"}, {"color": "green", "from": "__init__.py", "to": "engine"}, {"color": "green", "from": "__init__.py", "to": "db"}, {"color": "green", "from": "__init__.py", "to": "geom"}, {"color": "green", "from": "__init__.py", "to": "mesh"}, {"color": "green", "from": "__init__.py", "to": "tool"}, {"color": "green", "from": "__init__.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "__init__.py", "to": "BaseWorkflow"}, {"color": "green", "from": "__init__.py", "to": "MapParamModel"}, {"color": "green", "from": "__init__.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "__init__.py", "to": "DimensionViolationException"}, {"color": "green", "from": "__init__.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "__init__.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "__init__.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "__init__.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "__init__.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "__init__.py", "to": "InsufficientDataException"}, {"color": "green", "from": "__init__.py", "to": "Directory"}, {"color": "green", "from": "__init__.py", "to": "Timestamp"}, {"color": "green", "from": "__init__.py", "to": "Label"}, {"color": "green", "from": "__init__.py", "to": "Base"}, {"color": "green", "from": "__init__.py", "to": "GeometryFile"}, {"color": "green", "from": "__init__.py", "to": "SliceFile"}, {"color": "green", "from": "__init__.py", "to": "MeshFile"}, {"color": "green", "from": "__init__.py", "to": "GCode"}, {"color": "green", "from": "__init__.py", "to": "FEResult"}, {"color": "green", "from": "__init__.py", "to": "ModelProfile"}, {"color": "green", "from": "__init__.py", "to": "ModelParameter"}, {"color": "green", "from": "__init__.py", "to": "ParameterToProfile"}, {"color": "green", "from": "__init__.py", "to": "ParameterValue"}, {"color": "green", "from": "__init__.py", "to": "ImportedFile"}, {"color": "green", "from": "__init__.py", "to": "Task"}, {"color": "green", "from": "__init__.py", "to": "PolygonInfiller"}, {"color": "green", "from": "__init__.py", "to": "Pnt"}, {"color": "green", "from": "__init__.py", "to": "Segments"}, {"color": "green", "from": "__init__.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "__init__.py", "to": "Worker"}, {"color": "green", "from": "__init__.py", "to": "App"}, {"color": "steelblue", "from": "api.py", "to": "wrapped"}, {"color": "steelblue", "from": "api.py", "to": "cli"}, {"color": "green", "from": "api.py", "to": "amWorkflow"}, {"color": "green", "from": "api.py", "to": "engine"}, {"color": "green", "from": "api.py", "to": "db"}, {"color": "green", "from": "api.py", "to": "geom"}, {"color": "green", "from": "api.py", "to": "mesh"}, {"color": "green", "from": "api.py", "to": "tool"}, {"color": "green", "from": "api.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "api.py", "to": "BaseWorkflow"}, {"color": "green", "from": "api.py", "to": "MapParamModel"}, {"color": "green", "from": "api.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "api.py", "to": "DimensionViolationException"}, {"color": "green", "from": "api.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "api.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "api.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "api.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "api.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "api.py", "to": "InsufficientDataException"}, {"color": "green", "from": "api.py", "to": "Directory"}, {"color": "green", "from": "api.py", "to": "Timestamp"}, {"color": "green", "from": "api.py", "to": "Label"}, {"color": "green", "from": "api.py", "to": "Base"}, {"color": "green", "from": "api.py", "to": "GeometryFile"}, {"color": "green", "from": "api.py", "to": "SliceFile"}, {"color": "green", "from": "api.py", "to": "MeshFile"}, {"color": "green", "from": "api.py", "to": "GCode"}, {"color": "green", "from": "api.py", "to": "FEResult"}, {"color": "green", "from": "api.py", "to": "ModelProfile"}, {"color": "green", "from": "api.py", "to": "ModelParameter"}, {"color": "green", "from": "api.py", "to": "ParameterToProfile"}, {"color": "green", "from": "api.py", "to": "ParameterValue"}, {"color": "green", "from": "api.py", "to": "ImportedFile"}, {"color": "green", "from": "api.py", "to": "Task"}, {"color": "green", "from": "api.py", "to": "PolygonInfiller"}, {"color": "green", "from": "api.py", "to": "Pnt"}, {"color": "green", "from": "api.py", "to": "Segments"}, {"color": "green", "from": "api.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "api.py", "to": "Worker"}, {"color": "green", "from": "api.py", "to": "App"}, {"color": "blue", "from": "src", "to": "__init__.py"}, {"color": "blue", "from": "core", "to": "__init__.py"}, {"color": "blue", "from": "core", "to": "workflow.py"}, {"color": "steelblue", "from": "workflow.py", "to": "task_id_creator"}, {"color": "steelblue", "from": "workflow.py", "to": "batch_data_parser"}, {"color": "steelblue", "from": "workflow.py", "to": "simple_permutator"}, {"color": "steelblue", "from": "workflow.py", "to": "path_valid_check"}, {"color": "steelblue", "from": "workflow.py", "to": "yaml_parser"}, {"color": "green", "from": "workflow.py", "to": "amWorkflow"}, {"color": "green", "from": "workflow.py", "to": "engine"}, {"color": "green", "from": "workflow.py", "to": "db"}, {"color": "green", "from": "workflow.py", "to": "geom"}, {"color": "green", "from": "workflow.py", "to": "mesh"}, {"color": "green", "from": "workflow.py", "to": "tool"}, {"color": "green", "from": "workflow.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "workflow.py", "to": "BaseWorkflow"}, {"color": "green", "from": "workflow.py", "to": "MapParamModel"}, {"color": "green", "from": "workflow.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "workflow.py", "to": "DimensionViolationException"}, {"color": "green", "from": "workflow.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "workflow.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "workflow.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "workflow.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "workflow.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "workflow.py", "to": "InsufficientDataException"}, {"color": "green", "from": "workflow.py", "to": "Directory"}, {"color": "green", "from": "workflow.py", "to": "Timestamp"}, {"color": "green", "from": "workflow.py", "to": "Label"}, {"color": "green", "from": "workflow.py", "to": "Base"}, {"color": "green", "from": "workflow.py", "to": "GeometryFile"}, {"color": "green", "from": "workflow.py", "to": "SliceFile"}, {"color": "green", "from": "workflow.py", "to": "MeshFile"}, {"color": "green", "from": "workflow.py", "to": "GCode"}, {"color": "green", "from": "workflow.py", "to": "FEResult"}, {"color": "green", "from": "workflow.py", "to": "ModelProfile"}, {"color": "green", "from": "workflow.py", "to": "ModelParameter"}, {"color": "green", "from": "workflow.py", "to": "ParameterToProfile"}, {"color": "green", "from": "workflow.py", "to": "ParameterValue"}, {"color": "green", "from": "workflow.py", "to": "ImportedFile"}, {"color": "green", "from": "workflow.py", "to": "Task"}, {"color": "green", "from": "workflow.py", "to": "PolygonInfiller"}, {"color": "green", "from": "workflow.py", "to": "Pnt"}, {"color": "green", "from": "workflow.py", "to": "Segments"}, {"color": "green", "from": "workflow.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "workflow.py", "to": "Worker"}, {"color": "green", "from": "workflow.py", "to": "App"}, {"color": "blue", "from": "constants", "to": "data_model.py"}, {"color": "blue", "from": "constants", "to": "exceptions.py"}, {"color": "blue", "from": "constants", "to": "enums.py"}, {"color": "blue", "from": "constants", "to": "__init__ .py"}, {"color": "green", "from": "data_model.py", "to": "amWorkflow"}, {"color": "green", "from": "data_model.py", "to": "engine"}, {"color": "green", "from": "data_model.py", "to": "db"}, {"color": "green", "from": "data_model.py", "to": "geom"}, {"color": "green", "from": "data_model.py", "to": "mesh"}, {"color": "green", "from": "data_model.py", "to": "tool"}, {"color": "green", "from": "data_model.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "data_model.py", "to": "BaseWorkflow"}, {"color": "green", "from": "data_model.py", "to": "MapParamModel"}, {"color": "green", "from": "data_model.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "data_model.py", "to": "DimensionViolationException"}, {"color": "green", "from": "data_model.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "data_model.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "data_model.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "data_model.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "data_model.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "data_model.py", "to": "InsufficientDataException"}, {"color": "green", "from": "data_model.py", "to": "Directory"}, {"color": "green", "from": "data_model.py", "to": "Timestamp"}, {"color": "green", "from": "data_model.py", "to": "Label"}, {"color": "green", "from": "data_model.py", "to": "Base"}, {"color": "green", "from": "data_model.py", "to": "GeometryFile"}, {"color": "green", "from": "data_model.py", "to": "SliceFile"}, {"color": "green", "from": "data_model.py", "to": "MeshFile"}, {"color": "green", "from": "data_model.py", "to": "GCode"}, {"color": "green", "from": "data_model.py", "to": "FEResult"}, {"color": "green", "from": "data_model.py", "to": "ModelProfile"}, {"color": "green", "from": "data_model.py", "to": "ModelParameter"}, {"color": "green", "from": "data_model.py", "to": "ParameterToProfile"}, {"color": "green", "from": "data_model.py", "to": "ParameterValue"}, {"color": "green", "from": "data_model.py", "to": "ImportedFile"}, {"color": "green", "from": "data_model.py", "to": "Task"}, {"color": "green", "from": "data_model.py", "to": "PolygonInfiller"}, {"color": "green", "from": "data_model.py", "to": "Pnt"}, {"color": "green", "from": "data_model.py", "to": "Segments"}, {"color": "green", "from": "data_model.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "data_model.py", "to": "Worker"}, {"color": "green", "from": "data_model.py", "to": "App"}, {"color": "green", "from": "exceptions.py", "to": "amWorkflow"}, {"color": "green", "from": "exceptions.py", "to": "engine"}, {"color": "green", "from": "exceptions.py", "to": "db"}, {"color": "green", "from": "exceptions.py", "to": "geom"}, {"color": "green", "from": "exceptions.py", "to": "mesh"}, {"color": "green", "from": "exceptions.py", "to": "tool"}, {"color": "green", "from": "exceptions.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "exceptions.py", "to": "BaseWorkflow"}, {"color": "green", "from": "exceptions.py", "to": "MapParamModel"}, {"color": "green", "from": "exceptions.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "exceptions.py", "to": "DimensionViolationException"}, {"color": "green", "from": "exceptions.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "exceptions.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "exceptions.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "exceptions.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "exceptions.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "exceptions.py", "to": "InsufficientDataException"}, {"color": "green", "from": "exceptions.py", "to": "Directory"}, {"color": "green", "from": "exceptions.py", "to": "Timestamp"}, {"color": "green", "from": "exceptions.py", "to": "Label"}, {"color": "green", "from": "exceptions.py", "to": "Base"}, {"color": "green", "from": "exceptions.py", "to": "GeometryFile"}, {"color": "green", "from": "exceptions.py", "to": "SliceFile"}, {"color": "green", "from": "exceptions.py", "to": "MeshFile"}, {"color": "green", "from": "exceptions.py", "to": "GCode"}, {"color": "green", "from": "exceptions.py", "to": "FEResult"}, {"color": "green", "from": "exceptions.py", "to": "ModelProfile"}, {"color": "green", "from": "exceptions.py", "to": "ModelParameter"}, {"color": "green", "from": "exceptions.py", "to": "ParameterToProfile"}, {"color": "green", "from": "exceptions.py", "to": "ParameterValue"}, {"color": "green", "from": "exceptions.py", "to": "ImportedFile"}, {"color": "green", "from": "exceptions.py", "to": "Task"}, {"color": "green", "from": "exceptions.py", "to": "PolygonInfiller"}, {"color": "green", "from": "exceptions.py", "to": "Pnt"}, {"color": "green", "from": "exceptions.py", "to": "Segments"}, {"color": "green", "from": "exceptions.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "exceptions.py", "to": "Worker"}, {"color": "green", "from": "exceptions.py", "to": "App"}, {"color": "green", "from": "enums.py", "to": "amWorkflow"}, {"color": "green", "from": "enums.py", "to": "engine"}, {"color": "green", "from": "enums.py", "to": "db"}, {"color": "green", "from": "enums.py", "to": "geom"}, {"color": "green", "from": "enums.py", "to": "mesh"}, {"color": "green", "from": "enums.py", "to": "tool"}, {"color": "green", "from": "enums.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "enums.py", "to": "BaseWorkflow"}, {"color": "green", "from": "enums.py", "to": "MapParamModel"}, {"color": "green", "from": "enums.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "enums.py", "to": "DimensionViolationException"}, {"color": "green", "from": "enums.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "enums.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "enums.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "enums.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "enums.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "enums.py", "to": "InsufficientDataException"}, {"color": "green", "from": "enums.py", "to": "Directory"}, {"color": "green", "from": "enums.py", "to": "Timestamp"}, {"color": "green", "from": "enums.py", "to": "Label"}, {"color": "green", "from": "enums.py", "to": "Base"}, {"color": "green", "from": "enums.py", "to": "GeometryFile"}, {"color": "green", "from": "enums.py", "to": "SliceFile"}, {"color": "green", "from": "enums.py", "to": "MeshFile"}, {"color": "green", "from": "enums.py", "to": "GCode"}, {"color": "green", "from": "enums.py", "to": "FEResult"}, {"color": "green", "from": "enums.py", "to": "ModelProfile"}, {"color": "green", "from": "enums.py", "to": "ModelParameter"}, {"color": "green", "from": "enums.py", "to": "ParameterToProfile"}, {"color": "green", "from": "enums.py", "to": "ParameterValue"}, {"color": "green", "from": "enums.py", "to": "ImportedFile"}, {"color": "green", "from": "enums.py", "to": "Task"}, {"color": "green", "from": "enums.py", "to": "PolygonInfiller"}, {"color": "green", "from": "enums.py", "to": "Pnt"}, {"color": "green", "from": "enums.py", "to": "Segments"}, {"color": "green", "from": "enums.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "enums.py", "to": "Worker"}, {"color": "green", "from": "enums.py", "to": "App"}, {"color": "green", "from": "__init__ .py", "to": "amWorkflow"}, {"color": "green", "from": "__init__ .py", "to": "engine"}, {"color": "green", "from": "__init__ .py", "to": "db"}, {"color": "green", "from": "__init__ .py", "to": "geom"}, {"color": "green", "from": "__init__ .py", "to": "mesh"}, {"color": "green", "from": "__init__ .py", "to": "tool"}, {"color": "green", "from": "__init__ .py", "to": "CreateWallByPoints"}, {"color": "green", "from": "__init__ .py", "to": "BaseWorkflow"}, {"color": "green", "from": "__init__ .py", "to": "MapParamModel"}, {"color": "green", "from": "__init__ .py", "to": "DeepMapParamModel"}, {"color": "green", "from": "__init__ .py", "to": "DimensionViolationException"}, {"color": "green", "from": "__init__ .py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "__init__ .py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "__init__ .py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "__init__ .py", "to": "InvalidGeometryException"}, {"color": "green", "from": "__init__ .py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "__init__ .py", "to": "InsufficientDataException"}, {"color": "green", "from": "__init__ .py", "to": "Directory"}, {"color": "green", "from": "__init__ .py", "to": "Timestamp"}, {"color": "green", "from": "__init__ .py", "to": "Label"}, {"color": "green", "from": "__init__ .py", "to": "Base"}, {"color": "green", "from": "__init__ .py", "to": "GeometryFile"}, {"color": "green", "from": "__init__ .py", "to": "SliceFile"}, {"color": "green", "from": "__init__ .py", "to": "MeshFile"}, {"color": "green", "from": "__init__ .py", "to": "GCode"}, {"color": "green", "from": "__init__ .py", "to": "FEResult"}, {"color": "green", "from": "__init__ .py", "to": "ModelProfile"}, {"color": "green", "from": "__init__ .py", "to": "ModelParameter"}, {"color": "green", "from": "__init__ .py", "to": "ParameterToProfile"}, {"color": "green", "from": "__init__ .py", "to": "ParameterValue"}, {"color": "green", "from": "__init__ .py", "to": "ImportedFile"}, {"color": "green", "from": "__init__ .py", "to": "Task"}, {"color": "green", "from": "__init__ .py", "to": "PolygonInfiller"}, {"color": "green", "from": "__init__ .py", "to": "Pnt"}, {"color": "green", "from": "__init__ .py", "to": "Segments"}, {"color": "green", "from": "__init__ .py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "__init__ .py", "to": "Worker"}, {"color": "green", "from": "__init__ .py", "to": "App"}, {"color": "blue", "from": "utils", "to": "__init__.py"}, {"color": "blue", "from": "utils", "to": "visualizer.py"}, {"color": "blue", "from": "utils", "to": "writer.py"}, {"color": "blue", "from": "utils", "to": "parser.py"}, {"color": "blue", "from": "utils", "to": "system.py"}, {"color": "blue", "from": "utils", "to": "reader.py"}, {"color": "blue", "from": "utils", "to": "db_io.py"}, {"color": "blue", "from": "utils", "to": "sanity_check.py"}, {"color": "blue", "from": "utils", "to": "meter.py"}, {"color": "blue", "from": "utils", "to": "permutator.py"}, {"color": "blue", "from": "utils", "to": "db_calib.py"}, {"color": "steelblue", "from": "visualizer.py", "to": "shortest_distance_line_line"}, {"color": "green", "from": "visualizer.py", "to": "amWorkflow"}, {"color": "green", "from": "visualizer.py", "to": "engine"}, {"color": "green", "from": "visualizer.py", "to": "db"}, {"color": "green", "from": "visualizer.py", "to": "geom"}, {"color": "green", "from": "visualizer.py", "to": "mesh"}, {"color": "green", "from": "visualizer.py", "to": "tool"}, {"color": "green", "from": "visualizer.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "visualizer.py", "to": "BaseWorkflow"}, {"color": "green", "from": "visualizer.py", "to": "MapParamModel"}, {"color": "green", "from": "visualizer.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "visualizer.py", "to": "DimensionViolationException"}, {"color": "green", "from": "visualizer.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "visualizer.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "visualizer.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "visualizer.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "visualizer.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "visualizer.py", "to": "InsufficientDataException"}, {"color": "green", "from": "visualizer.py", "to": "Directory"}, {"color": "green", "from": "visualizer.py", "to": "Timestamp"}, {"color": "green", "from": "visualizer.py", "to": "Label"}, {"color": "green", "from": "visualizer.py", "to": "Base"}, {"color": "green", "from": "visualizer.py", "to": "GeometryFile"}, {"color": "green", "from": "visualizer.py", "to": "SliceFile"}, {"color": "green", "from": "visualizer.py", "to": "MeshFile"}, {"color": "green", "from": "visualizer.py", "to": "GCode"}, {"color": "green", "from": "visualizer.py", "to": "FEResult"}, {"color": "green", "from": "visualizer.py", "to": "ModelProfile"}, {"color": "green", "from": "visualizer.py", "to": "ModelParameter"}, {"color": "green", "from": "visualizer.py", "to": "ParameterToProfile"}, {"color": "green", "from": "visualizer.py", "to": "ParameterValue"}, {"color": "green", "from": "visualizer.py", "to": "ImportedFile"}, {"color": "green", "from": "visualizer.py", "to": "Task"}, {"color": "green", "from": "visualizer.py", "to": "PolygonInfiller"}, {"color": "green", "from": "visualizer.py", "to": "Pnt"}, {"color": "green", "from": "visualizer.py", "to": "Segments"}, {"color": "green", "from": "visualizer.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "visualizer.py", "to": "Worker"}, {"color": "green", "from": "visualizer.py", "to": "App"}, {"color": "green", "from": "writer.py", "to": "amWorkflow"}, {"color": "green", "from": "writer.py", "to": "engine"}, {"color": "green", "from": "writer.py", "to": "db"}, {"color": "green", "from": "writer.py", "to": "geom"}, {"color": "green", "from": "writer.py", "to": "mesh"}, {"color": "green", "from": "writer.py", "to": "tool"}, {"color": "green", "from": "writer.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "writer.py", "to": "BaseWorkflow"}, {"color": "green", "from": "writer.py", "to": "MapParamModel"}, {"color": "green", "from": "writer.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "writer.py", "to": "DimensionViolationException"}, {"color": "green", "from": "writer.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "writer.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "writer.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "writer.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "writer.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "writer.py", "to": "InsufficientDataException"}, {"color": "green", "from": "writer.py", "to": "Directory"}, {"color": "green", "from": "writer.py", "to": "Timestamp"}, {"color": "green", "from": "writer.py", "to": "Label"}, {"color": "green", "from": "writer.py", "to": "Base"}, {"color": "green", "from": "writer.py", "to": "GeometryFile"}, {"color": "green", "from": "writer.py", "to": "SliceFile"}, {"color": "green", "from": "writer.py", "to": "MeshFile"}, {"color": "green", "from": "writer.py", "to": "GCode"}, {"color": "green", "from": "writer.py", "to": "FEResult"}, {"color": "green", "from": "writer.py", "to": "ModelProfile"}, {"color": "green", "from": "writer.py", "to": "ModelParameter"}, {"color": "green", "from": "writer.py", "to": "ParameterToProfile"}, {"color": "green", "from": "writer.py", "to": "ParameterValue"}, {"color": "green", "from": "writer.py", "to": "ImportedFile"}, {"color": "green", "from": "writer.py", "to": "Task"}, {"color": "green", "from": "writer.py", "to": "PolygonInfiller"}, {"color": "green", "from": "writer.py", "to": "Pnt"}, {"color": "green", "from": "writer.py", "to": "Segments"}, {"color": "green", "from": "writer.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "writer.py", "to": "Worker"}, {"color": "green", "from": "writer.py", "to": "App"}, {"color": "steelblue", "from": "parser.py", "to": "yaml_translater"}, {"color": "green", "from": "parser.py", "to": "amWorkflow"}, {"color": "green", "from": "parser.py", "to": "engine"}, {"color": "green", "from": "parser.py", "to": "db"}, {"color": "green", "from": "parser.py", "to": "geom"}, {"color": "green", "from": "parser.py", "to": "mesh"}, {"color": "green", "from": "parser.py", "to": "tool"}, {"color": "green", "from": "parser.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "parser.py", "to": "BaseWorkflow"}, {"color": "green", "from": "parser.py", "to": "MapParamModel"}, {"color": "green", "from": "parser.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "parser.py", "to": "DimensionViolationException"}, {"color": "green", "from": "parser.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "parser.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "parser.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "parser.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "parser.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "parser.py", "to": "InsufficientDataException"}, {"color": "green", "from": "parser.py", "to": "Directory"}, {"color": "green", "from": "parser.py", "to": "Timestamp"}, {"color": "green", "from": "parser.py", "to": "Label"}, {"color": "green", "from": "parser.py", "to": "Base"}, {"color": "green", "from": "parser.py", "to": "GeometryFile"}, {"color": "green", "from": "parser.py", "to": "SliceFile"}, {"color": "green", "from": "parser.py", "to": "MeshFile"}, {"color": "green", "from": "parser.py", "to": "GCode"}, {"color": "green", "from": "parser.py", "to": "FEResult"}, {"color": "green", "from": "parser.py", "to": "ModelProfile"}, {"color": "green", "from": "parser.py", "to": "ModelParameter"}, {"color": "green", "from": "parser.py", "to": "ParameterToProfile"}, {"color": "green", "from": "parser.py", "to": "ParameterValue"}, {"color": "green", "from": "parser.py", "to": "ImportedFile"}, {"color": "green", "from": "parser.py", "to": "Task"}, {"color": "green", "from": "parser.py", "to": "PolygonInfiller"}, {"color": "green", "from": "parser.py", "to": "Pnt"}, {"color": "green", "from": "parser.py", "to": "Segments"}, {"color": "green", "from": "parser.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "parser.py", "to": "Worker"}, {"color": "green", "from": "parser.py", "to": "App"}, {"color": "green", "from": "system.py", "to": "amWorkflow"}, {"color": "green", "from": "system.py", "to": "engine"}, {"color": "green", "from": "system.py", "to": "db"}, {"color": "green", "from": "system.py", "to": "geom"}, {"color": "green", "from": "system.py", "to": "mesh"}, {"color": "green", "from": "system.py", "to": "tool"}, {"color": "green", "from": "system.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "system.py", "to": "BaseWorkflow"}, {"color": "green", "from": "system.py", "to": "MapParamModel"}, {"color": "green", "from": "system.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "system.py", "to": "DimensionViolationException"}, {"color": "green", "from": "system.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "system.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "system.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "system.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "system.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "system.py", "to": "InsufficientDataException"}, {"color": "green", "from": "system.py", "to": "Directory"}, {"color": "green", "from": "system.py", "to": "Timestamp"}, {"color": "green", "from": "system.py", "to": "Label"}, {"color": "green", "from": "system.py", "to": "Base"}, {"color": "green", "from": "system.py", "to": "GeometryFile"}, {"color": "green", "from": "system.py", "to": "SliceFile"}, {"color": "green", "from": "system.py", "to": "MeshFile"}, {"color": "green", "from": "system.py", "to": "GCode"}, {"color": "green", "from": "system.py", "to": "FEResult"}, {"color": "green", "from": "system.py", "to": "ModelProfile"}, {"color": "green", "from": "system.py", "to": "ModelParameter"}, {"color": "green", "from": "system.py", "to": "ParameterToProfile"}, {"color": "green", "from": "system.py", "to": "ParameterValue"}, {"color": "green", "from": "system.py", "to": "ImportedFile"}, {"color": "green", "from": "system.py", "to": "Task"}, {"color": "green", "from": "system.py", "to": "PolygonInfiller"}, {"color": "green", "from": "system.py", "to": "Pnt"}, {"color": "green", "from": "system.py", "to": "Segments"}, {"color": "green", "from": "system.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "system.py", "to": "Worker"}, {"color": "green", "from": "system.py", "to": "App"}, {"color": "steelblue", "from": "reader.py", "to": "get_filename"}, {"color": "steelblue", "from": "reader.py", "to": "get_file_md5"}, {"color": "steelblue", "from": "reader.py", "to": "query_multi_data"}, {"color": "green", "from": "reader.py", "to": "amWorkflow"}, {"color": "green", "from": "reader.py", "to": "engine"}, {"color": "green", "from": "reader.py", "to": "db"}, {"color": "green", "from": "reader.py", "to": "geom"}, {"color": "green", "from": "reader.py", "to": "mesh"}, {"color": "green", "from": "reader.py", "to": "tool"}, {"color": "green", "from": "reader.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "reader.py", "to": "BaseWorkflow"}, {"color": "green", "from": "reader.py", "to": "MapParamModel"}, {"color": "green", "from": "reader.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "reader.py", "to": "DimensionViolationException"}, {"color": "green", "from": "reader.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "reader.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "reader.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "reader.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "reader.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "reader.py", "to": "InsufficientDataException"}, {"color": "green", "from": "reader.py", "to": "Directory"}, {"color": "green", "from": "reader.py", "to": "Timestamp"}, {"color": "green", "from": "reader.py", "to": "Label"}, {"color": "green", "from": "reader.py", "to": "Base"}, {"color": "green", "from": "reader.py", "to": "GeometryFile"}, {"color": "green", "from": "reader.py", "to": "SliceFile"}, {"color": "green", "from": "reader.py", "to": "MeshFile"}, {"color": "green", "from": "reader.py", "to": "GCode"}, {"color": "green", "from": "reader.py", "to": "FEResult"}, {"color": "green", "from": "reader.py", "to": "ModelProfile"}, {"color": "green", "from": "reader.py", "to": "ModelParameter"}, {"color": "green", "from": "reader.py", "to": "ParameterToProfile"}, {"color": "green", "from": "reader.py", "to": "ParameterValue"}, {"color": "green", "from": "reader.py", "to": "ImportedFile"}, {"color": "green", "from": "reader.py", "to": "Task"}, {"color": "green", "from": "reader.py", "to": "PolygonInfiller"}, {"color": "green", "from": "reader.py", "to": "Pnt"}, {"color": "green", "from": "reader.py", "to": "Segments"}, {"color": "green", "from": "reader.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "reader.py", "to": "Worker"}, {"color": "green", "from": "reader.py", "to": "App"}, {"color": "steelblue", "from": "db_io.py", "to": "path_valid_check"}, {"color": "steelblue", "from": "db_io.py", "to": "query_multi_data"}, {"color": "steelblue", "from": "db_io.py", "to": "convert_to_datetime"}, {"color": "steelblue", "from": "db_io.py", "to": "mk_dir"}, {"color": "steelblue", "from": "db_io.py", "to": "worker"}, {"color": "steelblue", "from": "db_io.py", "to": "delete_dir"}, {"color": "steelblue", "from": "db_io.py", "to": "copyer"}, {"color": "green", "from": "db_io.py", "to": "amWorkflow"}, {"color": "green", "from": "db_io.py", "to": "engine"}, {"color": "green", "from": "db_io.py", "to": "db"}, {"color": "green", "from": "db_io.py", "to": "geom"}, {"color": "green", "from": "db_io.py", "to": "mesh"}, {"color": "green", "from": "db_io.py", "to": "tool"}, {"color": "green", "from": "db_io.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "db_io.py", "to": "BaseWorkflow"}, {"color": "green", "from": "db_io.py", "to": "MapParamModel"}, {"color": "green", "from": "db_io.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "db_io.py", "to": "DimensionViolationException"}, {"color": "green", "from": "db_io.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "db_io.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "db_io.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "db_io.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "db_io.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "db_io.py", "to": "InsufficientDataException"}, {"color": "green", "from": "db_io.py", "to": "Directory"}, {"color": "green", "from": "db_io.py", "to": "Timestamp"}, {"color": "green", "from": "db_io.py", "to": "Label"}, {"color": "green", "from": "db_io.py", "to": "Base"}, {"color": "green", "from": "db_io.py", "to": "GeometryFile"}, {"color": "green", "from": "db_io.py", "to": "SliceFile"}, {"color": "green", "from": "db_io.py", "to": "MeshFile"}, {"color": "green", "from": "db_io.py", "to": "GCode"}, {"color": "green", "from": "db_io.py", "to": "FEResult"}, {"color": "green", "from": "db_io.py", "to": "ModelProfile"}, {"color": "green", "from": "db_io.py", "to": "ModelParameter"}, {"color": "green", "from": "db_io.py", "to": "ParameterToProfile"}, {"color": "green", "from": "db_io.py", "to": "ParameterValue"}, {"color": "green", "from": "db_io.py", "to": "ImportedFile"}, {"color": "green", "from": "db_io.py", "to": "Task"}, {"color": "green", "from": "db_io.py", "to": "PolygonInfiller"}, {"color": "green", "from": "db_io.py", "to": "Pnt"}, {"color": "green", "from": "db_io.py", "to": "Segments"}, {"color": "green", "from": "db_io.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "db_io.py", "to": "Worker"}, {"color": "green", "from": "db_io.py", "to": "App"}, {"color": "green", "from": "sanity_check.py", "to": "amWorkflow"}, {"color": "green", "from": "sanity_check.py", "to": "engine"}, {"color": "green", "from": "sanity_check.py", "to": "db"}, {"color": "green", "from": "sanity_check.py", "to": "geom"}, {"color": "green", "from": "sanity_check.py", "to": "mesh"}, {"color": "green", "from": "sanity_check.py", "to": "tool"}, {"color": "green", "from": "sanity_check.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "sanity_check.py", "to": "BaseWorkflow"}, {"color": "green", "from": "sanity_check.py", "to": "MapParamModel"}, {"color": "green", "from": "sanity_check.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "sanity_check.py", "to": "DimensionViolationException"}, {"color": "green", "from": "sanity_check.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "sanity_check.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "sanity_check.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "sanity_check.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "sanity_check.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "sanity_check.py", "to": "InsufficientDataException"}, {"color": "green", "from": "sanity_check.py", "to": "Directory"}, {"color": "green", "from": "sanity_check.py", "to": "Timestamp"}, {"color": "green", "from": "sanity_check.py", "to": "Label"}, {"color": "green", "from": "sanity_check.py", "to": "Base"}, {"color": "green", "from": "sanity_check.py", "to": "GeometryFile"}, {"color": "green", "from": "sanity_check.py", "to": "SliceFile"}, {"color": "green", "from": "sanity_check.py", "to": "MeshFile"}, {"color": "green", "from": "sanity_check.py", "to": "GCode"}, {"color": "green", "from": "sanity_check.py", "to": "FEResult"}, {"color": "green", "from": "sanity_check.py", "to": "ModelProfile"}, {"color": "green", "from": "sanity_check.py", "to": "ModelParameter"}, {"color": "green", "from": "sanity_check.py", "to": "ParameterToProfile"}, {"color": "green", "from": "sanity_check.py", "to": "ParameterValue"}, {"color": "green", "from": "sanity_check.py", "to": "ImportedFile"}, {"color": "green", "from": "sanity_check.py", "to": "Task"}, {"color": "green", "from": "sanity_check.py", "to": "PolygonInfiller"}, {"color": "green", "from": "sanity_check.py", "to": "Pnt"}, {"color": "green", "from": "sanity_check.py", "to": "Segments"}, {"color": "green", "from": "sanity_check.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "sanity_check.py", "to": "Worker"}, {"color": "green", "from": "sanity_check.py", "to": "App"}, {"color": "green", "from": "meter.py", "to": "amWorkflow"}, {"color": "green", "from": "meter.py", "to": "engine"}, {"color": "green", "from": "meter.py", "to": "db"}, {"color": "green", "from": "meter.py", "to": "geom"}, {"color": "green", "from": "meter.py", "to": "mesh"}, {"color": "green", "from": "meter.py", "to": "tool"}, {"color": "green", "from": "meter.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "meter.py", "to": "BaseWorkflow"}, {"color": "green", "from": "meter.py", "to": "MapParamModel"}, {"color": "green", "from": "meter.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "meter.py", "to": "DimensionViolationException"}, {"color": "green", "from": "meter.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "meter.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "meter.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "meter.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "meter.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "meter.py", "to": "InsufficientDataException"}, {"color": "green", "from": "meter.py", "to": "Directory"}, {"color": "green", "from": "meter.py", "to": "Timestamp"}, {"color": "green", "from": "meter.py", "to": "Label"}, {"color": "green", "from": "meter.py", "to": "Base"}, {"color": "green", "from": "meter.py", "to": "GeometryFile"}, {"color": "green", "from": "meter.py", "to": "SliceFile"}, {"color": "green", "from": "meter.py", "to": "MeshFile"}, {"color": "green", "from": "meter.py", "to": "GCode"}, {"color": "green", "from": "meter.py", "to": "FEResult"}, {"color": "green", "from": "meter.py", "to": "ModelProfile"}, {"color": "green", "from": "meter.py", "to": "ModelParameter"}, {"color": "green", "from": "meter.py", "to": "ParameterToProfile"}, {"color": "green", "from": "meter.py", "to": "ParameterValue"}, {"color": "green", "from": "meter.py", "to": "ImportedFile"}, {"color": "green", "from": "meter.py", "to": "Task"}, {"color": "green", "from": "meter.py", "to": "PolygonInfiller"}, {"color": "green", "from": "meter.py", "to": "Pnt"}, {"color": "green", "from": "meter.py", "to": "Segments"}, {"color": "green", "from": "meter.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "meter.py", "to": "Worker"}, {"color": "green", "from": "meter.py", "to": "App"}, {"color": "green", "from": "permutator.py", "to": "amWorkflow"}, {"color": "green", "from": "permutator.py", "to": "engine"}, {"color": "green", "from": "permutator.py", "to": "db"}, {"color": "green", "from": "permutator.py", "to": "geom"}, {"color": "green", "from": "permutator.py", "to": "mesh"}, {"color": "green", "from": "permutator.py", "to": "tool"}, {"color": "green", "from": "permutator.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "permutator.py", "to": "BaseWorkflow"}, {"color": "green", "from": "permutator.py", "to": "MapParamModel"}, {"color": "green", "from": "permutator.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "permutator.py", "to": "DimensionViolationException"}, {"color": "green", "from": "permutator.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "permutator.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "permutator.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "permutator.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "permutator.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "permutator.py", "to": "InsufficientDataException"}, {"color": "green", "from": "permutator.py", "to": "Directory"}, {"color": "green", "from": "permutator.py", "to": "Timestamp"}, {"color": "green", "from": "permutator.py", "to": "Label"}, {"color": "green", "from": "permutator.py", "to": "Base"}, {"color": "green", "from": "permutator.py", "to": "GeometryFile"}, {"color": "green", "from": "permutator.py", "to": "SliceFile"}, {"color": "green", "from": "permutator.py", "to": "MeshFile"}, {"color": "green", "from": "permutator.py", "to": "GCode"}, {"color": "green", "from": "permutator.py", "to": "FEResult"}, {"color": "green", "from": "permutator.py", "to": "ModelProfile"}, {"color": "green", "from": "permutator.py", "to": "ModelParameter"}, {"color": "green", "from": "permutator.py", "to": "ParameterToProfile"}, {"color": "green", "from": "permutator.py", "to": "ParameterValue"}, {"color": "green", "from": "permutator.py", "to": "ImportedFile"}, {"color": "green", "from": "permutator.py", "to": "Task"}, {"color": "green", "from": "permutator.py", "to": "PolygonInfiller"}, {"color": "green", "from": "permutator.py", "to": "Pnt"}, {"color": "green", "from": "permutator.py", "to": "Segments"}, {"color": "green", "from": "permutator.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "permutator.py", "to": "Worker"}, {"color": "green", "from": "permutator.py", "to": "App"}, {"color": "steelblue", "from": "db_calib.py", "to": "delete_data"}, {"color": "steelblue", "from": "db_calib.py", "to": "db_calib"}, {"color": "steelblue", "from": "db_calib.py", "to": "query_multi_data"}, {"color": "green", "from": "db_calib.py", "to": "amWorkflow"}, {"color": "green", "from": "db_calib.py", "to": "engine"}, {"color": "green", "from": "db_calib.py", "to": "db"}, {"color": "green", "from": "db_calib.py", "to": "geom"}, {"color": "green", "from": "db_calib.py", "to": "mesh"}, {"color": "green", "from": "db_calib.py", "to": "tool"}, {"color": "green", "from": "db_calib.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "db_calib.py", "to": "BaseWorkflow"}, {"color": "green", "from": "db_calib.py", "to": "MapParamModel"}, {"color": "green", "from": "db_calib.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "db_calib.py", "to": "DimensionViolationException"}, {"color": "green", "from": "db_calib.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "db_calib.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "db_calib.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "db_calib.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "db_calib.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "db_calib.py", "to": "InsufficientDataException"}, {"color": "green", "from": "db_calib.py", "to": "Directory"}, {"color": "green", "from": "db_calib.py", "to": "Timestamp"}, {"color": "green", "from": "db_calib.py", "to": "Label"}, {"color": "green", "from": "db_calib.py", "to": "Base"}, {"color": "green", "from": "db_calib.py", "to": "GeometryFile"}, {"color": "green", "from": "db_calib.py", "to": "SliceFile"}, {"color": "green", "from": "db_calib.py", "to": "MeshFile"}, {"color": "green", "from": "db_calib.py", "to": "GCode"}, {"color": "green", "from": "db_calib.py", "to": "FEResult"}, {"color": "green", "from": "db_calib.py", "to": "ModelProfile"}, {"color": "green", "from": "db_calib.py", "to": "ModelParameter"}, {"color": "green", "from": "db_calib.py", "to": "ParameterToProfile"}, {"color": "green", "from": "db_calib.py", "to": "ParameterValue"}, {"color": "green", "from": "db_calib.py", "to": "ImportedFile"}, {"color": "green", "from": "db_calib.py", "to": "Task"}, {"color": "green", "from": "db_calib.py", "to": "PolygonInfiller"}, {"color": "green", "from": "db_calib.py", "to": "Pnt"}, {"color": "green", "from": "db_calib.py", "to": "Segments"}, {"color": "green", "from": "db_calib.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "db_calib.py", "to": "Worker"}, {"color": "green", "from": "db_calib.py", "to": "App"}, {"color": "blue", "from": "database", "to": "__init__.py"}, {"color": "blue", "from": "cruds", "to": "__init__.py"}, {"color": "blue", "from": "cruds", "to": "crud.py"}, {"color": "steelblue", "from": "crud.py", "to": "transcation_rollback"}, {"color": "steelblue", "from": "crud.py", "to": "query_data_object"}, {"color": "green", "from": "crud.py", "to": "amWorkflow"}, {"color": "green", "from": "crud.py", "to": "engine"}, {"color": "green", "from": "crud.py", "to": "db"}, {"color": "green", "from": "crud.py", "to": "geom"}, {"color": "green", "from": "crud.py", "to": "mesh"}, {"color": "green", "from": "crud.py", "to": "tool"}, {"color": "green", "from": "crud.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "crud.py", "to": "BaseWorkflow"}, {"color": "green", "from": "crud.py", "to": "MapParamModel"}, {"color": "green", "from": "crud.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "crud.py", "to": "DimensionViolationException"}, {"color": "green", "from": "crud.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "crud.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "crud.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "crud.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "crud.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "crud.py", "to": "InsufficientDataException"}, {"color": "green", "from": "crud.py", "to": "Directory"}, {"color": "green", "from": "crud.py", "to": "Timestamp"}, {"color": "green", "from": "crud.py", "to": "Label"}, {"color": "green", "from": "crud.py", "to": "Base"}, {"color": "green", "from": "crud.py", "to": "GeometryFile"}, {"color": "green", "from": "crud.py", "to": "SliceFile"}, {"color": "green", "from": "crud.py", "to": "MeshFile"}, {"color": "green", "from": "crud.py", "to": "GCode"}, {"color": "green", "from": "crud.py", "to": "FEResult"}, {"color": "green", "from": "crud.py", "to": "ModelProfile"}, {"color": "green", "from": "crud.py", "to": "ModelParameter"}, {"color": "green", "from": "crud.py", "to": "ParameterToProfile"}, {"color": "green", "from": "crud.py", "to": "ParameterValue"}, {"color": "green", "from": "crud.py", "to": "ImportedFile"}, {"color": "green", "from": "crud.py", "to": "Task"}, {"color": "green", "from": "crud.py", "to": "PolygonInfiller"}, {"color": "green", "from": "crud.py", "to": "Pnt"}, {"color": "green", "from": "crud.py", "to": "Segments"}, {"color": "green", "from": "crud.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "crud.py", "to": "Worker"}, {"color": "green", "from": "crud.py", "to": "App"}, {"color": "blue", "from": "engine", "to": "config.py"}, {"color": "blue", "from": "engine", "to": "engine.py"}, {"color": "green", "from": "config.py", "to": "amWorkflow"}, {"color": "green", "from": "config.py", "to": "db"}, {"color": "green", "from": "config.py", "to": "geom"}, {"color": "green", "from": "config.py", "to": "mesh"}, {"color": "green", "from": "config.py", "to": "tool"}, {"color": "green", "from": "config.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "config.py", "to": "BaseWorkflow"}, {"color": "green", "from": "config.py", "to": "MapParamModel"}, {"color": "green", "from": "config.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "config.py", "to": "DimensionViolationException"}, {"color": "green", "from": "config.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "config.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "config.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "config.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "config.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "config.py", "to": "InsufficientDataException"}, {"color": "green", "from": "config.py", "to": "Directory"}, {"color": "green", "from": "config.py", "to": "Timestamp"}, {"color": "green", "from": "config.py", "to": "Label"}, {"color": "green", "from": "config.py", "to": "Base"}, {"color": "green", "from": "config.py", "to": "GeometryFile"}, {"color": "green", "from": "config.py", "to": "SliceFile"}, {"color": "green", "from": "config.py", "to": "MeshFile"}, {"color": "green", "from": "config.py", "to": "GCode"}, {"color": "green", "from": "config.py", "to": "FEResult"}, {"color": "green", "from": "config.py", "to": "ModelProfile"}, {"color": "green", "from": "config.py", "to": "ModelParameter"}, {"color": "green", "from": "config.py", "to": "ParameterToProfile"}, {"color": "green", "from": "config.py", "to": "ParameterValue"}, {"color": "green", "from": "config.py", "to": "ImportedFile"}, {"color": "green", "from": "config.py", "to": "Task"}, {"color": "green", "from": "config.py", "to": "PolygonInfiller"}, {"color": "green", "from": "config.py", "to": "Pnt"}, {"color": "green", "from": "config.py", "to": "Segments"}, {"color": "green", "from": "config.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "config.py", "to": "Worker"}, {"color": "green", "from": "config.py", "to": "App"}, {"color": "green", "from": "engine.py", "to": "amWorkflow"}, {"color": "green", "from": "engine.py", "to": "db"}, {"color": "green", "from": "engine.py", "to": "geom"}, {"color": "green", "from": "engine.py", "to": "mesh"}, {"color": "green", "from": "engine.py", "to": "tool"}, {"color": "green", "from": "engine.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "engine.py", "to": "BaseWorkflow"}, {"color": "green", "from": "engine.py", "to": "MapParamModel"}, {"color": "green", "from": "engine.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "engine.py", "to": "DimensionViolationException"}, {"color": "green", "from": "engine.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "engine.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "engine.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "engine.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "engine.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "engine.py", "to": "InsufficientDataException"}, {"color": "green", "from": "engine.py", "to": "Directory"}, {"color": "green", "from": "engine.py", "to": "Timestamp"}, {"color": "green", "from": "engine.py", "to": "Label"}, {"color": "green", "from": "engine.py", "to": "Base"}, {"color": "green", "from": "engine.py", "to": "GeometryFile"}, {"color": "green", "from": "engine.py", "to": "SliceFile"}, {"color": "green", "from": "engine.py", "to": "MeshFile"}, {"color": "green", "from": "engine.py", "to": "GCode"}, {"color": "green", "from": "engine.py", "to": "FEResult"}, {"color": "green", "from": "engine.py", "to": "ModelProfile"}, {"color": "green", "from": "engine.py", "to": "ModelParameter"}, {"color": "green", "from": "engine.py", "to": "ParameterToProfile"}, {"color": "green", "from": "engine.py", "to": "ParameterValue"}, {"color": "green", "from": "engine.py", "to": "ImportedFile"}, {"color": "green", "from": "engine.py", "to": "Task"}, {"color": "green", "from": "engine.py", "to": "PolygonInfiller"}, {"color": "green", "from": "engine.py", "to": "Pnt"}, {"color": "green", "from": "engine.py", "to": "Segments"}, {"color": "green", "from": "engine.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "engine.py", "to": "Worker"}, {"color": "green", "from": "engine.py", "to": "App"}, {"color": "blue", "from": "models", "to": "__init__.py"}, {"color": "blue", "from": "models", "to": "model.py"}, {"color": "green", "from": "model.py", "to": "amWorkflow"}, {"color": "green", "from": "model.py", "to": "engine"}, {"color": "green", "from": "model.py", "to": "db"}, {"color": "green", "from": "model.py", "to": "geom"}, {"color": "green", "from": "model.py", "to": "mesh"}, {"color": "green", "from": "model.py", "to": "tool"}, {"color": "green", "from": "model.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "model.py", "to": "BaseWorkflow"}, {"color": "green", "from": "model.py", "to": "MapParamModel"}, {"color": "green", "from": "model.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "model.py", "to": "DimensionViolationException"}, {"color": "green", "from": "model.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "model.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "model.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "model.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "model.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "model.py", "to": "InsufficientDataException"}, {"color": "green", "from": "model.py", "to": "Directory"}, {"color": "green", "from": "model.py", "to": "Timestamp"}, {"color": "green", "from": "model.py", "to": "Label"}, {"color": "green", "from": "model.py", "to": "Base"}, {"color": "green", "from": "model.py", "to": "GeometryFile"}, {"color": "green", "from": "model.py", "to": "SliceFile"}, {"color": "green", "from": "model.py", "to": "MeshFile"}, {"color": "green", "from": "model.py", "to": "GCode"}, {"color": "green", "from": "model.py", "to": "FEResult"}, {"color": "green", "from": "model.py", "to": "ModelProfile"}, {"color": "green", "from": "model.py", "to": "ModelParameter"}, {"color": "green", "from": "model.py", "to": "ParameterToProfile"}, {"color": "green", "from": "model.py", "to": "ParameterValue"}, {"color": "green", "from": "model.py", "to": "ImportedFile"}, {"color": "green", "from": "model.py", "to": "Task"}, {"color": "green", "from": "model.py", "to": "PolygonInfiller"}, {"color": "green", "from": "model.py", "to": "Pnt"}, {"color": "green", "from": "model.py", "to": "Segments"}, {"color": "green", "from": "model.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "model.py", "to": "Worker"}, {"color": "green", "from": "model.py", "to": "App"}, {"color": "blue", "from": "geometries", "to": "__init__.py"}, {"color": "blue", "from": "geometries", "to": "infiller.py"}, {"color": "blue", "from": "geometries", "to": "mesher.py"}, {"color": "blue", "from": "geometries", "to": "property.py"}, {"color": "blue", "from": "geometries", "to": "builder.py"}, {"color": "blue", "from": "geometries", "to": "simple_geometry.py"}, {"color": "blue", "from": "geometries", "to": "operator.py"}, {"color": "blue", "from": "geometries", "to": "composite_geometry.py"}, {"color": "green", "from": "infiller.py", "to": "amWorkflow"}, {"color": "green", "from": "infiller.py", "to": "engine"}, {"color": "green", "from": "infiller.py", "to": "db"}, {"color": "green", "from": "infiller.py", "to": "geom"}, {"color": "green", "from": "infiller.py", "to": "mesh"}, {"color": "green", "from": "infiller.py", "to": "tool"}, {"color": "green", "from": "infiller.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "infiller.py", "to": "BaseWorkflow"}, {"color": "green", "from": "infiller.py", "to": "MapParamModel"}, {"color": "green", "from": "infiller.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "infiller.py", "to": "DimensionViolationException"}, {"color": "green", "from": "infiller.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "infiller.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "infiller.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "infiller.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "infiller.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "infiller.py", "to": "InsufficientDataException"}, {"color": "green", "from": "infiller.py", "to": "Directory"}, {"color": "green", "from": "infiller.py", "to": "Timestamp"}, {"color": "green", "from": "infiller.py", "to": "Label"}, {"color": "green", "from": "infiller.py", "to": "Base"}, {"color": "green", "from": "infiller.py", "to": "GeometryFile"}, {"color": "green", "from": "infiller.py", "to": "SliceFile"}, {"color": "green", "from": "infiller.py", "to": "MeshFile"}, {"color": "green", "from": "infiller.py", "to": "GCode"}, {"color": "green", "from": "infiller.py", "to": "FEResult"}, {"color": "green", "from": "infiller.py", "to": "ModelProfile"}, {"color": "green", "from": "infiller.py", "to": "ModelParameter"}, {"color": "green", "from": "infiller.py", "to": "ParameterToProfile"}, {"color": "green", "from": "infiller.py", "to": "ParameterValue"}, {"color": "green", "from": "infiller.py", "to": "ImportedFile"}, {"color": "green", "from": "infiller.py", "to": "Task"}, {"color": "green", "from": "infiller.py", "to": "PolygonInfiller"}, {"color": "green", "from": "infiller.py", "to": "Pnt"}, {"color": "green", "from": "infiller.py", "to": "Segments"}, {"color": "green", "from": "infiller.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "infiller.py", "to": "Worker"}, {"color": "green", "from": "infiller.py", "to": "App"}, {"color": "steelblue", "from": "mesher.py", "to": "get_geom_pointer"}, {"color": "steelblue", "from": "mesher.py", "to": "split"}, {"color": "green", "from": "mesher.py", "to": "amWorkflow"}, {"color": "green", "from": "mesher.py", "to": "engine"}, {"color": "green", "from": "mesher.py", "to": "db"}, {"color": "green", "from": "mesher.py", "to": "geom"}, {"color": "green", "from": "mesher.py", "to": "mesh"}, {"color": "green", "from": "mesher.py", "to": "tool"}, {"color": "green", "from": "mesher.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "mesher.py", "to": "BaseWorkflow"}, {"color": "green", "from": "mesher.py", "to": "MapParamModel"}, {"color": "green", "from": "mesher.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "mesher.py", "to": "DimensionViolationException"}, {"color": "green", "from": "mesher.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "mesher.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "mesher.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "mesher.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "mesher.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "mesher.py", "to": "InsufficientDataException"}, {"color": "green", "from": "mesher.py", "to": "Directory"}, {"color": "green", "from": "mesher.py", "to": "Timestamp"}, {"color": "green", "from": "mesher.py", "to": "Label"}, {"color": "green", "from": "mesher.py", "to": "Base"}, {"color": "green", "from": "mesher.py", "to": "GeometryFile"}, {"color": "green", "from": "mesher.py", "to": "SliceFile"}, {"color": "green", "from": "mesher.py", "to": "MeshFile"}, {"color": "green", "from": "mesher.py", "to": "GCode"}, {"color": "green", "from": "mesher.py", "to": "FEResult"}, {"color": "green", "from": "mesher.py", "to": "ModelProfile"}, {"color": "green", "from": "mesher.py", "to": "ModelParameter"}, {"color": "green", "from": "mesher.py", "to": "ParameterToProfile"}, {"color": "green", "from": "mesher.py", "to": "ParameterValue"}, {"color": "green", "from": "mesher.py", "to": "ImportedFile"}, {"color": "green", "from": "mesher.py", "to": "Task"}, {"color": "green", "from": "mesher.py", "to": "PolygonInfiller"}, {"color": "green", "from": "mesher.py", "to": "Pnt"}, {"color": "green", "from": "mesher.py", "to": "Segments"}, {"color": "green", "from": "mesher.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "mesher.py", "to": "Worker"}, {"color": "green", "from": "mesher.py", "to": "App"}, {"color": "steelblue", "from": "property.py", "to": "generate_link"}, {"color": "steelblue", "from": "property.py", "to": "shortest_distance_point_line"}, {"color": "green", "from": "property.py", "to": "amWorkflow"}, {"color": "green", "from": "property.py", "to": "engine"}, {"color": "green", "from": "property.py", "to": "db"}, {"color": "green", "from": "property.py", "to": "geom"}, {"color": "green", "from": "property.py", "to": "mesh"}, {"color": "green", "from": "property.py", "to": "tool"}, {"color": "green", "from": "property.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "property.py", "to": "BaseWorkflow"}, {"color": "green", "from": "property.py", "to": "MapParamModel"}, {"color": "green", "from": "property.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "property.py", "to": "DimensionViolationException"}, {"color": "green", "from": "property.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "property.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "property.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "property.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "property.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "property.py", "to": "InsufficientDataException"}, {"color": "green", "from": "property.py", "to": "Directory"}, {"color": "green", "from": "property.py", "to": "Timestamp"}, {"color": "green", "from": "property.py", "to": "Label"}, {"color": "green", "from": "property.py", "to": "Base"}, {"color": "green", "from": "property.py", "to": "GeometryFile"}, {"color": "green", "from": "property.py", "to": "SliceFile"}, {"color": "green", "from": "property.py", "to": "MeshFile"}, {"color": "green", "from": "property.py", "to": "GCode"}, {"color": "green", "from": "property.py", "to": "FEResult"}, {"color": "green", "from": "property.py", "to": "ModelProfile"}, {"color": "green", "from": "property.py", "to": "ModelParameter"}, {"color": "green", "from": "property.py", "to": "ParameterToProfile"}, {"color": "green", "from": "property.py", "to": "ParameterValue"}, {"color": "green", "from": "property.py", "to": "ImportedFile"}, {"color": "green", "from": "property.py", "to": "Task"}, {"color": "green", "from": "property.py", "to": "PolygonInfiller"}, {"color": "green", "from": "property.py", "to": "Pnt"}, {"color": "green", "from": "property.py", "to": "Segments"}, {"color": "green", "from": "property.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "property.py", "to": "Worker"}, {"color": "green", "from": "property.py", "to": "App"}, {"color": "green", "from": "builder.py", "to": "amWorkflow"}, {"color": "green", "from": "builder.py", "to": "engine"}, {"color": "green", "from": "builder.py", "to": "db"}, {"color": "green", "from": "builder.py", "to": "geom"}, {"color": "green", "from": "builder.py", "to": "mesh"}, {"color": "green", "from": "builder.py", "to": "tool"}, {"color": "green", "from": "builder.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "builder.py", "to": "BaseWorkflow"}, {"color": "green", "from": "builder.py", "to": "MapParamModel"}, {"color": "green", "from": "builder.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "builder.py", "to": "DimensionViolationException"}, {"color": "green", "from": "builder.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "builder.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "builder.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "builder.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "builder.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "builder.py", "to": "InsufficientDataException"}, {"color": "green", "from": "builder.py", "to": "Directory"}, {"color": "green", "from": "builder.py", "to": "Timestamp"}, {"color": "green", "from": "builder.py", "to": "Label"}, {"color": "green", "from": "builder.py", "to": "Base"}, {"color": "green", "from": "builder.py", "to": "GeometryFile"}, {"color": "green", "from": "builder.py", "to": "SliceFile"}, {"color": "green", "from": "builder.py", "to": "MeshFile"}, {"color": "green", "from": "builder.py", "to": "GCode"}, {"color": "green", "from": "builder.py", "to": "FEResult"}, {"color": "green", "from": "builder.py", "to": "ModelProfile"}, {"color": "green", "from": "builder.py", "to": "ModelParameter"}, {"color": "green", "from": "builder.py", "to": "ParameterToProfile"}, {"color": "green", "from": "builder.py", "to": "ParameterValue"}, {"color": "green", "from": "builder.py", "to": "ImportedFile"}, {"color": "green", "from": "builder.py", "to": "Task"}, {"color": "green", "from": "builder.py", "to": "PolygonInfiller"}, {"color": "green", "from": "builder.py", "to": "Pnt"}, {"color": "green", "from": "builder.py", "to": "Segments"}, {"color": "green", "from": "builder.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "builder.py", "to": "Worker"}, {"color": "green", "from": "builder.py", "to": "App"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "p_center_of_mass"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "random_pnt_gen"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "geom_copy"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "translate"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "create_prism"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "create_face"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "reverse"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "geometry_builder"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "create_edge"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "laterality_indicator"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "sewer"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "create_wire"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "check_parallel_line_line"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "shortest_distance_line_line"}, {"color": "steelblue", "from": "simple_geometry.py", "to": "check_overlap"}, {"color": "green", "from": "simple_geometry.py", "to": "amWorkflow"}, {"color": "green", "from": "simple_geometry.py", "to": "engine"}, {"color": "green", "from": "simple_geometry.py", "to": "db"}, {"color": "green", "from": "simple_geometry.py", "to": "geom"}, {"color": "green", "from": "simple_geometry.py", "to": "mesh"}, {"color": "green", "from": "simple_geometry.py", "to": "tool"}, {"color": "green", "from": "simple_geometry.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "simple_geometry.py", "to": "BaseWorkflow"}, {"color": "green", "from": "simple_geometry.py", "to": "MapParamModel"}, {"color": "green", "from": "simple_geometry.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "simple_geometry.py", "to": "DimensionViolationException"}, {"color": "green", "from": "simple_geometry.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "simple_geometry.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "simple_geometry.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "simple_geometry.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "simple_geometry.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "simple_geometry.py", "to": "InsufficientDataException"}, {"color": "green", "from": "simple_geometry.py", "to": "Directory"}, {"color": "green", "from": "simple_geometry.py", "to": "Timestamp"}, {"color": "green", "from": "simple_geometry.py", "to": "Label"}, {"color": "green", "from": "simple_geometry.py", "to": "Base"}, {"color": "green", "from": "simple_geometry.py", "to": "GeometryFile"}, {"color": "green", "from": "simple_geometry.py", "to": "SliceFile"}, {"color": "green", "from": "simple_geometry.py", "to": "MeshFile"}, {"color": "green", "from": "simple_geometry.py", "to": "GCode"}, {"color": "green", "from": "simple_geometry.py", "to": "FEResult"}, {"color": "green", "from": "simple_geometry.py", "to": "ModelProfile"}, {"color": "green", "from": "simple_geometry.py", "to": "ModelParameter"}, {"color": "green", "from": "simple_geometry.py", "to": "ParameterToProfile"}, {"color": "green", "from": "simple_geometry.py", "to": "ParameterValue"}, {"color": "green", "from": "simple_geometry.py", "to": "ImportedFile"}, {"color": "green", "from": "simple_geometry.py", "to": "Task"}, {"color": "green", "from": "simple_geometry.py", "to": "PolygonInfiller"}, {"color": "green", "from": "simple_geometry.py", "to": "Pnt"}, {"color": "green", "from": "simple_geometry.py", "to": "Segments"}, {"color": "green", "from": "simple_geometry.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "simple_geometry.py", "to": "Worker"}, {"color": "green", "from": "simple_geometry.py", "to": "App"}, {"color": "steelblue", "from": "operator.py", "to": "get_occ_bounding_box"}, {"color": "steelblue", "from": "operator.py", "to": "geometry_builder"}, {"color": "steelblue", "from": "operator.py", "to": "get_face_center_of_mass"}, {"color": "steelblue", "from": "operator.py", "to": "scaler"}, {"color": "steelblue", "from": "operator.py", "to": "topo_explorer"}, {"color": "green", "from": "operator.py", "to": "amWorkflow"}, {"color": "green", "from": "operator.py", "to": "engine"}, {"color": "green", "from": "operator.py", "to": "db"}, {"color": "green", "from": "operator.py", "to": "geom"}, {"color": "green", "from": "operator.py", "to": "mesh"}, {"color": "green", "from": "operator.py", "to": "tool"}, {"color": "green", "from": "operator.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "operator.py", "to": "BaseWorkflow"}, {"color": "green", "from": "operator.py", "to": "MapParamModel"}, {"color": "green", "from": "operator.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "operator.py", "to": "DimensionViolationException"}, {"color": "green", "from": "operator.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "operator.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "operator.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "operator.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "operator.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "operator.py", "to": "InsufficientDataException"}, {"color": "green", "from": "operator.py", "to": "Directory"}, {"color": "green", "from": "operator.py", "to": "Timestamp"}, {"color": "green", "from": "operator.py", "to": "Label"}, {"color": "green", "from": "operator.py", "to": "Base"}, {"color": "green", "from": "operator.py", "to": "GeometryFile"}, {"color": "green", "from": "operator.py", "to": "SliceFile"}, {"color": "green", "from": "operator.py", "to": "MeshFile"}, {"color": "green", "from": "operator.py", "to": "GCode"}, {"color": "green", "from": "operator.py", "to": "FEResult"}, {"color": "green", "from": "operator.py", "to": "ModelProfile"}, {"color": "green", "from": "operator.py", "to": "ModelParameter"}, {"color": "green", "from": "operator.py", "to": "ParameterToProfile"}, {"color": "green", "from": "operator.py", "to": "ParameterValue"}, {"color": "green", "from": "operator.py", "to": "ImportedFile"}, {"color": "green", "from": "operator.py", "to": "Task"}, {"color": "green", "from": "operator.py", "to": "PolygonInfiller"}, {"color": "green", "from": "operator.py", "to": "Pnt"}, {"color": "green", "from": "operator.py", "to": "Segments"}, {"color": "green", "from": "operator.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "operator.py", "to": "Worker"}, {"color": "green", "from": "operator.py", "to": "App"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "create_face"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "worker"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "reverse"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "get_face_center_of_mass"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "translate"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "cutter3D"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "linear_interpolate"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "random_polygon_constructor"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "rotate_face"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "fuser"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "hollow_carver"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "multiplier_unit"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "deter_dum"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "polygon_interpolater"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "bender"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "create_prism"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "topo_explorer"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "sewer"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "solid_maker"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "p_get_face_area"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "create_edge"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "create_wire"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "polygon_maker"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "shortest_distance_point_line"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "angular_bisector"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "angle_of_two_arrays"}, {"color": "steelblue", "from": "composite_geometry.py", "to": "laterality_indicator"}, {"color": "green", "from": "composite_geometry.py", "to": "amWorkflow"}, {"color": "green", "from": "composite_geometry.py", "to": "engine"}, {"color": "green", "from": "composite_geometry.py", "to": "db"}, {"color": "green", "from": "composite_geometry.py", "to": "geom"}, {"color": "green", "from": "composite_geometry.py", "to": "mesh"}, {"color": "green", "from": "composite_geometry.py", "to": "tool"}, {"color": "green", "from": "composite_geometry.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "composite_geometry.py", "to": "BaseWorkflow"}, {"color": "green", "from": "composite_geometry.py", "to": "MapParamModel"}, {"color": "green", "from": "composite_geometry.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "composite_geometry.py", "to": "DimensionViolationException"}, {"color": "green", "from": "composite_geometry.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "composite_geometry.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "composite_geometry.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "composite_geometry.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "composite_geometry.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "composite_geometry.py", "to": "InsufficientDataException"}, {"color": "green", "from": "composite_geometry.py", "to": "Directory"}, {"color": "green", "from": "composite_geometry.py", "to": "Timestamp"}, {"color": "green", "from": "composite_geometry.py", "to": "Label"}, {"color": "green", "from": "composite_geometry.py", "to": "Base"}, {"color": "green", "from": "composite_geometry.py", "to": "GeometryFile"}, {"color": "green", "from": "composite_geometry.py", "to": "SliceFile"}, {"color": "green", "from": "composite_geometry.py", "to": "MeshFile"}, {"color": "green", "from": "composite_geometry.py", "to": "GCode"}, {"color": "green", "from": "composite_geometry.py", "to": "FEResult"}, {"color": "green", "from": "composite_geometry.py", "to": "ModelProfile"}, {"color": "green", "from": "composite_geometry.py", "to": "ModelParameter"}, {"color": "green", "from": "composite_geometry.py", "to": "ParameterToProfile"}, {"color": "green", "from": "composite_geometry.py", "to": "ParameterValue"}, {"color": "green", "from": "composite_geometry.py", "to": "ImportedFile"}, {"color": "green", "from": "composite_geometry.py", "to": "Task"}, {"color": "green", "from": "composite_geometry.py", "to": "PolygonInfiller"}, {"color": "green", "from": "composite_geometry.py", "to": "Pnt"}, {"color": "green", "from": "composite_geometry.py", "to": "Segments"}, {"color": "green", "from": "composite_geometry.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "composite_geometry.py", "to": "Worker"}, {"color": "green", "from": "composite_geometry.py", "to": "App"}, {"color": "blue", "from": "interface", "to": "__init__.py"}, {"color": "blue", "from": "cli", "to": "__init__.py"}, {"color": "blue", "from": "cli", "to": "display.py"}, {"color": "blue", "from": "cli", "to": "cli_workflow.py"}, {"color": "steelblue", "from": "display.py", "to": "query_multi_data"}, {"color": "green", "from": "display.py", "to": "amWorkflow"}, {"color": "green", "from": "display.py", "to": "engine"}, {"color": "green", "from": "display.py", "to": "db"}, {"color": "green", "from": "display.py", "to": "geom"}, {"color": "green", "from": "display.py", "to": "mesh"}, {"color": "green", "from": "display.py", "to": "tool"}, {"color": "green", "from": "display.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "display.py", "to": "BaseWorkflow"}, {"color": "green", "from": "display.py", "to": "MapParamModel"}, {"color": "green", "from": "display.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "display.py", "to": "DimensionViolationException"}, {"color": "green", "from": "display.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "display.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "display.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "display.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "display.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "display.py", "to": "InsufficientDataException"}, {"color": "green", "from": "display.py", "to": "Directory"}, {"color": "green", "from": "display.py", "to": "Timestamp"}, {"color": "green", "from": "display.py", "to": "Label"}, {"color": "green", "from": "display.py", "to": "Base"}, {"color": "green", "from": "display.py", "to": "GeometryFile"}, {"color": "green", "from": "display.py", "to": "SliceFile"}, {"color": "green", "from": "display.py", "to": "MeshFile"}, {"color": "green", "from": "display.py", "to": "GCode"}, {"color": "green", "from": "display.py", "to": "FEResult"}, {"color": "green", "from": "display.py", "to": "ModelProfile"}, {"color": "green", "from": "display.py", "to": "ModelParameter"}, {"color": "green", "from": "display.py", "to": "ParameterToProfile"}, {"color": "green", "from": "display.py", "to": "ParameterValue"}, {"color": "green", "from": "display.py", "to": "ImportedFile"}, {"color": "green", "from": "display.py", "to": "Task"}, {"color": "green", "from": "display.py", "to": "PolygonInfiller"}, {"color": "green", "from": "display.py", "to": "Pnt"}, {"color": "green", "from": "display.py", "to": "Segments"}, {"color": "green", "from": "display.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "display.py", "to": "Worker"}, {"color": "green", "from": "display.py", "to": "App"}, {"color": "green", "from": "cli_workflow.py", "to": "amWorkflow"}, {"color": "green", "from": "cli_workflow.py", "to": "engine"}, {"color": "green", "from": "cli_workflow.py", "to": "db"}, {"color": "green", "from": "cli_workflow.py", "to": "geom"}, {"color": "green", "from": "cli_workflow.py", "to": "mesh"}, {"color": "green", "from": "cli_workflow.py", "to": "tool"}, {"color": "green", "from": "cli_workflow.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "cli_workflow.py", "to": "BaseWorkflow"}, {"color": "green", "from": "cli_workflow.py", "to": "MapParamModel"}, {"color": "green", "from": "cli_workflow.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "cli_workflow.py", "to": "DimensionViolationException"}, {"color": "green", "from": "cli_workflow.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "cli_workflow.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "cli_workflow.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "cli_workflow.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "cli_workflow.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "cli_workflow.py", "to": "InsufficientDataException"}, {"color": "green", "from": "cli_workflow.py", "to": "Directory"}, {"color": "green", "from": "cli_workflow.py", "to": "Timestamp"}, {"color": "green", "from": "cli_workflow.py", "to": "Label"}, {"color": "green", "from": "cli_workflow.py", "to": "Base"}, {"color": "green", "from": "cli_workflow.py", "to": "GeometryFile"}, {"color": "green", "from": "cli_workflow.py", "to": "SliceFile"}, {"color": "green", "from": "cli_workflow.py", "to": "MeshFile"}, {"color": "green", "from": "cli_workflow.py", "to": "GCode"}, {"color": "green", "from": "cli_workflow.py", "to": "FEResult"}, {"color": "green", "from": "cli_workflow.py", "to": "ModelProfile"}, {"color": "green", "from": "cli_workflow.py", "to": "ModelParameter"}, {"color": "green", "from": "cli_workflow.py", "to": "ParameterToProfile"}, {"color": "green", "from": "cli_workflow.py", "to": "ParameterValue"}, {"color": "green", "from": "cli_workflow.py", "to": "ImportedFile"}, {"color": "green", "from": "cli_workflow.py", "to": "Task"}, {"color": "green", "from": "cli_workflow.py", "to": "PolygonInfiller"}, {"color": "green", "from": "cli_workflow.py", "to": "Pnt"}, {"color": "green", "from": "cli_workflow.py", "to": "Segments"}, {"color": "green", "from": "cli_workflow.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "cli_workflow.py", "to": "Worker"}, {"color": "green", "from": "cli_workflow.py", "to": "App"}, {"color": "blue", "from": "gui", "to": "__init__.py"}, {"color": "blue", "from": "Qt", "to": "draft_ui.py"}, {"color": "blue", "from": "Qt", "to": "sub_window.py"}, {"color": "green", "from": "draft_ui.py", "to": "amWorkflow"}, {"color": "green", "from": "draft_ui.py", "to": "engine"}, {"color": "green", "from": "draft_ui.py", "to": "db"}, {"color": "green", "from": "draft_ui.py", "to": "geom"}, {"color": "green", "from": "draft_ui.py", "to": "mesh"}, {"color": "green", "from": "draft_ui.py", "to": "tool"}, {"color": "green", "from": "draft_ui.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "draft_ui.py", "to": "BaseWorkflow"}, {"color": "green", "from": "draft_ui.py", "to": "MapParamModel"}, {"color": "green", "from": "draft_ui.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "draft_ui.py", "to": "DimensionViolationException"}, {"color": "green", "from": "draft_ui.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "draft_ui.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "draft_ui.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "draft_ui.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "draft_ui.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "draft_ui.py", "to": "InsufficientDataException"}, {"color": "green", "from": "draft_ui.py", "to": "Directory"}, {"color": "green", "from": "draft_ui.py", "to": "Timestamp"}, {"color": "green", "from": "draft_ui.py", "to": "Label"}, {"color": "green", "from": "draft_ui.py", "to": "Base"}, {"color": "green", "from": "draft_ui.py", "to": "GeometryFile"}, {"color": "green", "from": "draft_ui.py", "to": "SliceFile"}, {"color": "green", "from": "draft_ui.py", "to": "MeshFile"}, {"color": "green", "from": "draft_ui.py", "to": "GCode"}, {"color": "green", "from": "draft_ui.py", "to": "FEResult"}, {"color": "green", "from": "draft_ui.py", "to": "ModelProfile"}, {"color": "green", "from": "draft_ui.py", "to": "ModelParameter"}, {"color": "green", "from": "draft_ui.py", "to": "ParameterToProfile"}, {"color": "green", "from": "draft_ui.py", "to": "ParameterValue"}, {"color": "green", "from": "draft_ui.py", "to": "ImportedFile"}, {"color": "green", "from": "draft_ui.py", "to": "Task"}, {"color": "green", "from": "draft_ui.py", "to": "PolygonInfiller"}, {"color": "green", "from": "draft_ui.py", "to": "Pnt"}, {"color": "green", "from": "draft_ui.py", "to": "Segments"}, {"color": "green", "from": "draft_ui.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "draft_ui.py", "to": "Worker"}, {"color": "green", "from": "draft_ui.py", "to": "App"}, {"color": "green", "from": "sub_window.py", "to": "amWorkflow"}, {"color": "green", "from": "sub_window.py", "to": "engine"}, {"color": "green", "from": "sub_window.py", "to": "db"}, {"color": "green", "from": "sub_window.py", "to": "geom"}, {"color": "green", "from": "sub_window.py", "to": "mesh"}, {"color": "green", "from": "sub_window.py", "to": "tool"}, {"color": "green", "from": "sub_window.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "sub_window.py", "to": "BaseWorkflow"}, {"color": "green", "from": "sub_window.py", "to": "MapParamModel"}, {"color": "green", "from": "sub_window.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "sub_window.py", "to": "DimensionViolationException"}, {"color": "green", "from": "sub_window.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "sub_window.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "sub_window.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "sub_window.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "sub_window.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "sub_window.py", "to": "InsufficientDataException"}, {"color": "green", "from": "sub_window.py", "to": "Directory"}, {"color": "green", "from": "sub_window.py", "to": "Timestamp"}, {"color": "green", "from": "sub_window.py", "to": "Label"}, {"color": "green", "from": "sub_window.py", "to": "Base"}, {"color": "green", "from": "sub_window.py", "to": "GeometryFile"}, {"color": "green", "from": "sub_window.py", "to": "SliceFile"}, {"color": "green", "from": "sub_window.py", "to": "MeshFile"}, {"color": "green", "from": "sub_window.py", "to": "GCode"}, {"color": "green", "from": "sub_window.py", "to": "FEResult"}, {"color": "green", "from": "sub_window.py", "to": "ModelProfile"}, {"color": "green", "from": "sub_window.py", "to": "ModelParameter"}, {"color": "green", "from": "sub_window.py", "to": "ParameterToProfile"}, {"color": "green", "from": "sub_window.py", "to": "ParameterValue"}, {"color": "green", "from": "sub_window.py", "to": "ImportedFile"}, {"color": "green", "from": "sub_window.py", "to": "Task"}, {"color": "green", "from": "sub_window.py", "to": "PolygonInfiller"}, {"color": "green", "from": "sub_window.py", "to": "Pnt"}, {"color": "green", "from": "sub_window.py", "to": "Segments"}, {"color": "green", "from": "sub_window.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "sub_window.py", "to": "Worker"}, {"color": "green", "from": "sub_window.py", "to": "App"}, {"color": "blue", "from": "web", "to": "draft_ui.py"}, {"color": "blue", "from": "web", "to": "stl_viewer.py"}, {"color": "green", "from": "stl_viewer.py", "to": "amWorkflow"}, {"color": "green", "from": "stl_viewer.py", "to": "engine"}, {"color": "green", "from": "stl_viewer.py", "to": "db"}, {"color": "green", "from": "stl_viewer.py", "to": "geom"}, {"color": "green", "from": "stl_viewer.py", "to": "mesh"}, {"color": "green", "from": "stl_viewer.py", "to": "tool"}, {"color": "green", "from": "stl_viewer.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "stl_viewer.py", "to": "BaseWorkflow"}, {"color": "green", "from": "stl_viewer.py", "to": "MapParamModel"}, {"color": "green", "from": "stl_viewer.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "stl_viewer.py", "to": "DimensionViolationException"}, {"color": "green", "from": "stl_viewer.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "stl_viewer.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "stl_viewer.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "stl_viewer.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "stl_viewer.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "stl_viewer.py", "to": "InsufficientDataException"}, {"color": "green", "from": "stl_viewer.py", "to": "Directory"}, {"color": "green", "from": "stl_viewer.py", "to": "Timestamp"}, {"color": "green", "from": "stl_viewer.py", "to": "Label"}, {"color": "green", "from": "stl_viewer.py", "to": "Base"}, {"color": "green", "from": "stl_viewer.py", "to": "GeometryFile"}, {"color": "green", "from": "stl_viewer.py", "to": "SliceFile"}, {"color": "green", "from": "stl_viewer.py", "to": "MeshFile"}, {"color": "green", "from": "stl_viewer.py", "to": "GCode"}, {"color": "green", "from": "stl_viewer.py", "to": "FEResult"}, {"color": "green", "from": "stl_viewer.py", "to": "ModelProfile"}, {"color": "green", "from": "stl_viewer.py", "to": "ModelParameter"}, {"color": "green", "from": "stl_viewer.py", "to": "ParameterToProfile"}, {"color": "green", "from": "stl_viewer.py", "to": "ParameterValue"}, {"color": "green", "from": "stl_viewer.py", "to": "ImportedFile"}, {"color": "green", "from": "stl_viewer.py", "to": "Task"}, {"color": "green", "from": "stl_viewer.py", "to": "PolygonInfiller"}, {"color": "green", "from": "stl_viewer.py", "to": "Pnt"}, {"color": "green", "from": "stl_viewer.py", "to": "Segments"}, {"color": "green", "from": "stl_viewer.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "stl_viewer.py", "to": "Worker"}, {"color": "green", "from": "stl_viewer.py", "to": "App"}, {"color": "blue", "from": "tests", "to": "__init__.py"}, {"color": "blue", "from": "tests", "to": "test_base_workflow.py"}, {"color": "blue", "from": "tests", "to": "test.py"}, {"color": "steelblue", "from": "test_base_workflow.py", "to": "intersector"}, {"color": "steelblue", "from": "test_base_workflow.py", "to": "create_box"}, {"color": "green", "from": "test_base_workflow.py", "to": "amWorkflow"}, {"color": "green", "from": "test_base_workflow.py", "to": "engine"}, {"color": "green", "from": "test_base_workflow.py", "to": "db"}, {"color": "green", "from": "test_base_workflow.py", "to": "geom"}, {"color": "green", "from": "test_base_workflow.py", "to": "mesh"}, {"color": "green", "from": "test_base_workflow.py", "to": "tool"}, {"color": "green", "from": "test_base_workflow.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "test_base_workflow.py", "to": "BaseWorkflow"}, {"color": "green", "from": "test_base_workflow.py", "to": "MapParamModel"}, {"color": "green", "from": "test_base_workflow.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "test_base_workflow.py", "to": "DimensionViolationException"}, {"color": "green", "from": "test_base_workflow.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "test_base_workflow.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "test_base_workflow.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "test_base_workflow.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "test_base_workflow.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "test_base_workflow.py", "to": "InsufficientDataException"}, {"color": "green", "from": "test_base_workflow.py", "to": "Directory"}, {"color": "green", "from": "test_base_workflow.py", "to": "Timestamp"}, {"color": "green", "from": "test_base_workflow.py", "to": "Label"}, {"color": "green", "from": "test_base_workflow.py", "to": "Base"}, {"color": "green", "from": "test_base_workflow.py", "to": "GeometryFile"}, {"color": "green", "from": "test_base_workflow.py", "to": "SliceFile"}, {"color": "green", "from": "test_base_workflow.py", "to": "MeshFile"}, {"color": "green", "from": "test_base_workflow.py", "to": "GCode"}, {"color": "green", "from": "test_base_workflow.py", "to": "FEResult"}, {"color": "green", "from": "test_base_workflow.py", "to": "ModelProfile"}, {"color": "green", "from": "test_base_workflow.py", "to": "ModelParameter"}, {"color": "green", "from": "test_base_workflow.py", "to": "ParameterToProfile"}, {"color": "green", "from": "test_base_workflow.py", "to": "ParameterValue"}, {"color": "green", "from": "test_base_workflow.py", "to": "ImportedFile"}, {"color": "green", "from": "test_base_workflow.py", "to": "Task"}, {"color": "green", "from": "test_base_workflow.py", "to": "PolygonInfiller"}, {"color": "green", "from": "test_base_workflow.py", "to": "Pnt"}, {"color": "green", "from": "test_base_workflow.py", "to": "Segments"}, {"color": "green", "from": "test_base_workflow.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "test_base_workflow.py", "to": "Worker"}, {"color": "green", "from": "test_base_workflow.py", "to": "App"}, {"color": "steelblue", "from": "test.py", "to": "is_hex"}, {"color": "steelblue", "from": "test.py", "to": "namer"}, {"color": "steelblue", "from": "test.py", "to": "create_box"}, {"color": "steelblue", "from": "test.py", "to": "intersector"}, {"color": "green", "from": "test.py", "to": "amWorkflow"}, {"color": "green", "from": "test.py", "to": "engine"}, {"color": "green", "from": "test.py", "to": "db"}, {"color": "green", "from": "test.py", "to": "geom"}, {"color": "green", "from": "test.py", "to": "mesh"}, {"color": "green", "from": "test.py", "to": "tool"}, {"color": "green", "from": "test.py", "to": "CreateWallByPoints"}, {"color": "green", "from": "test.py", "to": "BaseWorkflow"}, {"color": "green", "from": "test.py", "to": "MapParamModel"}, {"color": "green", "from": "test.py", "to": "DeepMapParamModel"}, {"color": "green", "from": "test.py", "to": "DimensionViolationException"}, {"color": "green", "from": "test.py", "to": "GmshUseBeforeInitializedException"}, {"color": "green", "from": "test.py", "to": "DimensionInconsistencyException"}, {"color": "green", "from": "test.py", "to": "NoDataInDatabaseException"}, {"color": "green", "from": "test.py", "to": "InvalidGeometryException"}, {"color": "green", "from": "test.py", "to": "InvalidFileFormatException"}, {"color": "green", "from": "test.py", "to": "InsufficientDataException"}, {"color": "green", "from": "test.py", "to": "Directory"}, {"color": "green", "from": "test.py", "to": "Timestamp"}, {"color": "green", "from": "test.py", "to": "Label"}, {"color": "green", "from": "test.py", "to": "Base"}, {"color": "green", "from": "test.py", "to": "GeometryFile"}, {"color": "green", "from": "test.py", "to": "SliceFile"}, {"color": "green", "from": "test.py", "to": "MeshFile"}, {"color": "green", "from": "test.py", "to": "GCode"}, {"color": "green", "from": "test.py", "to": "FEResult"}, {"color": "green", "from": "test.py", "to": "ModelProfile"}, {"color": "green", "from": "test.py", "to": "ModelParameter"}, {"color": "green", "from": "test.py", "to": "ParameterToProfile"}, {"color": "green", "from": "test.py", "to": "ParameterValue"}, {"color": "green", "from": "test.py", "to": "ImportedFile"}, {"color": "green", "from": "test.py", "to": "Task"}, {"color": "green", "from": "test.py", "to": "PolygonInfiller"}, {"color": "green", "from": "test.py", "to": "Pnt"}, {"color": "green", "from": "test.py", "to": "Segments"}, {"color": "green", "from": "test.py", "to": "CreateWallByPointsUpdate"}, {"color": "green", "from": "test.py", "to": "Worker"}, {"color": "green", "from": "test.py", "to": "App"}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": true,
+        "filter": [
+            "physics"
+        ]
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "forceAtlas2Based": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.01,
+            "damping": 0.4,
+            "gravitationalConstant": -50,
+            "springConstant": 0.08,
+            "springLength": 100
+        },
+        "solver": "forceAtlas2Based",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+                  // if this network requires displaying the configure window,
+                  // put it in its div
+                  options.configure["container"] = document.getElementById("config");
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+                    network.on("selectNode", neighbourhoodHighlight);
+                  
+
+                  
+
+
+                  
+                      network.on("stabilizationProgress", function(params) {
+                          document.getElementById('loadingBar').removeAttribute("style");
+                          var maxWidth = 496;
+                          var minWidth = 20;
+                          var widthFactor = params.iterations/params.total;
+                          var width = Math.max(minWidth,maxWidth * widthFactor);
+                          document.getElementById('bar').style.width = width + 'px';
+                          document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+                      });
+                      network.once("stabilizationIterationsDone", function() {
+                          document.getElementById('text').innerHTML = '100%';
+                          document.getElementById('bar').style.width = '496px';
+                          document.getElementById('loadingBar').style.opacity = 0;
+                          // really clean the dom element
+                          setTimeout(function () {document.getElementById('loadingBar').style.display = 'none';}, 500);
+                      });
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
