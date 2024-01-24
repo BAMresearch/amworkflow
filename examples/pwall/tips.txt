@@ -1,6 +1,0 @@
-You could use the command
-python pwall.py -n pwall -gp thickness length height -gpv 8 20 30
-You may also notice that there is a parameter "draft" in the decorator @aw.engine.amworkflow("draft")
-This will trigger a QT5 window and you can preview your design after clicking "Display Geometry".
-In draft mode no data will be stored in db.
-To create a real model, simply delete the string "draft".
