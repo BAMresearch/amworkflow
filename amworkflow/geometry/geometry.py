@@ -1,12 +1,16 @@
+import logging
 import typing
 from pathlib import Path
-import logging
+
+import matplotlib.pyplot as plt
 import numpy as np
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Core.TopoDS import TopoDS_Shape
 from OCC.Extend.DataExchange import write_step_file, write_stl_file
-from amworkflow.geometry import simple_geometries
+from scipy.optimize import fsolve
+
 import amworkflow.geometry.builtinCAD as bcad
+from amworkflow.geometry import composite_geometries, simple_geometries
 
 typing.override = lambda x: x
 
@@ -159,18 +163,24 @@ class GeometryParamWall(GeometryOCC):
             )
 
         elif self.infill == "honeycomb":
-            shape = honeycomb_infill(self.length, self.width, self.line_width)
-
+            points = honeycomb_infill(self.length, self.width, self.line_width)
+            creator = composite_geometries.CreateWallByPointsUpdate(
+                points, th=self.line_width, height=self.height
+            )
+            shape = creator.Shape()
         elif self.infill == "zigzag":
-            shape = zigzag_infill(self.length, self.width, self.line_width)
-
+            points = zigzag_infill(self.length, self.width, self.line_width)
+            creator = composite_geometries.CreateWallByPointsUpdate(
+                points, th=self.line_width, height=self.height
+            )
+            shape = creator.Shape()
         else:
             raise ValueError(f"Unknown infill type {self.infill}")
 
         return shape
-    
-    def honeycomb_infill(self, 
-    overall_length: float, line_width: float, honeycomb_num: int = 1
+
+    def honeycomb_infill(
+        self, overall_length: float, line_width: float, honeycomb_num: int = 1
     ) -> TopoDS_Shape:
         """Create honeycomb geometry.
 
@@ -183,7 +193,10 @@ class GeometryParamWall(GeometryOCC):
             points: list of points defining the honeycomb geometry.
 
         """
-        def half_honeycomb(origin: np.ndarray, side_length1: float, side_length2, angle: float) -> np.ndarray:
+
+        def half_honeycomb(
+            origin: np.ndarray, side_length1: float, side_length2, angle: float
+        ) -> np.ndarray:
             """Create half of a honeycomb geometry.
 
             Args:
@@ -202,35 +215,36 @@ class GeometryParamWall(GeometryOCC):
             # points[2] = origin + np.array([length, 0])
             # points[3] = origin + np.array([0.5 * length, -np.sqrt(3) * side_length / 2])
             # points[4] = origin + np.array([0.5 * length, 0])
-            points[1] = origin + np.array([side_length1 * np.cos(angle), side_length1 * np.sin(angle)])
+            points[1] = origin + np.array(
+                [side_length1 * np.cos(angle), side_length1 * np.sin(angle)]
+            )
             points[2] = points[1] + np.array([side_length2, 0])
-            points[3] = points[2] + np.array([side_length1 * np.cos(angle), -side_length1 * np.sin(angle)])
+            points[3] = points[2] + np.array(
+                [side_length1 * np.cos(angle), -side_length1 * np.sin(angle)]
+            )
             points[4] = points[1] + np.array([side_length1 * np.cos(angle), 0])
             return points
-        
+
         length = (overall_length / 3 - line_width) / honeycomb_num
         start_point = np.array([0, line_width * 0.5])
-        offset = np.array([2 * line_width,0])
+        offset = np.array([2 * line_width, 0])
         # unit_width = 4 * line_width + np.sqrt(3) * length
         point_num = 16 + honeycomb_num * 10
         half_points = np.zeros((point_num / 2, 2))
         half_points[0] = start_point
         for i in range(honeycomb_num):
             if i == 0:
-                start = start_point+offset
+                start = start_point + offset
                 honeycomb_unit = half_honeycomb(start, length, length, 1.1468)
             else:
-                start = start_point+offset+np.array([3*length*i,0])
+                start = start_point + offset + np.array([3 * length * i, 0])
                 honeycomb_unit = half_honeycomb(start, length, length, 1.1468)
-            half_points[i*5+1:i*5+6] = honeycomb_unit
+            half_points[i * 5 + 1 : i * 5 + 6] = honeycomb_unit
         another_half = half_points.copy()
         another_half[:, 1] = -another_half[:, 1]
         another_half = np.flipud(another_half)
         points = np.concatenate((half_points, another_half), axis=0)
         return points
-            
-        
-
 
 
 class GeometryCenterline(GeometryOCC):
@@ -277,6 +291,7 @@ class GeometryCenterline(GeometryOCC):
         design = None
         return design
 
+
 def honeycomb_infill(
     overall_length: float,
     overall_width: float,
@@ -285,6 +300,7 @@ def honeycomb_infill(
     angle: float = 1.1468,
     regular: bool = False,
     side_len: float = None,
+    expand_factor: float = 0,
 ):
     """
     Create honeycomb geometry.
@@ -300,16 +316,26 @@ def honeycomb_infill(
 
     def calculate_lengths_and_widths(angle_length_pair):
         x_rad = np.radians(angle_length_pair[0])
-        equation1 = ((2 * np.cos(x_rad) + 2) * angle_length_pair[1] * honeycomb_num + 1.5 * line_width - overall_length)
-        equation2 = 3 * line_width + 2 * angle_length_pair[1] * np.sin(x_rad) - overall_width
+        equation1 = (
+            (2 * np.cos(x_rad) + 2) * angle_length_pair[1] * honeycomb_num
+            + 1.5 * line_width
+            - overall_length
+        )
+        equation2 = (
+            3 * line_width + 2 * angle_length_pair[1] * np.sin(x_rad) - overall_width
+        )
         return [equation1, equation2]
 
     def create_half_honeycomb(origin, side_length1, side_length2, angle):
         points = np.zeros((5, 2))
         points[0] = origin
-        points[1] = origin + np.array([side_length1 * np.cos(angle), side_length1 * np.sin(angle)])
+        points[1] = origin + np.array(
+            [side_length1 * np.cos(angle), side_length1 * np.sin(angle)]
+        )
         points[2] = points[1] + np.array([side_length2, 0])
-        points[3] = points[2] + np.array([side_length1 * np.cos(angle), -side_length1 * np.sin(angle)])
+        points[3] = points[2] + np.array(
+            [side_length1 * np.cos(angle), -side_length1 * np.sin(angle)]
+        )
         points[4] = points[3] + np.array([side_length2 * 0.5, 0])
         return points
 
@@ -317,8 +343,15 @@ def honeycomb_infill(
         if overall_width is not None:
             overall_length -= int(line_width)
             overall_width -= int(line_width)
-            initial_guesses = [(x, y) for x in range(0, 89, 10) for y in range(1, overall_length, 10)]
-            updated_solutions = {(round(sol[0], 10), round(sol[1], 10)) for guess in initial_guesses for sol in [fsolve(calculate_lengths_and_widths, guess)] if 0 <= sol[0] <= 90 and 0 <= sol[1] <= 150}
+            initial_guesses = [
+                (x, y) for x in range(0, 89, 10) for y in range(1, overall_length, 10)
+            ]
+            updated_solutions = {
+                (round(sol[0], 10), round(sol[1], 10))
+                for guess in initial_guesses
+                for sol in [fsolve(calculate_lengths_and_widths, guess)]
+                if 0 <= sol[0] <= 90 and 0 <= sol[1] <= 150
+            }
             if updated_solutions:
                 ideal_solution = min(updated_solutions, key=lambda x: np.abs(x[0] - 45))
             else:
@@ -326,11 +359,17 @@ def honeycomb_infill(
             length = ideal_solution[1]
             angle = np.radians(ideal_solution[0])
         else:
-            length = ((overall_length - 1.5 * line_width) / (2 * np.cos(angle) + 2) / honeycomb_num)
+            length = (
+                (overall_length - 1.5 * line_width)
+                / (2 * np.cos(angle) + 2)
+                / honeycomb_num
+            )
             overall_width = 3 * line_width + 2 * np.sin(angle) * length
     else:
         length = side_len
-        overall_length = 1.5 * line_width + (2 * np.cos(angle) + 2) * side_len * honeycomb_num
+        overall_length = (
+            1.5 * line_width + (2 * np.cos(angle) + 2) * side_len * honeycomb_num
+        )
         overall_width = 3 * line_width + 2 * np.sin(angle) * length
 
     start_point = np.array([0, line_width * 0.5])
@@ -339,16 +378,28 @@ def honeycomb_infill(
     half_points = np.zeros((int((12 + (honeycomb_num - 1) * 10) / 2), 2))
     half_points[0] = start_point
     for i in range(honeycomb_num):
-        start = start_point + offset + np.array([(2 * np.cos(angle) + 2) * length * i, 0])
+        start = (
+            start_point + offset + np.array([(2 * np.cos(angle) + 2) * length * i, 0])
+        )
         honeycomb_unit = create_half_honeycomb(start, length, length, angle)
         half_points[i * 5 + 1 : i * 5 + 6] = honeycomb_unit
 
     another_half = np.flipud(np.copy(half_points) * [1, -1])
     points = np.concatenate((half_points, another_half), axis=0)
-    outer_points = np.array([[0, -overall_width * 0.5], [overall_length, -overall_width * 0.5], [overall_length, overall_width * 0.5], [0, overall_width * 0.5]])
+    outer_points = np.array(
+        [
+            [0, -overall_width * 0.5],
+            [overall_length, -overall_width * 0.5],
+            [overall_length, overall_width * 0.5],
+            [0, overall_width * 0.5],
+        ]
+    )
     points = np.concatenate((points, outer_points), axis=0)
-
+    if expand_factor != 0:
+        cnt = np.mean(points, axis=0)
+        points[2:-6] = (points[2:-6] - cnt) * (1 + expand_factor) + cnt
     return points
+
 
 def zigzag_infill(
     overall_length: float,
@@ -358,6 +409,7 @@ def zigzag_infill(
     angle: float = 1.1468,
     regular: bool = False,
     side_len: float = None,
+    expand_factor: float = 0,
 ):
     """
     Create zigzag geometry.
@@ -462,6 +514,8 @@ def zigzag_infill(
         ]
     )
     points = np.concatenate((points, outer_points), axis=0)
+    if expand_factor != 0:
+        cnt = np.mean(points, axis=0)
+        points[2:-6] = (points[2:-6] - cnt) * (1 + expand_factor) + cnt
 
     return points
-
