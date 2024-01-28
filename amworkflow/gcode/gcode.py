@@ -182,9 +182,10 @@ class GcodeFromPoints(Gcode):
         :return: The extrusion length
         :rtype: float
         """
+        rect_width = self.line_width * self.delta
         self.nozzle_area = 0.25 * np.pi * self.nozzle_diameter**2
         L = np.linalg.norm(p0 - p1)
-        E = np.round(L * self.line_width * self.layer_height / self.nozzle_area, 4)
+        E = np.round(L * rect_width * self.layer_height / self.nozzle_area, 4)
         if self.kappa == 0:
             logging.warning("Kappa is zero, set to 1")
             self.kappa = 1
@@ -215,10 +216,11 @@ class GcodeFromPoints(Gcode):
             writer.writerows(self.extrusion_tracker)
 
     def compute_feedrate(self):
+        rect_width = self.line_width * self.delta
         return (
             self.gamma
             * 60
-            / (self.layer_height * self.line_width * self.density * 1e-6)
+            / (self.layer_height * rect_width * self.density * 1e-6)
         )
 
     def read_points(self, csv_file: str):
@@ -240,6 +242,7 @@ class GcodeFromPoints(Gcode):
             self.points = bcad.rotate(
                 points_3d, angle_z=np.deg2rad(-90), cnt=points_3d[0]
             )
+            self.points = self.points[:, :2]
         self.points_t = np.array(self.points).T
         self.bbox = np.array(
             [
