@@ -151,7 +151,7 @@ class GcodeFromPoints(Gcode):
         out_gcode_dir = Path(out_gcode_dir)
         self.init_gcode()
         z = 0
-        for j in range(self.layer_num):
+        for i in range(self.layer_num):
             z += self.layer_height
             self.elevate(z)
             self.reset_extrusion()
@@ -159,11 +159,16 @@ class GcodeFromPoints(Gcode):
             coordinates = np.round(np.vstack((coordinates, coordinates[0])), 5)
             E = 0
             for j, coord in enumerate(coordinates):
-                extrusion_length = (
-                    self.compute_extrusion(coord, coordinates[j - 1])
-                    if j > 0
-                    else self.compute_extrusion(coord, np.zeros_like(coord))
-                )
+                if i == 0 and j == 0:
+                    extrusion_length = self.compute_extrusion(
+                        coord, np.zeros_like(coord)
+                    )
+                else:
+                    extrusion_length = (
+                        self.compute_extrusion(coord, coordinates[j - 1])
+                        if j > 0
+                        else 0
+                    )
                 E += extrusion_length
                 self.move(coord, np.round(E, 5), self.feedrate)
         gcode_file_path = out_gcode_dir / out_gcode
@@ -182,10 +187,9 @@ class GcodeFromPoints(Gcode):
         :return: The extrusion length
         :rtype: float
         """
-        rect_width = self.line_width * self.delta
         self.nozzle_area = 0.25 * np.pi * self.nozzle_diameter**2
         L = np.linalg.norm(p0 - p1)
-        E = np.round(L * rect_width * self.layer_height / self.nozzle_area, 4)
+        E = np.round(L * self.line_width * self.layer_height / self.nozzle_area, 4)
         if self.kappa == 0:
             logging.warning("Kappa is zero, set to 1")
             self.kappa = 1
@@ -194,7 +198,7 @@ class GcodeFromPoints(Gcode):
         return rect_E
 
     def log_consumption(self, dist, speed, material_consumption):
-        time_consumption = dist / speed * 60
+        time_consumption = dist / (speed / 60)
         volume = material_consumption * self.nozzle_area * 1e-6  # in L
         if len(self.extrusion_tracker) == 0:
             aggregate_volume = volume
@@ -217,11 +221,7 @@ class GcodeFromPoints(Gcode):
 
     def compute_feedrate(self):
         rect_width = self.line_width * self.delta
-        return (
-            self.gamma
-            * 60
-            / (self.layer_height * rect_width * self.density * 1e-6)
-        )
+        return self.gamma * 60 / (self.layer_height * rect_width * self.density * 1e-6)
 
     def read_points(self, csv_file: str):
         """Read points from file
@@ -450,6 +450,8 @@ class GcodeFromPoints(Gcode):
         self.gcode.append(
             comment(f"Estimated time consumption: {hours}hr:{minutes}min:{seconds}sec")
         )
+        print(self.time_consumption)
+        print(self.feedrate)
         self.gcode.append(
             comment(
                 f"Original point: ({self.offset_from_origin[0]},{self.offset_from_origin[1]})"

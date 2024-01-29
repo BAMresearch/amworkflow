@@ -35,7 +35,7 @@ params = {  # geometry parameters
     # Tool number of the extruder. Expected to be an integer
     "feedrate": 1800,
     # Feedrate of the extruder in mm/min. Expected to be an integer
-    "in_file_path": "/Users/yuxianghe/Documents/BAM/amworkflow_restructure/usecases/beam_zigzag_700x150x150x12.csv",
+    "in_file_path": "/Users/yuxianghe/Documents/BAM/amworkflow_restructure/usecases/cube_honeycomb_150x150x150x10.csv",
     # Path to the input file
     "fixed_feedrate": False,
     "rotate": rotate,
