@@ -1,6 +1,7 @@
 import csv
 import logging
 import os
+import re
 import typing
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -57,6 +58,10 @@ class GcodeFromPoints(Gcode):
         rotate: bool = False,
         density: float = 1,
         in_file_path: str = None,
+        num_horizant: int = 1,
+        num_vertic: int = 1,
+        plate_length: float = 1,
+        plate_width: float = 1,
         **kwargs,
     ) -> None:
         self.line_width = line_width
@@ -127,7 +132,25 @@ class GcodeFromPoints(Gcode):
         # Container of extrusion logs
         self.in_file_path = in_file_path
         # Path to the input file
-        self.read_points(self.in_file_path)
+        self.diff_geo_per_layer = False
+        # switch of different geometry per layer
+        self.num_horizant = num_horizant
+        self.num_vertic = num_vertic
+        self.plate_length = plate_length
+        self.plate_width = plate_width
+        self.need_tune = False
+        self.different_geo_per_layer = False
+        self.different_geo = False
+        self.unit_length = 0
+        self.unit_width = 0
+        self.gcodelist = []
+        self.grid = []
+        self.visualize_cache = []
+        self.standard = standard
+        self.gcode_info = {}
+        self.gcode_geo = {}
+        self.recnst_geo = {}
+        # self.read_points(self.in_file_path)
         super().__init__(**kwargs)
 
     @typing.override
@@ -417,76 +440,95 @@ class GcodeFromPoints(Gcode):
         """
         return f"{self.SetTool}{tool_number}"
 
-    def comment_info(self):
-        def comment(text):
-            return f"; {text}\n"
+    def read_gcode(self, in_file_path: str):
+        """Read gcode from file
 
-        # Format hours, minutes, and seconds
-        hours, remainder = divmod(self.timedelta.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        length = self.bbox_length
-        width = self.bbox_width
-        info_feedrate = self.feedrate
-        self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
-        self.gcode.append(comment(f"Length: {length}"))
-        self.gcode.append(comment(f"Width: {width}"))
-        self.gcode.append(comment(f"Height: {self.layer_height * self.layer_num}"))
-        self.gcode.append(comment(f"Layer height: {self.layer_height}"))
-        self.gcode.append(comment(f"Layer number: {self.layer_num}"))
-        self.gcode.append(comment(f"Line width: {self.line_width}"))
-        self.gcode.append(comment(f"Tool number: {self.tool_number}"))
-        self.gcode.append(comment(f"Feed rate: {info_feedrate}"))
-        self.gcode.append(comment(f"Kappa: {self.kappa}"))
-        self.gcode.append(comment(f"Gamma: {self.gamma}"))
-        self.gcode.append(comment(f"Delta: {self.delta}"))
-        self.gcode.append(comment(f"Standard: {self.standard}"))
-        self.gcode.append(comment(f"Coordinate system: {self.coordinate_system}"))
-        self.gcode.append(comment(f"Unit: {self.unit}"))
-        self.gcode.append(comment(f"Nozzle diameter: {self.nozzle_diameter}"))
+        :param filepath: Path to file
+        :type filepath: str
+        :return: gcode
+        :rtype: str
+        """
+        in_file_path = Path(in_file_path)
+        gcode_name = in_file_path.stem
+        with open(in_file_path, "r", encoding="utf-8") as f:
+            gcode = f.readlines()
+            annotation = []
+            moving_cmd = []
+            geo_container = []
+            info_container = {}
 
-        self.gcode.append(
-            comment(f"Material consumption(L): {self.material_consumption}")
-        )
-        self.gcode.append(
-            comment(f"Estimated time consumption: {hours}hr:{minutes}min:{seconds}sec")
-        )
-        print(self.time_consumption)
-        print(self.feedrate)
-        self.gcode.append(
-            comment(
-                f"Original point: ({self.offset_from_origin[0]},{self.offset_from_origin[1]})"
-            )
-        )
+            for line in gcode:
+                if line.startswith(";"):
+                    annotation.append(line)
+                elif line.startswith(self.LinearMove):
+                    moving_cmd.append(line)
+            for line in annotation:
+                if "Different geometry per layer" in line:
+                    self.different_geo_per_layer = True
+                key_value = line.split(":", 1)
+                if len(key_value) == 2:
+                    key, value = key_value
+                    key = key.strip("; \n")
+                    value = value.strip()
 
+                    # Optional: Convert value to a numeric type if applicable
+                    if value.startswith("(") and value.endswith(")"):
+                        # Remove parentheses and split by comma
+                        value = value[1:-1].split(",")
+                        # Convert each item to float
+                        value = tuple(float(val.strip()) for val in value)
+                    elif value.replace(".", "", 1).isdigit():
+                        value = float(value) if "." in value else int(value)
 
-class GcodeMultiplier(object):
-    def __init__(
-        self,
-        num_horizant: int,
-        num_vertic: int,
-        plate_length: float,
-        plate_width: float,
-        gcode_params: dict,
-    ) -> None:
-        self.num_horizant = num_horizant
-        self.num_vertic = num_vertic
-        self.plate_length = plate_length
-        self.plate_width = plate_width
-        self.gcode_params = gcode_params
-        self.need_tune = False
-        self.unit_length = 0
-        self.unit_width = 0
-        self.gcodelist = []
-        self.grid = []
-        self.visualize_cache = []
-        for i in range(num_horizant * num_vertic):
-            self.gcodelist.append(GcodeFromPoints(**self.gcode_params))
-        self.divide_plate()
+                    info_container[key] = value
+            self.gcode_info[gcode_name] = info_container
+            ind1 = 0
+            counter = 0
+            for line in moving_cmd:
+                condition = self.SetZ in line
+                if ind1 == 1 and condition:
+                    ind1 = 0
+                if ind1 == 1:
+                    pattern = r"([XYEF])(\d+\.\d+)"
+                    matches = re.findall(pattern, line)
+                    values = {letter: float(number) for letter, number in matches}
+                    geo_container[-1].append(values)
+                if condition:
+                    ind1 = 1
+                    counter += 1
+                    if not self.different_geo_per_layer and counter > 1:
+                        break
+                    geo_container.append([])
+            self.gcode_geo[gcode_name] = geo_container
+
+    def reconstruct_geo(self):
+        """Reconstruct the geometry from the gcode"""
+        for geo_name, geo in self.gcode_geo.items():
+            cnt = np.zeros(2)
+            bbox = np.zeros((2, 2))
+            layers = []
+            for layer in geo:
+                points = []
+                extrusions = []
+                for state in layer:
+                    point = np.array([state[self.SetX], state[self.SetY]])
+                    extrusion = (
+                        state[self.LengthOfExtrude]
+                        if self.LengthOfExtrude in state
+                        else 0
+                    )
+                    points.append(point)
+                    extrusions.append(extrusion)
+                one_layer = {"points": points, "extrusions": extrusions}
+                layers.append(one_layer)
+            bbox = bcad.bounding_box(np.array([layer["points"] for layer in layers]))
+            cnt = bcad.center_of_mass(bbox)
+            self.recnst_geo[geo_name] = {"bbox": bbox, "cnt": cnt, "layers": layers}
 
     def divide_plate(self):
         unit_length = self.plate_length / self.num_horizant
         unit_width = self.plate_width / self.num_vertic
-        sample_length = self.gcodelist[0].bbox_length
+        sample_length = self.recnst_geo
         sample_width = self.gcodelist[0].bbox_width
         if unit_length < sample_length or unit_width < sample_width:
             raise ValueError("The plate is too small to be divided. Perhaps rotate it?")
@@ -558,40 +600,6 @@ class GcodeMultiplier(object):
                     bcad.bounding_box(self.gcodelist[i * self.num_horizant + j].points)
                 )
 
-    def create(
-        self,
-        auto_balance: bool = True,
-        dist_horizont: float = 0,
-        dist_vertic: float = 0,
-    ):
-        """Create multiple gcode files in one plate.
-        Args:
-            auto_balance: Auto balance the points in the grid
-            dist_horizont: The distance between the structures in horizontal direction
-            dist_vertic: The distance between the structures in vertical direction
-        """
-
-        if auto_balance:
-            for i in range(0, self.num_vertic):
-                for j in range(0, self.num_horizant):
-                    self.gcodelist[
-                        i * self.num_horizant + j
-                    ].points = self.auto_balance(
-                        self.grid[i * self.num_horizant + j],
-                        self.gcodelist[i * self.num_horizant + j].points,
-                    )
-                    self.visualize_cache.append(
-                        bcad.bounding_box(
-                            self.gcodelist[i * self.num_horizant + j].points
-                        )
-                    )
-        else:
-            self.keep_distance(dist_horizont, dist_vertic)
-        for ind, gcd in enumerate(self.gcodelist):
-            gcd.create(
-                gcd.in_file_path, f"{self.gcode_params['standard']}_P{ind+1}.gcode"
-            )
-
     def visualize(self):
         """Visualize the gcode files in one plate"""
         # Create a figure and axis
@@ -632,3 +640,81 @@ class GcodeMultiplier(object):
 
         # Display the plot
         plt.show()
+
+    def create_multiple_gcode(
+        self,
+        auto_balance: bool = True,
+        dist_horizont: float = 0,
+        dist_vertic: float = 0,
+    ):
+        """Create multiple gcode files in one plate.
+        Args:
+            auto_balance: Auto balance the points in the grid
+            dist_horizont: The distance between the structures in horizontal direction
+            dist_vertic: The distance between the structures in vertical direction
+        """
+
+        if auto_balance:
+            for i in range(0, self.num_vertic):
+                for j in range(0, self.num_horizant):
+                    self.gcodelist[
+                        i * self.num_horizant + j
+                    ].points = self.auto_balance(
+                        self.grid[i * self.num_horizant + j],
+                        self.gcodelist[i * self.num_horizant + j].points,
+                    )
+                    self.visualize_cache.append(
+                        bcad.bounding_box(
+                            self.gcodelist[i * self.num_horizant + j].points
+                        )
+                    )
+        else:
+            self.keep_distance(dist_horizont, dist_vertic)
+        # for ind, gcd in enumerate(self.gcodelist):
+        #     gcd.create(
+        #         gcd.in_file_path, f"{self.gcode_params['standard']}_P{ind+1}.gcode"
+        #     )
+
+    def comment_info(self):
+        def comment(text):
+            return f"; {text}\n"
+
+        # Format hours, minutes, and seconds
+        hours, remainder = divmod(self.timedelta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        length = self.bbox_length
+        width = self.bbox_width
+        info_feedrate = self.feedrate
+        self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
+        self.gcode.append(comment(f"Length: {length}"))
+        self.gcode.append(comment(f"Width: {width}"))
+        self.gcode.append(comment(f"Height: {self.layer_height * self.layer_num}"))
+        self.gcode.append(comment(f"Layer height: {self.layer_height}"))
+        self.gcode.append(comment(f"Layer number: {self.layer_num}"))
+        self.gcode.append(comment(f"Line width: {self.line_width}"))
+        self.gcode.append(
+            comment(f"Different geometry per layer: {self.diff_geo_per_layer}")
+        )
+        self.gcode.append(comment(f"Tool number: {self.tool_number}"))
+        self.gcode.append(comment(f"Feed rate: {info_feedrate}"))
+        self.gcode.append(comment(f"Kappa: {self.kappa}"))
+        self.gcode.append(comment(f"Gamma: {self.gamma}"))
+        self.gcode.append(comment(f"Delta: {self.delta}"))
+        self.gcode.append(comment(f"Standard: {self.standard}"))
+        self.gcode.append(comment(f"Coordinate system: {self.coordinate_system}"))
+        self.gcode.append(comment(f"Unit: {self.unit}"))
+        self.gcode.append(comment(f"Nozzle diameter: {self.nozzle_diameter}"))
+
+        self.gcode.append(
+            comment(f"Material consumption(L): {self.material_consumption}")
+        )
+        self.gcode.append(
+            comment(f"Estimated time consumption: {hours}hr:{minutes}min:{seconds}sec")
+        )
+        print(self.time_consumption)
+        print(self.feedrate)
+        self.gcode.append(
+            comment(
+                f"Original point: ({self.offset_from_origin[0]},{self.offset_from_origin[1]})"
+            )
+        )
