@@ -10,12 +10,12 @@ dependencies:
   - pandas
   - sqlite
   - numpy
-#  - fenics-dolfinx=0.6.0
   - fenicsxconcrete
   - meshio
   - mpich
   - pyvista
   - pytest
+  - pyyaml
   - pip
   - pip:
     - gmsh==4.11.1
@@ -23,4 +23,3 @@ dependencies:
     - pyqt5
     - sphinx
     - sqlalchemy
-    - ruamel-yaml

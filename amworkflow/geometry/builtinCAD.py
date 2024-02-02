@@ -17,11 +17,12 @@ from OCC.Core.TopoDS import (
 from amworkflow.geometry.simple_geometries import create_edge, create_face, create_wire
 from amworkflow.occ_helpers import create_solid, sew_face
 
+level = logging.WARNING
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("amworkflow.geometry.builtinCAD")
-logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
 
 count_id = 0
 count_gid = [0 for i in range(7)]
@@ -38,13 +39,13 @@ TYPE_INDEX = {
 
 
 def pnt(pt_coord) -> np.ndarray:
-    '''
+    """
     Create a point.
     :param pt_coord: The coordinate of the point. If the dimension is less than 3, the rest will be padded with 0. If the dimension is more than 3, an exception will be raised.
     :type pt_coord: list
     :return: The coordinate of the point.
     :rtype: np.ndarray
-    '''
+    """
     opt = np.array(pt_coord)
     dim = np.shape(pt_coord)[0]
     if dim > 3:
@@ -57,9 +58,10 @@ def pnt(pt_coord) -> np.ndarray:
 
 
 class DuplicationCheck:
-    '''
+    """
     Check if an item already exists in the index.
-    '''
+    """
+
     def __init__(
         self,
         gtype: int,
@@ -468,6 +470,7 @@ def angle_of_two_arrays(a1: np.ndarray, a2: np.ndarray, rad: bool = True) -> flo
     else:
         return np.rad2deg(np.arccos(cos_value))
 
+
 # pnt1 = Pnt([2,3])
 # pnt2 = Pnt([2,3,3])
 # pnt3 = Pnt([2,3,5])
@@ -693,6 +696,7 @@ def get_face_area(points: list):
         result += t
     return np.abs(result) * 0.5
 
+
 def get_literal_vector(a: np.ndarray, d: bool):
     """
     @brief This is used to create a vector which is perpendicular to the based vector on its left side ( d = True ) or right side ( d = False )
@@ -708,6 +712,7 @@ def get_literal_vector(a: np.ndarray, d: bool):
         na = np.cross(-z, a)
     norm = np.linalg.norm(na, na.shape[0])
     return na / norm
+
 
 def bisect_angle(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
     """
@@ -728,6 +733,43 @@ def bisect_angle(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
     return opt
 
 def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
+    pts = np.array([np.array(list(i.Coord())) if isinstance(
+        i, gp_Pnt) else np.array(i) for i in pts])
+    pts = [i + direct for i in pts]
+    return list(pts)
+
+def center_of_mass(pts: np.ndarray) -> np.ndarray:
+    pts = np.array([np.array(list(i.Coord())) if isinstance(
+        i, gp_Pnt) else np.array(i) for i in pts])
+
+    return np.mean(pts.T, axis=1)
+
+def rotate(pts: np.ndarray, angle_x: float = 0, angle_y: float = 0, angle_z: float = 0, cnt: np.ndarray = None) -> np.ndarray:
+    pts = np.array([np.array(list(i.Coord())) if isinstance(
+        i, gp_Pnt) else np.array(i) for i in pts])
+    com = center_of_mass(pts)
+    if cnt is None:
+        cnt = np.array([0, 0, 0])
+    t_vec = cnt - com
+    pts += t_vec
+    rot_x = np.array([[1, 0, 0],
+                      [0, np.cos(angle_x), -np.sin(angle_x)],
+                      [0, np.sin(angle_x), np.cos(angle_x)]])
+    rot_y = np.array([[np.cos(angle_y), 0, np.sin(angle_y)],
+                      [0, 1, 0],
+                      [-np.sin(angle_y), np.cos(angle_y), 0]])
+    rot_z = np.array([[np.cos(angle_z), -np.sin(angle_z), 0],
+                      [np.sin(angle_z), np.cos(angle_z), 0],
+                      [0, 0, 1]])
+    R = rot_x@rot_y@rot_z
+    rt_pts = pts@R
+    r_pts = rt_pts - t_vec
+    return r_pts
+
+def distance(p1: Pnt, p2: Pnt) -> float:
+    return np.linalg.norm(p1.value - p2.value)
+
+def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
     pts = np.array(
         [
             np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
@@ -736,6 +778,78 @@ def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
     )
     pts = [i + direct for i in pts]
     return list(pts)
+
+
+def center_of_mass(pts: np.ndarray) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+
+    return np.mean(pts.T, axis=1)
+
+
+def rotate(
+    pts: np.ndarray,
+    angle_x: float = 0,
+    angle_y: float = 0,
+    angle_z: float = 0,
+    cnt: np.ndarray = None,
+) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+    com = center_of_mass(pts)
+    if cnt is None:
+        cnt = np.array([0, 0, 0])
+    t_vec = cnt - com
+    pts += t_vec
+    rot_x = np.array(
+        [
+            [1, 0, 0],
+            [0, np.cos(angle_x), -np.sin(angle_x)],
+            [0, np.sin(angle_x), np.cos(angle_x)],
+        ]
+    )
+    rot_y = np.array(
+        [
+            [np.cos(angle_y), 0, np.sin(angle_y)],
+            [0, 1, 0],
+            [-np.sin(angle_y), np.cos(angle_y), 0],
+        ]
+    )
+    rot_z = np.array(
+        [
+            [np.cos(angle_z), -np.sin(angle_z), 0],
+            [np.sin(angle_z), np.cos(angle_z), 0],
+            [0, 0, 1],
+        ]
+    )
+    R = rot_x @ rot_y @ rot_z
+    rt_pts = pts @ R
+    r_pts = rt_pts - t_vec
+    return r_pts
+
+
+def distance(p1: Pnt, p2: Pnt) -> float:
+    return np.linalg.norm(p1.value - p2.value)
+
+
+def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+    pts = [i + direct for i in pts]
+    return list(pts)
+
 
 def get_center_of_mass(pts: np.ndarray) -> np.ndarray:
     pts = np.array(
@@ -747,6 +861,7 @@ def get_center_of_mass(pts: np.ndarray) -> np.ndarray:
 
     return np.mean(pts.T, axis=1)
 
+
 def linear_interpolate(pts: np.ndarray, num: int):
     for i, pt in enumerate(pts):
         if i == len(pts) - 1:
@@ -754,6 +869,7 @@ def linear_interpolate(pts: np.ndarray, num: int):
         else:
             interpolated_points = np.linspace(pt, pts[i + 1], num=num + 2)[1:-1]
     return interpolated_points
+
 
 def interpolate_polygon(
     plg: np.ndarray, step_len: float = None, num: int = None, isclose: bool = True
@@ -793,6 +909,7 @@ def interpolate_polygon(
         new_plg = np.concatenate((new_plg[: pos + 1], insert_p, new_plg[pos + 1 :]))
         pos += p_num + 1
     return new_plg
+
 
 def p_rotate(
     pts: np.ndarray,
@@ -838,6 +955,7 @@ def p_rotate(
     r_pts = rt_pts - t_vec
     return r_pts
 
+
 def get_random_pnt(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
     random_x = np.random.randint(xmin, xmax)
     random_y = np.random.randint(ymin, ymax)
@@ -847,8 +965,8 @@ def get_random_pnt(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
         random_z = np.random.randint(zmin, zmax)
     return np.array([random_x, random_y, random_z])
 
+
 def get_random_line(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
     pt1 = get_random_pnt(xmin, xmax, ymin, ymax, zmin, zmax)
     pt2 = get_random_pnt(xmin, xmax, ymin, ymax, zmin, zmax)
     return np.array([pt1, pt2])
-

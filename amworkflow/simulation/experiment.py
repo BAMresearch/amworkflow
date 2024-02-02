@@ -32,7 +32,7 @@ class ExperimentProcess(Experiment):
         setup function called
 
          Args:
-            parameters: dictionary with parameters that can override the default values Needs to be pint Quantities!!
+            parameters: dictionary with parameters that can override the default values. Needs to be pint quantities!! description is given in parameter_description()
 
         """
 
@@ -61,6 +61,18 @@ class ExperimentProcess(Experiment):
             )
 
     @staticmethod
+    def parameter_description() -> dict[str, str]:
+        """description of the required parameters for the experiment """
+
+        description = {
+            "dim": "dimension of problem, only 3D implemented",
+            "mesh_file": "path name of the mesh file in xdmf format (h5 with same name required)",
+            "mesh_unit": "unit of the mesh file for recomputing into base units",
+        }
+
+        return description
+
+    @staticmethod
     def default_parameters() -> dict[str, pint.Quantity]:
         """sets up a working set of parameter values as example
 
@@ -74,7 +86,7 @@ class ExperimentProcess(Experiment):
         # dimension of problem, only 3D implemented
         default_parameters["dim"] = 3 * ureg("")
         # path name of the mesh file in xdmf format
-        default_parameters["mesh_file"] = "bla/test.xdmf" * ureg("")
+        default_parameters["mesh_file"] = "bla/test_files.xdmf" * ureg("")
         # unit of the mesh file
         default_parameters["mesh_unit"] = "mm" * ureg("")
 
@@ -145,7 +157,7 @@ class ExperimentProcess(Experiment):
         element activation via pseudo density and incremental loading via parameter ["load_time"] computed in class concrete_am
 
         Args:
-            v: test function
+            v: test_files function
             q_fd: quadrature function given the loading increment where elements are active
             rule: rule for the quadrature function
 
@@ -181,7 +193,7 @@ class ExperimentStructure(Experiment):
         setup function called
 
          Args:
-            parameters: dictionary with parameters that can override the default values
+            parameters: dictionary with parameters that can override the default values, description is given in parameter_description()
 
         """
 
@@ -214,6 +226,19 @@ class ExperimentStructure(Experiment):
             )
 
     @staticmethod
+    def parameter_description() -> dict[str, str]:
+        """description of the required parameters for the experiment """
+
+        description = {
+            "bc_setting": "boundary setting, possible cases <fixed_y_bottom> fixed at ymin values loaded per displacement load at ymax values",
+            "dim": "dimension of problem, only 3D implemented",
+            "mesh_file": "path name of the mesh file in xdmf format (h5 with same name required)",
+            "mesh_unit": "unit of the mesh file for recomputing into base units",
+        }
+
+        return description
+
+    @staticmethod
     def default_parameters() -> dict[str, pint.Quantity]:
         """sets up a working set of parameter values as example
 
@@ -229,7 +254,7 @@ class ExperimentStructure(Experiment):
         # dimension of problem, only 3D implemented
         default_parameters["dim"] = 3 * ureg("")
         # path name of the mesh file in xdmf format
-        default_parameters["mesh_file"] = "bla/test.xdmf" * ureg("")
+        default_parameters["mesh_file"] = "bla/test_files.xdmf" * ureg("")
         # unit of the mesh file
         default_parameters["mesh_unit"] = "mm" * ureg("")
 
@@ -323,7 +348,7 @@ class ExperimentStructure(Experiment):
     #     """defines body force
     #
     #     Args:
-    #         v: test function
+    #         v: test_files function
     #
     #     Returns:
     #         form for body force
