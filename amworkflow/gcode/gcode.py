@@ -58,10 +58,6 @@ class GcodeFromPoints(Gcode):
         rotate: bool = False,
         density: float = 1,
         in_file_path: str = None,
-        num_horizant: int = 1,
-        num_vertic: int = 1,
-        plate_length: float = 1,
-        plate_width: float = 1,
         density: float = 1,
         in_file_path: str = None,
         fixed_feedrate: bool = False,
@@ -155,23 +151,7 @@ class GcodeFromPoints(Gcode):
         # Path to the input file
         self.diff_geo_per_layer = False
         # switch of different geometry per layer
-        self.num_horizant = num_horizant
-        self.num_vertic = num_vertic
-        self.plate_length = plate_length
-        self.plate_width = plate_width
-        self.need_tune = False
-        self.different_geo_per_layer = False
-        self.different_geo = False
-        self.unit_length = 0
-        self.unit_width = 0
-        self.gcodelist = []
-        self.grid = []
-        self.visualize_cache = []
-        self.standard = standard
-        self.gcode_info = {}
-        self.gcode_geo = {}
-        self.recnst_geo = {}
-        # self.read_points(self.in_file_path)
+        self.read_points(self.in_file_path)
         # Container of extrusion logs
         self.in_file_path = in_file_path
         # Path to the input file
@@ -508,6 +488,191 @@ class GcodeFromPoints(Gcode):
         """
         return f"{self.SetTool}{tool_number}"
 
+    def comment_info(self):
+        def comment(text):
+            return f"; {text}\n"
+
+        # Format hours, minutes, and seconds
+        hours, remainder = divmod(self.timedelta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        length = self.bbox_length
+        width = self.bbox_width
+        info_feedrate = self.feedrate
+        self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
+        self.gcode.append(comment(f"Length: {length}"))
+        self.gcode.append(comment(f"Width: {width}"))
+        self.gcode.append(comment(f"Height: {self.layer_height * self.layer_num}"))
+        self.gcode.append(comment(f"Layer height: {self.layer_height}"))
+        self.gcode.append(comment(f"Layer number: {self.layer_num}"))
+        self.gcode.append(comment(f"Line width: {self.line_width}"))
+        self.gcode.append(
+            comment(f"Different geometry per layer: {self.diff_geo_per_layer}")
+        )
+        self.gcode.append(comment(f"Tool number: {self.tool_number}"))
+        self.gcode.append(comment(f"Feed rate: {info_feedrate}"))
+        self.gcode.append(comment(f"Kappa: {self.kappa}"))
+        self.gcode.append(comment(f"Gamma: {self.gamma}"))
+        self.gcode.append(comment(f"Delta: {self.delta}"))
+        self.gcode.append(comment(f"Standard: {self.standard}"))
+        self.gcode.append(comment(f"Coordinate system: {self.coordinate_system}"))
+        self.gcode.append(comment(f"Unit: {self.unit}"))
+        self.gcode.append(comment(f"Nozzle diameter: {self.nozzle_diameter}"))
+
+        self.gcode.append(
+            comment(f"Material consumption(L): {self.material_consumption}")
+        )
+        self.gcode.append(
+            comment(f"Estimated time consumption: {hours}hr:{minutes}min:{seconds}sec")
+        )
+        print(self.time_consumption)
+        print(self.feedrate)
+        self.gcode.append(
+            comment(
+                f"Original point: ({self.offset_from_origin[0]},{self.offset_from_origin[1]})"
+            )
+        )
+
+
+class GcodeMultiplier(object):
+    def __init__(
+        self,
+        num_horizant: int,
+        num_vertic: int,
+        plate_length: float,
+        plate_width: float,
+        gcode_params: dict,
+        standard: str = "ConcretePrinter",
+    ) -> None:
+        self.num_horizant = num_horizant
+        self.num_vertic = num_vertic
+        self.plate_length = plate_length
+        self.plate_width = plate_width
+        self.gcode_params = gcode_params
+        self.need_tune = False
+        self.unit_length = 0
+        self.unit_width = 0
+        self.gcodelist = []
+        self.grid = []
+        self.visualize_cache = []
+        self.standard = standard
+        self.gcode_info = {}
+        self.gcode_geo = {}
+        self.recnst_geo = {}
+        self.grid = []
+        self.visualize_cache = []
+        for i in range(num_horizant * num_vertic):
+            self.gcodelist.append(GcodeFromPoints(**self.gcode_params))
+        self.divide_plate()
+
+    def divide_plate(self):
+        unit_length = self.plate_length / self.num_horizant
+        unit_width = self.plate_width / self.num_vertic
+        sample_length = self.gcodelist[0].bbox_length
+        sample_width = self.gcodelist[0].bbox_width
+        if unit_length < sample_length or unit_width < sample_width:
+            raise ValueError("The plate is too small to be divided. Perhaps rotate it?")
+        else:
+            self.unit_length = unit_length
+            self.unit_width = unit_width
+            for i in range(0, self.num_vertic):
+                for j in range(0, self.num_horizant):
+                    self.grid.append(
+                        np.array(
+                            [
+                                [j * unit_length, i * unit_width],
+                                [
+                                    (j + 1) * unit_length,
+                                    (i + 1) * unit_width,
+                                ],
+                            ]
+                        )
+                    )
+
+    def auto_balance(self, grid: np.ndarray, points: np.ndarray):
+        """Auto balance the points in the grid"""
+
+        cnt_points = bcad.center_of_mass(points)
+        cnt_grid = bcad.center_of_mass(grid)
+        offset = cnt_grid - cnt_points
+        return offset + points
+
+    def keep_distance(self, dist_hori: float, dist_vert: float):
+        """Keep the distance between the structures"""
+        if self.num_horizant > 2:
+            if self.unit_length - dist_hori < self.gcodelist[0].bbox_length:
+                raise ValueError(
+                    f"The horizontal distance is too large, at least {self.gcodelist[0].bbox_length - self.unit_length + dist_hori}mm short"
+                )
+        else:
+            if self.unit_length - dist_hori * 0.5 < self.gcodelist[0].bbox_length:
+                raise ValueError(
+                    f"The horizontal distance is too large, at least {self.gcodelist[0].bbox_length - self.unit_length + dist_hori}mm short"
+                )
+        if self.num_vertic > 2:
+            if self.unit_width - dist_vert < self.gcodelist[0].bbox_width:
+                raise ValueError(
+                    f"The vertical distance is too large, at least {self.gcodelist[0].bbox_width - self.unit_width + dist_vert}mm short"
+                )
+        else:
+            if self.unit_width - dist_vert * 0.5 < self.gcodelist[0].bbox_width:
+                raise ValueError(
+                    f"The vertical distance is too large, at least {self.gcodelist[0].bbox_width - self.unit_width + dist_vert}mm short"
+                )
+        for i in range(0, self.num_vertic):
+            new_box = np.array([[0, 0], [0, 0]])
+            if i == 0:
+                new_box[1][1] = -dist_vert * 0.5
+            elif i == self.num_vertic - 1:
+                new_box[0][1] = dist_vert * 0.5
+            for j in range(0, self.num_horizant):
+                if j == 0:
+                    new_box[1][0] = -dist_hori * 0.5
+                elif j == self.num_horizant - 1:
+                    new_box[0][0] = dist_hori * 0.5
+                bbox = self.gcodelist[i * self.num_horizant + j].bbox
+                new_grid = self.grid[i * self.num_horizant + j] + new_box
+                cnt_bbox = bcad.center_of_mass(bbox)
+                cnt_grid = bcad.center_of_mass(new_grid)
+                offset = cnt_grid - cnt_bbox
+                self.gcodelist[i * self.num_horizant + j].points += offset
+                self.visualize_cache.append(
+                    bcad.bounding_box(self.gcodelist[i * self.num_horizant + j].points)
+                )
+
+    def create(
+        self,
+        auto_balance: bool = True,
+        dist_horizont: float = 0,
+        dist_vertic: float = 0,
+    ):
+        """Create multiple gcode files in one plate.
+        Args:
+            auto_balance: Auto balance the points in the grid
+            dist_horizont: The distance between the structures in horizontal direction
+            dist_vertic: The distance between the structures in vertical direction
+        """
+
+        if auto_balance:
+            for i in range(0, self.num_vertic):
+                for j in range(0, self.num_horizant):
+                    self.gcodelist[i * self.num_horizant + j].points = (
+                        self.auto_balance(
+                            self.grid[i * self.num_horizant + j],
+                            self.gcodelist[i * self.num_horizant + j].points,
+                        )
+                    )
+                    self.visualize_cache.append(
+                        bcad.bounding_box(
+                            self.gcodelist[i * self.num_horizant + j].points
+                        )
+                    )
+        else:
+            self.keep_distance(dist_horizont, dist_vertic)
+        for ind, gcd in enumerate(self.gcodelist):
+            gcd.create(
+                gcd.in_file_path, f"{self.gcode_params['standard']}_P{ind+1}.gcode"
+            )
+
     def read_gcode(self, in_file_path: str):
         """Read gcode from file
 
@@ -593,81 +758,6 @@ class GcodeFromPoints(Gcode):
             cnt = bcad.center_of_mass(bbox)
             self.recnst_geo[geo_name] = {"bbox": bbox, "cnt": cnt, "layers": layers}
 
-    def divide_plate(self):
-        unit_length = self.plate_length / self.num_horizant
-        unit_width = self.plate_width / self.num_vertic
-        sample_length = self.recnst_geo
-        sample_width = self.gcodelist[0].bbox_width
-        if unit_length < sample_length or unit_width < sample_width:
-            raise ValueError("The plate is too small to be divided. Perhaps rotate it?")
-        else:
-            self.unit_length = unit_length
-            self.unit_width = unit_width
-            for i in range(0, self.num_vertic):
-                for j in range(0, self.num_horizant):
-                    self.grid.append(
-                        np.array(
-                            [
-                                [j * unit_length, i * unit_width],
-                                [
-                                    (j + 1) * unit_length,
-                                    (i + 1) * unit_width,
-                                ],
-                            ]
-                        )
-                    )
-
-    def auto_balance(self, grid: np.ndarray, points: np.ndarray):
-        """Auto balance the points in the grid"""
-
-        cnt_points = bcad.center_of_mass(points)
-        cnt_grid = bcad.center_of_mass(grid)
-        offset = cnt_grid - cnt_points
-        return offset + points
-
-    def keep_distance(self, dist_hori: float, dist_vert: float):
-        """Keep the distance between the structures"""
-        if self.num_horizant > 2:
-            if self.unit_length - dist_hori < self.gcodelist[0].bbox_length:
-                raise ValueError(
-                    f"The horizontal distance is too large, at least {self.gcodelist[0].bbox_length - self.unit_length + dist_hori}mm short"
-                )
-        else:
-            if self.unit_length - dist_hori * 0.5 < self.gcodelist[0].bbox_length:
-                raise ValueError(
-                    f"The horizontal distance is too large, at least {self.gcodelist[0].bbox_length - self.unit_length + dist_hori}mm short"
-                )
-        if self.num_vertic > 2:
-            if self.unit_width - dist_vert < self.gcodelist[0].bbox_width:
-                raise ValueError(
-                    f"The vertical distance is too large, at least {self.gcodelist[0].bbox_width - self.unit_width + dist_vert}mm short"
-                )
-        else:
-            if self.unit_width - dist_vert * 0.5 < self.gcodelist[0].bbox_width:
-                raise ValueError(
-                    f"The vertical distance is too large, at least {self.gcodelist[0].bbox_width - self.unit_width + dist_vert}mm short"
-                )
-        for i in range(0, self.num_vertic):
-            new_box = np.array([[0, 0], [0, 0]])
-            if i == 0:
-                new_box[1][1] = -dist_vert * 0.5
-            elif i == self.num_vertic - 1:
-                new_box[0][1] = dist_vert * 0.5
-            for j in range(0, self.num_horizant):
-                if j == 0:
-                    new_box[1][0] = -dist_hori * 0.5
-                elif j == self.num_horizant - 1:
-                    new_box[0][0] = dist_hori * 0.5
-                bbox = self.gcodelist[i * self.num_horizant + j].bbox
-                new_grid = self.grid[i * self.num_horizant + j] + new_box
-                cnt_bbox = bcad.center_of_mass(bbox)
-                cnt_grid = bcad.center_of_mass(new_grid)
-                offset = cnt_grid - cnt_bbox
-                self.gcodelist[i * self.num_horizant + j].points += offset
-                self.visualize_cache.append(
-                    bcad.bounding_box(self.gcodelist[i * self.num_horizant + j].points)
-                )
-
     def visualize(self):
         """Visualize the gcode files in one plate"""
         # Create a figure and axis
@@ -742,50 +832,6 @@ class GcodeFromPoints(Gcode):
         #     gcd.create(
         #         gcd.in_file_path, f"{self.gcode_params['standard']}_P{ind+1}.gcode"
         #     )
-
-    def comment_info(self):
-        def comment(text):
-            return f"; {text}\n"
-
-        # Format hours, minutes, and seconds
-        hours, remainder = divmod(self.timedelta.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        length = self.bbox_length
-        width = self.bbox_width
-        info_feedrate = self.feedrate
-        self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
-        self.gcode.append(comment(f"Length: {length}"))
-        self.gcode.append(comment(f"Width: {width}"))
-        self.gcode.append(comment(f"Height: {self.layer_height * self.layer_num}"))
-        self.gcode.append(comment(f"Layer height: {self.layer_height}"))
-        self.gcode.append(comment(f"Layer number: {self.layer_num}"))
-        self.gcode.append(comment(f"Line width: {self.line_width}"))
-        self.gcode.append(
-            comment(f"Different geometry per layer: {self.diff_geo_per_layer}")
-        )
-        self.gcode.append(comment(f"Tool number: {self.tool_number}"))
-        self.gcode.append(comment(f"Feed rate: {info_feedrate}"))
-        self.gcode.append(comment(f"Kappa: {self.kappa}"))
-        self.gcode.append(comment(f"Gamma: {self.gamma}"))
-        self.gcode.append(comment(f"Delta: {self.delta}"))
-        self.gcode.append(comment(f"Standard: {self.standard}"))
-        self.gcode.append(comment(f"Coordinate system: {self.coordinate_system}"))
-        self.gcode.append(comment(f"Unit: {self.unit}"))
-        self.gcode.append(comment(f"Nozzle diameter: {self.nozzle_diameter}"))
-
-        self.gcode.append(
-            comment(f"Material consumption(L): {self.material_consumption}")
-        )
-        self.gcode.append(
-            comment(f"Estimated time consumption: {hours}hr:{minutes}min:{seconds}sec")
-        )
-        print(self.time_consumption)
-        print(self.feedrate)
-        self.gcode.append(
-            comment(
-                f"Original point: ({self.offset_from_origin[0]},{self.offset_from_origin[1]})"
-            )
-        )
 
 
 class GcodeMultiplier(object):
