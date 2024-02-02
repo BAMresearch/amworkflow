@@ -94,7 +94,7 @@ class GeometryOCC(Geometry):
         Args:
             out_step: File path of step file.
             out_path: File path of file containing the print path points.
-            out_stl: File path of step file.
+            out_stl: File path of stl file.
 
         Returns:
 
@@ -184,6 +184,7 @@ class GeometryParamWall(GeometryOCC):
                 height=self.height,
                 radius=self.radius,
             )
+            points = [[0,0,0],[0,0,0]]
 
         elif self.infill == "honeycomb":
             points = self.honeycomb_infill(self.length, self.width, self.line_width)
@@ -493,10 +494,9 @@ class GeometryCenterline(GeometryOCC):
         assert self.layer_thickness is not None
         assert self.height is not None
 
-        # where to put those geometry building function?
-        # is_close as global parameter?
-        # wall_maker = CreateWallByPoints("", self.layer_thickness, self.layer_height*self.number_of_layers, is_close=False)
-        # design = wall_maker.Shape()
-        design = None
-        return design
+        creator = composite_geometries.CreateWallByPoints(
+            self.points, th=self.layer_thickness, height=self.height
+        )
+        shape = creator.Shape()
+        return shape, self.points
     

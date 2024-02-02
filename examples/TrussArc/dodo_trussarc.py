@@ -21,11 +21,10 @@ logging.basicConfig(level=logging.INFO)
 params = {  # geometry parameters
     "csv_points": "print110823.csv",
     "layer_thickness": 50,  # mm
-    "number_of_layers": 10,
-    "layer_height": 10,  # mm
+    "height": 100,  # mm
     # mesh parameters (meshing by layer height)
     "mesh_size_factor": 10,
-    # ....
+    "number_of_layers": 10,
 }
 
 # TODO datastore stuff??
@@ -71,7 +70,6 @@ def task_meshing():
     out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
     out_file_vtk = OUTPUT / f"{OUTPUT_NAME}.vtk"
 
-    params["number_of_layers"] = None
     meshing = MeshingGmsh(**params)
 
     return {
