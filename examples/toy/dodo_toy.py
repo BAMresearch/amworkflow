@@ -19,10 +19,10 @@ logging.basicConfig(level=logging.INFO)
 
 # define required parameters
 params = {  # geometry parameters
-    "layer_thickness": 20,  # mm
+    "layer_thickness": 10,  # mm
     "height": 40,  # mm
     # mesh parameters (meshing by layer height)
-    "mesh_size_factor": 10,
+    "mesh_size_factor": 1,
     # "layer_height": 10,  # mm
     "number_of_layers": 4,
     # ....
@@ -47,6 +47,9 @@ def task_create_design():
     # define center line points here for this example:
     points = [[0., 0., 0.],
               [0., 150., 0.],
+              [10., 150., 0],
+              [75., 75., 0.],
+              [140., 150., 0.],
               [150., 150., 0.],
               [150., 0., 0.]]
     params["points"] = points

@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 # define required parameters
 params = {  # geometry parameters
     "csv_points": "print110823.csv",
-    "layer_thickness": 50,  # mm
+    "layer_thickness": 5,  # mm
     "height": 100,  # mm
     # mesh parameters (meshing by layer height)
     "mesh_size_factor": 10,
