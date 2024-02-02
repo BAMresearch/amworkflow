@@ -39,6 +39,13 @@ TYPE_INDEX = {
 
 
 def pnt(pt_coord) -> np.ndarray:
+    """
+    Create a point.
+    :param pt_coord: The coordinate of the point. If the dimension is less than 3, the rest will be padded with 0. If the dimension is more than 3, an exception will be raised.
+    :type pt_coord: list
+    :return: The coordinate of the point.
+    :rtype: np.ndarray
+    """
     opt = np.array(pt_coord)
     dim = np.shape(pt_coord)[0]
     if dim > 3:
@@ -51,6 +58,10 @@ def pnt(pt_coord) -> np.ndarray:
 
 
 class DuplicationCheck:
+    """
+    Check if an item already exists in the index.
+    """
+
     def __init__(
         self,
         gtype: int,
@@ -460,9 +471,235 @@ def angle_of_two_arrays(a1: np.ndarray, a2: np.ndarray, rad: bool = True) -> flo
         return np.rad2deg(np.arccos(cos_value))
 
 
-def laterality_indicator(a: np.ndarray, d: bool):
+# pnt1 = Pnt([2,3])
+# pnt2 = Pnt([2,3,3])
+# pnt3 = Pnt([2,3,5])
+# pnt31 = Pnt([2,3,5])
+# print(pnt31 is pnt3)
+# seg1 = Segment(pnt1, pnt2)
+# seg11 = Segment(pnt1, pnt2)
+# print(seg11 is seg1)
+# seg2 = Segment(pnt2, pnt3)
+# seg3 = Segment(pnt3, pnt1)
+# wire1 = Wire(seg1, seg2,seg3)
+# surf1 = Surface(wire1)
+# pprint(id_index)
+# print(seg3)
+# print(pnt1.property["occ_pnt"])
+
+
+def bend(
+    point_cordinates,
+    radius: float = None,
+    mx_pt: np.ndarray = None,
+    mn_pt: np.ndarray = None,
+):
+    coord_t = np.array(point_cordinates).T
+    if mx_pt is None:
+        mx_pt = np.max(coord_t, 1)
+    if mn_pt is None:
+        mn_pt = np.min(coord_t, 1)
+    cnt = 0.5 * (mn_pt + mx_pt)
+    scale = np.abs(mn_pt - mx_pt)
+    if radius is None:
+        radius = scale[1] * 2
+    o_y = scale[1] * 0.5 + radius
+    for pt in point_cordinates:
+        xp = pt[0]
+        yp = pt[1]
+        ratio_l = xp / scale[0]
+        ypr = scale[1] * 0.5 - yp
+        Rp = radius + ypr
+        ly = scale[0] * (1 + ypr / radius)
+        lp = ratio_l * ly
+        thetp = lp / (Rp)
+        thetp = lp / (Rp)
+        pt[0] = Rp * np.sin(thetp)
+        pt[1] = o_y - Rp * np.cos(thetp)
+    return point_cordinates
+
+
+def project_array(array: np.ndarray, direct: np.ndarray) -> np.ndarray:
     """
-    @brief Compute laterality indicator of a vector. This is used to create a vector which is perpendicular to the based vector on its left side ( d = True ) or right side ( d = False )
+    Project an array to the specified direction.
+    """
+    direct = direct / np.linalg.norm(direct)
+    return np.dot(array, direct) * direct
+
+
+def shortest_distance_point_line(line, p):
+    pt1, pt2 = line
+    s = pt2 - pt1
+    lmbda = (p - pt1).dot(s) / s.dot(s)
+    if lmbda < 1 and lmbda > 0:
+        pt_compute = pt1 + lmbda * s
+        distance = np.linalg.norm(pt_compute - p)
+        return lmbda, distance
+    elif lmbda <= 0:
+        distance = np.linalg.norm(pt1 - p)
+        return 0, distance
+    else:
+        distance = np.linalg.norm(pt2 - p)
+        return 1, distance
+
+
+def bounding_box(pts: list):
+    pts = np.array(pts)
+    coord_t = np.array(pts).T
+    mx_pt = np.max(coord_t, 1)
+    mn_pt = np.min(coord_t, 1)
+    return mx_pt, mn_pt
+
+
+def shortest_distance_line_line(line1, line2):
+    pt11, pt12 = line1
+    pt21, pt22 = line2
+    s1 = pt12 - pt11
+    s2 = pt22 - pt21
+    s1square = np.dot(s1, s1)
+    s2square = np.dot(s2, s2)
+    term1 = s1square * s2square - (np.dot(s1, s2) ** 2)
+    term2 = s1square * s2square - (np.dot(s1, s2) ** 2)
+    if np.isclose(term1, 0) or np.isclose(term2, 0):
+        if np.isclose(s1[0], 0):
+            s_p = np.array([-s1[1], s1[0], 0])
+        else:
+            s_p = np.array([s1[1], -s1[0], 0])
+        l1 = np.random.randint(1, 4) * 0.1
+        l2 = np.random.randint(6, 9) * 0.1
+        pt1i = s1 * l1 + pt11
+        pt2i = s2 * l2 + pt21
+        si = pt2i - pt1i
+        dist = np.linalg.norm(
+            si * (si * s_p) / (np.linalg.norm(si) * np.linalg.norm(s_p))
+        )
+        return dist, np.array([pt1i, pt2i])
+    lmbda1 = (
+        np.dot(s1, s2) * np.dot(pt11 - pt21, s2) - s2square * np.dot(pt11 - pt21, s1)
+    ) / (s1square * s2square - (np.dot(s1, s2) ** 2))
+    lmbda2 = -(
+        np.dot(s1, s2) * np.dot(pt11 - pt21, s1) - s1square * np.dot(pt11 - pt21, s2)
+    ) / (s1square * s2square - (np.dot(s1, s2) ** 2))
+    condition1 = lmbda1 >= 1
+    condition2 = lmbda1 <= 0
+    condition3 = lmbda2 >= 1
+    condition4 = lmbda2 <= 0
+    if condition1 or condition2 or condition3 or condition4:
+        choices = [
+            [line2, pt11, s2],
+            [line2, pt12, s2],
+            [line1, pt21, s1],
+            [line1, pt22, s1],
+        ]
+        result = np.zeros((4, 2))
+        for i in range(4):
+            result[i] = shortest_distance_point_line(choices[i][0], choices[i][1])
+        shortest_index = np.argmin(result.T[1])
+        shortest_result = result[shortest_index]
+        pti1 = (
+            shortest_result[0] * choices[shortest_index][2]
+            + choices[shortest_index][0][0]
+        )
+        pti2 = choices[shortest_index][1]
+        # print(result)
+    else:
+        pti1 = pt11 + lmbda1 * s1
+        pti2 = pt21 + lmbda2 * s2
+    # print(lmbda1, lmbda2)
+    # print(pti1, pti2)
+    # print(np.dot(s1,pti2 - pti1), np.dot(s2,pti2 - pti1))
+    distance = np.linalg.norm(pti1 - pti2)
+    return distance, np.array([pti1, pti2])
+
+
+def check_parallel_line_line(line1: np.ndarray, line2: np.ndarray) -> tuple:
+    parallel = False
+    colinear = False
+    pt1, pt2 = line1
+    pt3, pt4 = line2
+
+    def generate_link():
+        t1 = np.random.randint(1, 4) * 0.1
+        t2 = np.random.randint(5, 9) * 0.1
+        pt12 = (1 - t1) * pt1 + t1 * pt2
+        pt34 = (1 - t2) * pt3 + t2 * pt4
+        norm_L3 = np.linalg.norm(pt34 - pt12)
+        while np.isclose(norm_L3, 0):
+            t1 = np.random.randint(1, 4) * 0.1
+            t2 = np.random.randint(5, 9) * 0.1
+            pt12 = (1 - t1) * pt1 + t1 * pt2
+            pt34 = (1 - t2) * pt3 + t2 * pt4
+            norm_L3 = np.linalg.norm(pt34 - pt12)
+        return pt12, pt34
+
+    pt12, pt34 = generate_link()
+    L1 = (pt2 - pt1) / np.linalg.norm(pt2 - pt1)
+    L2 = (pt4 - pt3) / np.linalg.norm(pt4 - pt3)
+    L3 = (pt34 - pt12) / np.linalg.norm(pt34 - pt12)
+    if np.isclose(np.linalg.norm(np.cross(L1, L2)), 0):
+        parallel = True
+    if np.isclose(np.linalg.norm(np.cross(L1, L3)), 0) and parallel:
+        colinear = True
+    return parallel, colinear
+
+
+def check_overlap(line1: np.ndarray, line2: np.ndarray) -> np.ndarray:
+    A, B = line1
+    C, D = line2
+    s = B - A
+    dist_s = np.linalg.norm(s)
+    norm_s = s / dist_s
+    c = C - A
+    dist_c = np.linalg.norm(c)
+    if np.isclose(dist_c, 0):
+        lmbda_c = 0
+    else:
+        norm_c = c / dist_c
+        sign_c = -1 if np.isclose(np.sum(norm_c + norm_s), 0) else 1
+        lmbda_c = sign_c * dist_c / dist_s
+    d = D - A
+    dist_d = np.linalg.norm(d)
+    if np.isclose(dist_d, 0):
+        lmbda_d = 0
+    else:
+        norm_d = d / dist_d
+        sign_d = -1 if np.isclose(np.sum(norm_d + norm_s), 0) else 1
+        lmbda_d = sign_d * dist_d / dist_s
+    indicator = np.zeros(4)
+    direction_cd = lmbda_d - lmbda_c
+    smaller = min(lmbda_c, lmbda_d)
+    larger = max(lmbda_c, lmbda_d)
+    pnt_list = np.array([A, B, C, D])
+    if lmbda_c < 1 and lmbda_c > 0:
+        indicator[2] = 1
+    if lmbda_d < 1 and lmbda_d > 0:
+        indicator[3] = 1
+    if 0 < larger and 0 > smaller:
+        indicator[0] = 1
+    if 1 < larger and 1 > smaller:
+        indicator[1] = 1
+    return np.where(indicator == 1)[0], np.unique(
+        pnt_list[np.where(indicator == 1)[0]], axis=0
+    )
+
+
+def get_face_area(points: list):
+    pts = np.array(points).T
+    x = pts[0]
+    y = pts[1]
+    result = 0
+    for i in range(len(x)):
+        if i < len(x) - 1:
+            t = x[i] * y[i + 1] - x[i + 1] * y[i]
+        else:
+            t = x[i] * y[0] - x[0] * y[i]
+        result += t
+    return np.abs(result) * 0.5
+
+
+def get_literal_vector(a: np.ndarray, d: bool):
+    """
+    @brief This is used to create a vector which is perpendicular to the based vector on its left side ( d = True ) or right side ( d = False )
     @param a vector ( a )
     @param d True if on left or False if on right
     @return A vector.
@@ -477,7 +714,7 @@ def laterality_indicator(a: np.ndarray, d: bool):
     return na / norm
 
 
-def angular_bisector(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
+def bisect_angle(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
     """
     @brief Angular bisector between two vectors. The result is a vector splitting the angle between two vectors uniformly.
     @param a1 1xN numpy array
@@ -490,7 +727,7 @@ def angular_bisector(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
     norm3 = np.linalg.norm(bst)
     # The laterality indicator a2 norm3 norm3
     if norm3 == 0:
-        opt = laterality_indicator(a2, True)
+        opt = get_literal_vector(a2, True)
     else:
         opt = bst / norm3
     return opt
@@ -532,18 +769,204 @@ def rotate(pts: np.ndarray, angle_x: float = 0, angle_y: float = 0, angle_z: flo
 def distance(p1: Pnt, p2: Pnt) -> float:
     return np.linalg.norm(p1.value - p2.value)
 
-# pnt1 = Pnt([2,3])
-# pnt2 = Pnt([2,3,3])
-# pnt3 = Pnt([2,3,5])
-# pnt31 = Pnt([2,3,5])
-# print(pnt31 is pnt3)
-# seg1 = Segment(pnt1, pnt2)
-# seg11 = Segment(pnt1, pnt2)
-# print(seg11 is seg1)
-# seg2 = Segment(pnt2, pnt3)
-# seg3 = Segment(pnt3, pnt1)
-# wire1 = Wire(seg1, seg2,seg3)
-# surf1 = Surface(wire1)
-# pprint(id_index)
-# print(seg3)
-# print(pnt1.property["occ_pnt"])
+def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+    pts = [i + direct for i in pts]
+    return list(pts)
+
+
+def center_of_mass(pts: np.ndarray) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+
+    return np.mean(pts.T, axis=1)
+
+
+def rotate(
+    pts: np.ndarray,
+    angle_x: float = 0,
+    angle_y: float = 0,
+    angle_z: float = 0,
+    cnt: np.ndarray = None,
+) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+    com = center_of_mass(pts)
+    if cnt is None:
+        cnt = np.array([0, 0, 0])
+    t_vec = cnt - com
+    pts += t_vec
+    rot_x = np.array(
+        [
+            [1, 0, 0],
+            [0, np.cos(angle_x), -np.sin(angle_x)],
+            [0, np.sin(angle_x), np.cos(angle_x)],
+        ]
+    )
+    rot_y = np.array(
+        [
+            [np.cos(angle_y), 0, np.sin(angle_y)],
+            [0, 1, 0],
+            [-np.sin(angle_y), np.cos(angle_y), 0],
+        ]
+    )
+    rot_z = np.array(
+        [
+            [np.cos(angle_z), -np.sin(angle_z), 0],
+            [np.sin(angle_z), np.cos(angle_z), 0],
+            [0, 0, 1],
+        ]
+    )
+    R = rot_x @ rot_y @ rot_z
+    rt_pts = pts @ R
+    r_pts = rt_pts - t_vec
+    return r_pts
+
+
+def distance(p1: Pnt, p2: Pnt) -> float:
+    return np.linalg.norm(p1.value - p2.value)
+
+
+def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+    pts = [i + direct for i in pts]
+    return list(pts)
+
+
+def get_center_of_mass(pts: np.ndarray) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+
+    return np.mean(pts.T, axis=1)
+
+
+def linear_interpolate(pts: np.ndarray, num: int):
+    for i, pt in enumerate(pts):
+        if i == len(pts) - 1:
+            break
+        else:
+            interpolated_points = np.linspace(pt, pts[i + 1], num=num + 2)[1:-1]
+    return interpolated_points
+
+
+def interpolate_polygon(
+    plg: np.ndarray, step_len: float = None, num: int = None, isclose: bool = True
+):
+    def deter_dum(line: np.ndarray):
+        ratio = step_len / np.linalg.norm(line[0] - line[1])
+        if ratio > 0.75:
+            num = 0
+        elif (ratio > 0.4) and (ratio <= 0.75):
+            num = 1
+        elif (ratio > 0.3) and (ratio <= 0.4):
+            num = 2
+        elif (ratio > 0.22) and (ratio <= 0.3):
+            num = 3
+        elif (ratio > 0.19) and (ratio <= 0.22):
+            num = 4
+        elif (ratio > 0.14) and (ratio <= 0.19):
+            num = 5
+        elif ratio <= 0.14:
+            num = 7
+        return num
+
+    new_plg = plg
+    pos = 0
+    n = 1
+    if not isclose:
+        n = 2
+    for i, pt in enumerate(plg):
+        if i == len(plg) - n:
+            break
+        line = np.array([pt, plg[i + 1]])
+        if num is not None:
+            p_num = num
+        else:
+            p_num = deter_dum(line)
+        insert_p = linear_interpolate(line, p_num)
+        new_plg = np.concatenate((new_plg[: pos + 1], insert_p, new_plg[pos + 1 :]))
+        pos += p_num + 1
+    return new_plg
+
+
+def p_rotate(
+    pts: np.ndarray,
+    angle_x: float = 0,
+    angle_y: float = 0,
+    angle_z: float = 0,
+    cnt: np.ndarray = None,
+) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+    com = get_center_of_mass(pts)
+    if cnt is None:
+        cnt = np.array([0, 0, 0])
+    t_vec = cnt - com
+    pts += t_vec
+    rot_x = np.array(
+        [
+            [1, 0, 0],
+            [0, np.cos(angle_x), -np.sin(angle_x)],
+            [0, np.sin(angle_x), np.cos(angle_x)],
+        ]
+    )
+    rot_y = np.array(
+        [
+            [np.cos(angle_y), 0, np.sin(angle_y)],
+            [0, 1, 0],
+            [-np.sin(angle_y), np.cos(angle_y), 0],
+        ]
+    )
+    rot_z = np.array(
+        [
+            [np.cos(angle_z), -np.sin(angle_z), 0],
+            [np.sin(angle_z), np.cos(angle_z), 0],
+            [0, 0, 1],
+        ]
+    )
+    R = rot_x @ rot_y @ rot_z
+    rt_pts = pts @ R
+    r_pts = rt_pts - t_vec
+    return r_pts
+
+
+def get_random_pnt(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
+    random_x = np.random.randint(xmin, xmax)
+    random_y = np.random.randint(ymin, ymax)
+    if zmin == 0 and zmax == 0:
+        random_z = 0
+    else:
+        random_z = np.random.randint(zmin, zmax)
+    return np.array([random_x, random_y, random_z])
+
+
+def get_random_line(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
+    pt1 = get_random_pnt(xmin, xmax, ymin, ymax, zmin, zmax)
+    pt2 = get_random_pnt(xmin, xmax, ymin, ymax, zmin, zmax)
+    return np.array([pt1, pt2])

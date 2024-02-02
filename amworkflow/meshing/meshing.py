@@ -1,15 +1,14 @@
 import logging
+import multiprocessing
 import typing
 from pathlib import Path
 
-import meshio
-
 import gmsh
-import multiprocessing
-from OCC.Core.TopoDS import TopoDS_Solid
-from OCC.Extend.DataExchange import read_step_file
+import meshio
 from dolfinx.io import XDMFFile, gmshio
 from mpi4py import MPI
+from OCC.Core.TopoDS import TopoDS_Solid
+from OCC.Extend.DataExchange import read_step_file
 
 from amworkflow import occ_helpers
 
@@ -89,7 +88,7 @@ class MeshingGmsh(Meshing):
             raise EnvironmentError("Gmsh not initialized.")
 
         # two options of splitting geometry in layers checked above in assert
-        geo = occ_helpers.split(
+        geo = occ_helpers.split_by_plane(
             item=shape, layer_height=self.layer_height, nz=self.number_of_layers
         )
 

@@ -13,8 +13,8 @@ from amworkflow.simulation import SimulationFenicsXConcrete
 
 
 
-def test_simulation_structure(tmp_path):
 
+def test_simulation_structure(tmp_path):
     # tmp output files directory
     d = tmp_path / f"test_sim"
     d.mkdir(parents=True, exist_ok=True)
@@ -62,7 +62,6 @@ def test_simulation_structure(tmp_path):
 
 
 def test_simulation_process(tmp_path):
-
     # tmp output files directory
     d = tmp_path / f"test_sim"
     d.mkdir(parents=True, exist_ok=True)
@@ -113,15 +112,9 @@ def test_simulation_process(tmp_path):
         # print('disp max', y[:].max())
         # print('disp min', y[:].min())
         assert abs(y[:]).max() > 0.0
-#
-
-
 
 
 ###
 if __name__ == "__main__":
-
     test_simulation_structure(Path.cwd())
     test_simulation_process(Path.cwd())
-
-
