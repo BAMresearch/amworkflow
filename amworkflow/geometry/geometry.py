@@ -5,6 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 import numpy as np
+import pandas as pd
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Core.TopoDS import TopoDS_Shape
 from OCC.Extend.DataExchange import write_step_file, write_stl_file
@@ -109,9 +110,9 @@ class GeometryOCC(Geometry):
         write_step_file(a_shape=self.shape, filename=str(out_step))
 
         # save print path points
-        dict = {'x': np.array(self.points)[:, 0], 'y': np.array(self.points)[:, 1], 'z': np.array(self.points)[:, 2]}
+        dict = {'x': np.array(self.points)[:, 0], 'y': np.array(self.points)[:, 1]}
         df = pd.DataFrame(dict)
-        df.to_csv(str(out_path))
+        df.to_csv(str(out_path),index=False)
 
 
 

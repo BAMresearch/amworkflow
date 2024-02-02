@@ -12,7 +12,7 @@ from fenicsxconcrete.util import ureg
 from amworkflow.geometry import GeometryParamWall
 from amworkflow.meshing import MeshingGmsh
 
-# from amworkflow.simulation import SimulationFenicsXConcrete
+from amworkflow.simulation import SimulationFenicsXConcrete
 
 # > doit -f <filename>   # for execution of all task
 # > doit -f <filename> s <taskname> # for specific task
