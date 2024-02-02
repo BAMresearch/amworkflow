@@ -1,16 +1,10 @@
 import logging
-import logging
 from pprint import pprint
-
-import numpy as np
-from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
 
 import numpy as np
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
 from OCC.Core.gp import gp_Pnt
 from OCC.Core.TopoDS import (
-    TopoDS_Compound,
-    TopoDS_Edge,
     TopoDS_Compound,
     TopoDS_Edge,
     TopoDS_Face,
@@ -24,13 +18,11 @@ from amworkflow.geometry.simple_geometries import create_edge, create_face, crea
 from amworkflow.occ_helpers import create_solid, sew_face
 
 level = logging.WARNING
-level = logging.WARNING
 logging.basicConfig(
-    level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("amworkflow.geometry.builtinCAD")
-# # logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
 
 count_id = 0
 count_gid = [0 for i in range(7)]
@@ -740,6 +732,42 @@ def bisect_angle(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
         opt = bst / norm3
     return opt
 
+def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
+    pts = np.array([np.array(list(i.Coord())) if isinstance(
+        i, gp_Pnt) else np.array(i) for i in pts])
+    pts = [i + direct for i in pts]
+    return list(pts)
+
+def center_of_mass(pts: np.ndarray) -> np.ndarray:
+    pts = np.array([np.array(list(i.Coord())) if isinstance(
+        i, gp_Pnt) else np.array(i) for i in pts])
+
+    return np.mean(pts.T, axis=1)
+
+def rotate(pts: np.ndarray, angle_x: float = 0, angle_y: float = 0, angle_z: float = 0, cnt: np.ndarray = None) -> np.ndarray:
+    pts = np.array([np.array(list(i.Coord())) if isinstance(
+        i, gp_Pnt) else np.array(i) for i in pts])
+    com = center_of_mass(pts)
+    if cnt is None:
+        cnt = np.array([0, 0, 0])
+    t_vec = cnt - com
+    pts += t_vec
+    rot_x = np.array([[1, 0, 0],
+                      [0, np.cos(angle_x), -np.sin(angle_x)],
+                      [0, np.sin(angle_x), np.cos(angle_x)]])
+    rot_y = np.array([[np.cos(angle_y), 0, np.sin(angle_y)],
+                      [0, 1, 0],
+                      [-np.sin(angle_y), np.cos(angle_y), 0]])
+    rot_z = np.array([[np.cos(angle_z), -np.sin(angle_z), 0],
+                      [np.sin(angle_z), np.cos(angle_z), 0],
+                      [0, 0, 1]])
+    R = rot_x@rot_y@rot_z
+    rt_pts = pts@R
+    r_pts = rt_pts - t_vec
+    return r_pts
+
+def distance(p1: Pnt, p2: Pnt) -> float:
+    return np.linalg.norm(p1.value - p2.value)
 
 def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
     pts = np.array(

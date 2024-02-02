@@ -3,6 +3,7 @@ import typing
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+
 import numpy as np
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Core.TopoDS import TopoDS_Shape
@@ -13,7 +14,6 @@ import amworkflow.geometry.builtinCAD as bcad
 from amworkflow.geometry import composite_geometries, simple_geometries
 
 typing.override = lambda x: x
-
 
 class Geometry:
     """Base class with API for any geometry creation."""
@@ -33,6 +33,7 @@ class Geometry:
             out_step: File path of step file.
             out_path: File path of file containing the print path points (csv).
             out_path: File path of file containing the print path points (csv).
+
             out_stl: Optional file path of stl file.
 
         Returns:
@@ -61,6 +62,7 @@ class GeometryOCC(Geometry):
             stl_linear_deflection: Linear deflection parameter of OCC stl export (Lower, more accurate mesh; OCC default is 0.001)
             stl_angular_deflection: Angular deflection parameter of OCC stl export (Lower, more accurate_mesh: OCC default is 0.5).
         """
+
 
         self.stl_linear_deflection = stl_linear_deflection
         self.stl_angular_deflection = stl_angular_deflection
@@ -493,3 +495,4 @@ class GeometryCenterline(GeometryOCC):
         # design = wall_maker.Shape()
         design = None
         return design
+    
