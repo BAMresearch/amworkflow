@@ -3,7 +3,6 @@ import typing
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-
 import numpy as np
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Core.TopoDS import TopoDS_Shape
@@ -14,6 +13,7 @@ import amworkflow.geometry.builtinCAD as bcad
 from amworkflow.geometry import composite_geometries, simple_geometries
 
 typing.override = lambda x: x
+
 
 class Geometry:
     """Base class with API for any geometry creation."""
@@ -62,7 +62,6 @@ class GeometryOCC(Geometry):
             stl_linear_deflection: Linear deflection parameter of OCC stl export (Lower, more accurate mesh; OCC default is 0.001)
             stl_angular_deflection: Angular deflection parameter of OCC stl export (Lower, more accurate_mesh: OCC default is 0.5).
         """
-
 
         self.stl_linear_deflection = stl_linear_deflection
         self.stl_angular_deflection = stl_angular_deflection
@@ -491,8 +490,12 @@ class GeometryCenterline(GeometryOCC):
 
         # where to put those geometry building function?
         # is_close as global parameter?
-        # wall_maker = CreateWallByPoints("", self.layer_thickness, self.layer_height*self.number_of_layers, is_close=False)
-        # design = wall_maker.Shape()
-        design = None
+        wall_maker = composite_geometries.CreateWallByPoints(
+            self.points,
+            self.layer_thickness,
+            self.layer_height * self.number_of_layers,
+            is_close=False,
+        )
+        design = wall_maker.Shape()
+        # design = None
         return design
-    
