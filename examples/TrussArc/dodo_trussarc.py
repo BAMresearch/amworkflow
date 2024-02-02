@@ -22,7 +22,7 @@ params = {  # geometry parameters
     "csv_points": "print110823.csv",
     "layer_thickness": 50,  # mm
     "number_of_layers": 10,
-    "layer_height": 10,  # mm
+    # "layer_height": 10,  # mm
     # mesh parameters (meshing by layer height)
     "mesh_size_factor": 10,
     # ....
