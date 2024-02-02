@@ -99,7 +99,6 @@ class GcodeFromPoints(Gcode):
         # Container of tail of gcode
         super().__init__(**kwargs)
 
-    @typing.override
     def create(self, in_file: Path, out_gcode: Path) -> None:
         """Create gcode file by given path point file
 

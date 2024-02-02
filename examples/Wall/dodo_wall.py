@@ -19,6 +19,7 @@ from amworkflow.meshing import MeshingGmsh
 # > doit -f <filename>   # for execution of all task
 # > doit -f <filename> s <taskname> # for specific task
 # > doit -f <filename> clean # for deleting task output
+# add infill=<zigzag/solid/honeycomb> default is zigzag
 
 logging.basicConfig(level=logging.INFO)
 
@@ -28,7 +29,7 @@ params = {  # geometry parameters
     "height": 150,  # mm
     "width": 150,  # mm
     "radius": None,  # mm
-    "infill": "zigzag",
+    "infill": get_var('infill',"zigzag"), # default infill changable via command line doit -f dodo_wall.py infill=zigzag or solid or honeycomb
     # mesh parameters (meshing by layer height)
     "line_width": 10,  # mm
     "mesh_size_factor": 10,
