@@ -14,8 +14,8 @@ from OCC.Core.TopoDS import (
     TopoDS_Wire,
 )
 
-from amworkflow.geometry import simple_geometries as sgeom
-from amworkflow.occ_helpers import sew_face
+from amworkflow.geometry.simple_geometries import create_edge, create_face, create_wire
+from amworkflow.occ_helpers import create_solid, sew_face
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -25,7 +25,6 @@ logger.setLevel(logging.INFO)
 
 count_id = 0
 count_gid = [0 for i in range(7)]
-count_cid = 0
 id_index = {}
 TYPE_INDEX = {
     0: "point",
@@ -35,11 +34,17 @@ TYPE_INDEX = {
     4: "shell",
     5: "solid",
     6: "compound",
-    7: "constraint",
 }
 
 
 def pnt(pt_coord) -> np.ndarray:
+    '''
+    Create a point.
+    :param pt_coord: The coordinate of the point. If the dimension is less than 3, the rest will be padded with 0. If the dimension is more than 3, an exception will be raised.
+    :type pt_coord: list
+    :return: The coordinate of the point.
+    :rtype: np.ndarray
+    '''
     opt = np.array(pt_coord)
     dim = np.shape(pt_coord)[0]
     if dim > 3:
@@ -52,6 +57,9 @@ def pnt(pt_coord) -> np.ndarray:
 
 
 class DuplicationCheck:
+    '''
+    Check if an item already exists in the index.
+    '''
     def __init__(
         self,
         gtype: int,
@@ -257,21 +265,18 @@ class Pnt(TopoObj):
     Create a point.
     """
 
-    def __new__(cls, *coord: list[float]) -> None:
+    def __new__(cls, coord: list) -> None:
         point = pnt(coord)
         checker = DuplicationCheck(0, point)
-        if not checker.new:
-            return checker.exist_object
-        else:
+        if checker.new:
             return super().__new__(cls)
+        else:
+            return checker.exist_object
 
-    def __init__(self, *coord: list[float]) -> None:
+    def __init__(self, coord: list) -> None:
         super().__init__()
         self.type = 0
         self.coord = pnt(coord)
-        checker = DuplicationCheck(0, self.coord)
-        if not checker.new:
-            return None
         self.value = self.coord
         self.occ_pnt = gp_Pnt(*self.coord.tolist())
         self.enrich_property({"occ_pnt": self.occ_pnt})
@@ -279,14 +284,14 @@ class Pnt(TopoObj):
 
 
 class Segment(TopoObj):
-    def __new__(cls, pnt2: Pnt, pnt1: Pnt = Pnt()):
+    def __new__(cls, pnt2: Pnt, pnt1: Pnt = Pnt([])):
         checker = DuplicationCheck(1, [pnt1.id, pnt2.id])
         if checker.new:
             return super().__new__(cls)
         else:
             return checker.exist_object
 
-    def __init__(self, pnt2: Pnt, pnt1: Pnt = Pnt()) -> None:
+    def __init__(self, pnt2: Pnt, pnt1: Pnt = Pnt([])) -> None:
         super().__init__()
         pnt1, pnt2 = self.check_input(pnt1=pnt1, pnt2=pnt2)
         self.start_pnt = pnt1.id
@@ -296,7 +301,7 @@ class Segment(TopoObj):
         self.normal = self.vector / self.length
         self.type = 1
         self.value = [self.start_pnt, self.end_pnt]
-        self.occ_edge = sgeom.create_edge(pnt1.occ_pnt, pnt2.occ_pnt)
+        self.occ_edge = create_edge(pnt1.occ_pnt, pnt2.occ_pnt)
         self.enrich_property(
             {
                 "occ_edge": self.occ_edge,
@@ -338,7 +343,7 @@ class Wire(TopoObj):
         super().__init__()
         self.type = 2
         self.seg_ids = [item.id for item in segments]
-        self.occ_wire = sgeom.create_wire(*[item.occ_edge for item in segments])
+        self.occ_wire = create_wire(*[item.occ_edge for item in segments])
         self.update_dependency(*segments)
         self.value = self.seg_ids
         self.enrich_property({"occ_wire": self.occ_wire})
@@ -358,7 +363,7 @@ class Surface(TopoObj):
         self.type = 3
         self.wire_ids = [item.id for item in wires]
         self.value = self.wire_ids
-        self.occ_face = sgeom.create_face(wires[0].occ_wire)
+        self.occ_face = create_face(wires[0].occ_wire)
         self.update_dependency(*wires)
         self.enrich_property({"occ_face": self.occ_face})
         self.register_item()
@@ -396,7 +401,7 @@ class Solid(TopoObj):
         self.type = 5
         self.shell_id = shell.id
         self.value = [self.shell_id]
-        self.occ_solid = sgeom.create_solid(shell.occ_shell)
+        self.occ_solid = create_solid(shell.occ_shell)
         self.update_dependency(shell)
         self.enrich_property({"occ_solid": self.occ_solid})
         self.register_item()
@@ -413,19 +418,19 @@ def create_wire_by_points(points: list):
     for i, pt in enumerate(pts):
         # Create a wire for the i th point.
         if i == 0:
-            edge = sgeom.create_edge(pt, pts[i + 1])
-            wire = sgeom.create_wire(edge)
+            edge = create_edge(pt, pts[i + 1])
+            wire = create_wire(edge)
         # Create a wire for the given points.
         if i != len(pts) - 1:
-            edge = sgeom.create_edge(pt, pts[i + 1])
-            wire = sgeom.create_wire(wire, edge)
+            edge = create_edge(pt, pts[i + 1])
+            wire = create_wire(wire, edge)
         else:
-            edge = sgeom.create_edge(pts[i], pts[0])
-            wire = sgeom.create_wire(wire, edge)
+            edge = create_edge(pts[i], pts[0])
+            wire = create_wire(wire, edge)
     return wire
 
 
-def create_polygon_by_points(
+def random_polygon_constructor(
     points: list, isface: bool = True
 ) -> TopoDS_Face or TopoDS_Wire:
     """
@@ -442,7 +447,7 @@ def create_polygon_by_points(
     pb.Close()
     # Create a face or a wire.
     if isface:
-        return sgeom.create_face(pb.Wire())
+        return create_face(pb.Wire())
     else:
         return pb.Wire()
 
@@ -463,55 +468,145 @@ def angle_of_two_arrays(a1: np.ndarray, a2: np.ndarray, rad: bool = True) -> flo
     else:
         return np.rad2deg(np.arccos(cos_value))
 
+# pnt1 = Pnt([2,3])
+# pnt2 = Pnt([2,3,3])
+# pnt3 = Pnt([2,3,5])
+# pnt31 = Pnt([2,3,5])
+# print(pnt31 is pnt3)
+# seg1 = Segment(pnt1, pnt2)
+# seg11 = Segment(pnt1, pnt2)
+# print(seg11 is seg1)
+# seg2 = Segment(pnt2, pnt3)
+# seg3 = Segment(pnt3, pnt1)
+# wire1 = Wire(seg1, seg2,seg3)
+# surf1 = Surface(wire1)
+# pprint(id_index)
+# print(seg3)
+# print(pnt1.property["occ_pnt"])
 
-def laterality_indicator(a: np.ndarray, d: bool):
+
+def bend(
+    point_cordinates,
+    radius: float = None,
+    mx_pt: np.ndarray = None,
+    mn_pt: np.ndarray = None,
+):
+    coord_t = np.array(point_cordinates).T
+    if mx_pt is None:
+        mx_pt = np.max(coord_t, 1)
+    if mn_pt is None:
+        mn_pt = np.min(coord_t, 1)
+    cnt = 0.5 * (mn_pt + mx_pt)
+    scale = np.abs(mn_pt - mx_pt)
+    if radius is None:
+        radius = scale[1] * 2
+    o_y = scale[1] * 0.5 + radius
+    for pt in point_cordinates:
+        xp = pt[0]
+        yp = pt[1]
+        ratio_l = xp / scale[0]
+        ypr = scale[1] * 0.5 - yp
+        Rp = radius + ypr
+        ly = scale[0] * (1 + ypr / radius)
+        lp = ratio_l * ly
+        thetp = lp / (Rp)
+        thetp = lp / (Rp)
+        pt[0] = Rp * np.sin(thetp)
+        pt[1] = o_y - Rp * np.cos(thetp)
+    return point_cordinates
+
+
+def project_array(array: np.ndarray, direct: np.ndarray) -> np.ndarray:
     """
-    @brief Compute laterality indicator of a vector. This is used to create a vector which is perpendicular to the based vector on its left side ( d = True ) or right side ( d = False )
-    @param a vector ( a )
-    @param d True if on left or False if on right
-    @return A vector.
+    Project an array to the specified direction.
     """
-    z = np.array([0, 0, 1])
-    # cross product of z and a
-    if d:
-        na = np.cross(z, a)
+    direct = direct / np.linalg.norm(direct)
+    return np.dot(array, direct) * direct
+
+
+def shortest_distance_point_line(line, p):
+    pt1, pt2 = line
+    s = pt2 - pt1
+    lmbda = (p - pt1).dot(s) / s.dot(s)
+    if lmbda < 1 and lmbda > 0:
+        pt_compute = pt1 + lmbda * s
+        distance = np.linalg.norm(pt_compute - p)
+        return lmbda, distance
+    elif lmbda <= 0:
+        distance = np.linalg.norm(pt1 - p)
+        return 0, distance
     else:
-        na = np.cross(-z, a)
-    norm = np.linalg.norm(na, na.shape[0])
-    return na / norm
+        distance = np.linalg.norm(pt2 - p)
+        return 1, distance
 
 
-def get_face_area(points: list):
-    pts = np.array(points).T
-    x = pts[0]
-    y = pts[1]
-    result = 0
-    for i in range(len(x)):
-        if i < len(x) - 1:
-            t = x[i] * y[i + 1] - x[i + 1] * y[i]
+def bounding_box(pts: list):
+    pts = np.array(pts)
+    coord_t = np.array(pts).T
+    mx_pt = np.max(coord_t, 1)
+    mn_pt = np.min(coord_t, 1)
+    return mx_pt, mn_pt
+
+
+def shortest_distance_line_line(line1, line2):
+    pt11, pt12 = line1
+    pt21, pt22 = line2
+    s1 = pt12 - pt11
+    s2 = pt22 - pt21
+    s1square = np.dot(s1, s1)
+    s2square = np.dot(s2, s2)
+    term1 = s1square * s2square - (np.dot(s1, s2) ** 2)
+    term2 = s1square * s2square - (np.dot(s1, s2) ** 2)
+    if np.isclose(term1, 0) or np.isclose(term2, 0):
+        if np.isclose(s1[0], 0):
+            s_p = np.array([-s1[1], s1[0], 0])
         else:
-            t = x[i] * y[0] - x[0] * y[i]
-        result += t
-    return np.abs(result) * 0.5
-
-
-def angular_bisector(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
-    """
-    @brief Angular bisector between two vectors. The result is a vector splitting the angle between two vectors uniformly.
-    @param a1 1xN numpy array
-    @param a2 1xN numpy array
-    @return the bisector vector
-    """
-    norm1 = np.linalg.norm(a1)
-    norm2 = np.linalg.norm(a2)
-    bst = a1 / norm1 + a2 / norm2
-    norm3 = np.linalg.norm(bst)
-    # The laterality indicator a2 norm3 norm3
-    if norm3 == 0:
-        opt = laterality_indicator(a2, True)
+            s_p = np.array([s1[1], -s1[0], 0])
+        l1 = np.random.randint(1, 4) * 0.1
+        l2 = np.random.randint(6, 9) * 0.1
+        pt1i = s1 * l1 + pt11
+        pt2i = s2 * l2 + pt21
+        si = pt2i - pt1i
+        dist = np.linalg.norm(
+            si * (si * s_p) / (np.linalg.norm(si) * np.linalg.norm(s_p))
+        )
+        return dist, np.array([pt1i, pt2i])
+    lmbda1 = (
+        np.dot(s1, s2) * np.dot(pt11 - pt21, s2) - s2square * np.dot(pt11 - pt21, s1)
+    ) / (s1square * s2square - (np.dot(s1, s2) ** 2))
+    lmbda2 = -(
+        np.dot(s1, s2) * np.dot(pt11 - pt21, s1) - s1square * np.dot(pt11 - pt21, s2)
+    ) / (s1square * s2square - (np.dot(s1, s2) ** 2))
+    condition1 = lmbda1 >= 1
+    condition2 = lmbda1 <= 0
+    condition3 = lmbda2 >= 1
+    condition4 = lmbda2 <= 0
+    if condition1 or condition2 or condition3 or condition4:
+        choices = [
+            [line2, pt11, s2],
+            [line2, pt12, s2],
+            [line1, pt21, s1],
+            [line1, pt22, s1],
+        ]
+        result = np.zeros((4, 2))
+        for i in range(4):
+            result[i] = shortest_distance_point_line(choices[i][0], choices[i][1])
+        shortest_index = np.argmin(result.T[1])
+        shortest_result = result[shortest_index]
+        pti1 = (
+            shortest_result[0] * choices[shortest_index][2]
+            + choices[shortest_index][0][0]
+        )
+        pti2 = choices[shortest_index][1]
+        # print(result)
     else:
-        opt = bst / norm3
-    return opt
+        pti1 = pt11 + lmbda1 * s1
+        pti2 = pt21 + lmbda2 * s2
+    # print(lmbda1, lmbda2)
+    # print(pti1, pti2)
+    # print(np.dot(s1,pti2 - pti1), np.dot(s2,pti2 - pti1))
+    distance = np.linalg.norm(pti1 - pti2)
+    return distance, np.array([pti1, pti2])
 
 
 def check_parallel_line_line(line1: np.ndarray, line2: np.ndarray) -> tuple:
@@ -585,122 +680,72 @@ def check_overlap(line1: np.ndarray, line2: np.ndarray) -> np.ndarray:
     )
 
 
-def shortest_distance_point_line(line, p):
-    pt1, pt2 = line
-    s = pt2 - pt1
-    lmbda = (p - pt1).dot(s) / s.dot(s)
-    if lmbda < 1 and lmbda > 0:
-        pt_compute = pt1 + lmbda * s
-        distance = np.linalg.norm(pt_compute - p)
-        return lmbda, distance
-    elif lmbda <= 0:
-        distance = np.linalg.norm(pt1 - p)
-        return 0, distance
-    else:
-        distance = np.linalg.norm(pt2 - p)
-        return 1, distance
-
-
-def shortest_distance_line_line(line1, line2):
-    pt11, pt12 = line1
-    pt21, pt22 = line2
-    s1 = pt12 - pt11
-    s2 = pt22 - pt21
-    s1square = np.dot(s1, s1)
-    s2square = np.dot(s2, s2)
-    term1 = s1square * s2square - (np.dot(s1, s2) ** 2)
-    term2 = s1square * s2square - (np.dot(s1, s2) ** 2)
-    if np.isclose(term1, 0) or np.isclose(term2, 0):
-        if np.isclose(s1[0], 0):
-            s_p = np.array([-s1[1], s1[0], 0])
+def get_face_area(points: list):
+    pts = np.array(points).T
+    x = pts[0]
+    y = pts[1]
+    result = 0
+    for i in range(len(x)):
+        if i < len(x) - 1:
+            t = x[i] * y[i + 1] - x[i + 1] * y[i]
         else:
-            s_p = np.array([s1[1], -s1[0], 0])
-        l1 = np.random.randint(1, 4) * 0.1
-        l2 = np.random.randint(6, 9) * 0.1
-        pt1i = s1 * l1 + pt11
-        pt2i = s2 * l2 + pt21
-        si = pt2i - pt1i
-        dist = np.linalg.norm(
-            si * (si * s_p) / (np.linalg.norm(si) * np.linalg.norm(s_p))
-        )
-        return dist, np.array([pt1i, pt2i])
-    lmbda1 = (
-        np.dot(s1, s2) * np.dot(pt11 - pt21, s2) - s2square * np.dot(pt11 - pt21, s1)
-    ) / (s1square * s2square - (np.dot(s1, s2) ** 2))
-    lmbda2 = -(
-        np.dot(s1, s2) * np.dot(pt11 - pt21, s1) - s1square * np.dot(pt11 - pt21, s2)
-    ) / (s1square * s2square - (np.dot(s1, s2) ** 2))
-    condition1 = lmbda1 >= 1
-    condition2 = lmbda1 <= 0
-    condition3 = lmbda2 >= 1
-    condition4 = lmbda2 <= 0
-    if condition1 or condition2 or condition3 or condition4:
-        choices = [
-            [line2, pt11, s2],
-            [line2, pt12, s2],
-            [line1, pt21, s1],
-            [line1, pt22, s1],
-        ]
-        result = np.zeros((4, 2))
-        for i in range(4):
-            result[i] = shortest_distance_point_line(choices[i][0], choices[i][1])
-        shortest_index = np.argmin(result.T[1])
-        shortest_result = result[shortest_index]
-        pti1 = (
-            shortest_result[0] * choices[shortest_index][2]
-            + choices[shortest_index][0][0]
-        )
-        pti2 = choices[shortest_index][1]
-        # print(result)
+            t = x[i] * y[0] - x[0] * y[i]
+        result += t
+    return np.abs(result) * 0.5
+
+def get_literal_vector(a: np.ndarray, d: bool):
+    """
+    @brief This is used to create a vector which is perpendicular to the based vector on its left side ( d = True ) or right side ( d = False )
+    @param a vector ( a )
+    @param d True if on left or False if on right
+    @return A vector.
+    """
+    z = np.array([0, 0, 1])
+    # cross product of z and a
+    if d:
+        na = np.cross(z, a)
     else:
-        pti1 = pt11 + lmbda1 * s1
-        pti2 = pt21 + lmbda2 * s2
-    # print(lmbda1, lmbda2)
-    # print(pti1, pti2)
-    # print(np.dot(s1,pti2 - pti1), np.dot(s2,pti2 - pti1))
-    distance = np.linalg.norm(pti1 - pti2)
-    return distance, np.array([pti1, pti2])
+        na = np.cross(-z, a)
+    norm = np.linalg.norm(na, na.shape[0])
+    return na / norm
 
+def bisect_angle(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
+    """
+    @brief Angular bisector between two vectors. The result is a vector splitting the angle between two vectors uniformly.
+    @param a1 1xN numpy array
+    @param a2 1xN numpy array
+    @return the bisector vector
+    """
+    norm1 = np.linalg.norm(a1)
+    norm2 = np.linalg.norm(a2)
+    bst = a1 / norm1 + a2 / norm2
+    norm3 = np.linalg.norm(bst)
+    # The laterality indicator a2 norm3 norm3
+    if norm3 == 0:
+        opt = get_literal_vector(a2, True)
+    else:
+        opt = bst / norm3
+    return opt
 
-def bound_segments(master_seg: Segment, driven_seg: Segment):
-    if "driven_seg" not in master_seg.property:
-        master_seg.enrich_property({"driven_seg": []})
-    if "master_seg" not in driven_seg.property:
-        driven_seg.enrich_property({"master_seg": None})
-    master_seg.property["driven_seg"].append(driven_seg.id)
-    driven_seg.update_property("master_seg", master_seg.id)
+def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+    pts = [i + direct for i in pts]
+    return list(pts)
 
+def get_center_of_mass(pts: np.ndarray) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
 
-def bender(
-    point_cordinates,
-    radius: float = None,
-    mx_pt: np.ndarray = None,
-    mn_pt: np.ndarray = None,
-):
-    coord_t = np.array(point_cordinates).T
-    if mx_pt is None:
-        mx_pt = np.max(coord_t, 1)
-    if mn_pt is None:
-        mn_pt = np.min(coord_t, 1)
-    cnt = 0.5 * (mn_pt + mx_pt)
-    scale = np.abs(mn_pt - mx_pt)
-    if radius is None:
-        radius = scale[1] * 2
-    o_y = scale[1] * 0.5 + radius
-    for pt in point_cordinates:
-        xp = pt[0]
-        yp = pt[1]
-        ratio_l = xp / scale[0]
-        ypr = scale[1] * 0.5 - yp
-        Rp = radius + ypr
-        ly = scale[0] * (1 + ypr / radius)
-        lp = ratio_l * ly
-        thetp = lp / (Rp)
-        thetp = lp / (Rp)
-        pt[0] = Rp * np.sin(thetp)
-        pt[1] = o_y - Rp * np.cos(thetp)
-    return point_cordinates
-
+    return np.mean(pts.T, axis=1)
 
 def linear_interpolate(pts: np.ndarray, num: int):
     for i, pt in enumerate(pts):
@@ -710,8 +755,7 @@ def linear_interpolate(pts: np.ndarray, num: int):
             interpolated_points = np.linspace(pt, pts[i + 1], num=num + 2)[1:-1]
     return interpolated_points
 
-
-def polygon_interpolater(
+def interpolate_polygon(
     plg: np.ndarray, step_len: float = None, num: int = None, isclose: bool = True
 ):
     def deter_dum(line: np.ndarray):
@@ -750,39 +794,61 @@ def polygon_interpolater(
         pos += p_num + 1
     return new_plg
 
+def p_rotate(
+    pts: np.ndarray,
+    angle_x: float = 0,
+    angle_y: float = 0,
+    angle_z: float = 0,
+    cnt: np.ndarray = None,
+) -> np.ndarray:
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
+    com = get_center_of_mass(pts)
+    if cnt is None:
+        cnt = np.array([0, 0, 0])
+    t_vec = cnt - com
+    pts += t_vec
+    rot_x = np.array(
+        [
+            [1, 0, 0],
+            [0, np.cos(angle_x), -np.sin(angle_x)],
+            [0, np.sin(angle_x), np.cos(angle_x)],
+        ]
+    )
+    rot_y = np.array(
+        [
+            [np.cos(angle_y), 0, np.sin(angle_y)],
+            [0, 1, 0],
+            [-np.sin(angle_y), np.cos(angle_y), 0],
+        ]
+    )
+    rot_z = np.array(
+        [
+            [np.cos(angle_z), -np.sin(angle_z), 0],
+            [np.sin(angle_z), np.cos(angle_z), 0],
+            [0, 0, 1],
+        ]
+    )
+    R = rot_x @ rot_y @ rot_z
+    rt_pts = pts @ R
+    r_pts = rt_pts - t_vec
+    return r_pts
 
-class Constraint:
-    def __init__(self):
-        self.type = 7
+def get_random_pnt(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
+    random_x = np.random.randint(xmin, xmax)
+    random_y = np.random.randint(ymin, ymax)
+    if zmin == 0 and zmax == 0:
+        random_z = 0
+    else:
+        random_z = np.random.randint(zmin, zmax)
+    return np.array([random_x, random_y, random_z])
 
+def get_random_line(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
+    pt1 = get_random_pnt(xmin, xmax, ymin, ymax, zmin, zmax)
+    pt2 = get_random_pnt(xmin, xmax, ymin, ymax, zmin, zmax)
+    return np.array([pt1, pt2])
 
-class ColinearConstraint(Constraint):
-    def __init__(self):
-        super().__init__()
-
-
-class FixedDistanceConstraint(Constraint):
-    def __init__(self):
-        super().__init__()
-
-
-# pnt1 = Pnt([2, 3])
-# pnt2 = Pnt([2, 3, 3])
-# pnt3 = Pnt([2, 3, 5])
-# # pnt31 = Pnt([2,3,5])
-# # print(pnt31 is pnt3)
-# # seg1 = Segment(pnt1, pnt2)
-# # seg11 = Segment(pnt1, pnt2)
-# # print(seg11 is seg1)
-# seg2 = Segment(pnt2, pnt3)
-# seg3 = Segment(pnt3, pnt1)
-# seg4 = Segment(pnt1, pnt2)
-# # wire1 = Wire(seg1, seg2,seg3)
-# # surf1 = Surface(wire1)
-# # pprint(id_index)
-# # print(seg3)
-# # print(pnt1.property["occ_pnt"])
-# bound_segments(seg2, seg3)
-# bound_segments(seg2, seg4)
-# print(seg2.property["driven_seg"])
-# print(count_gid)

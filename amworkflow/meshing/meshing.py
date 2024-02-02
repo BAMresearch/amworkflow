@@ -9,7 +9,7 @@ from dolfinx.io import XDMFFile, gmshio
 from mpi4py import MPI
 from OCC.Core.TopoDS import TopoDS_Solid
 from OCC.Extend.DataExchange import read_step_file
-from amworkflow.geometry import simple_geometries as sgeom
+
 from amworkflow import occ_helpers
 
 typing.override = lambda x: x
@@ -66,11 +66,11 @@ class MeshingGmsh(Meshing):
         Returns:
 
         """
-        # assert [self.number_of_layers, self.layer_height].count(None) == 1
+        assert [self.number_of_layers, self.layer_height].count(None) == 1
         assert step_file.is_file(), f"Step file {step_file} does not exist."
 
         shape = read_step_file(filename=str(step_file))
-        solid = sgeom.create_solid(shape)
+        solid = occ_helpers.create_solid(shape)
 
         assert isinstance(solid, TopoDS_Solid), "Must be TopoDS_Shape object to mesh."
 
@@ -82,7 +82,7 @@ class MeshingGmsh(Meshing):
             raise EnvironmentError("Gmsh not initialized.")
 
         # two options of splitting geometry in layers checked above in assert
-        geo = occ_helpers.split(
+        geo = occ_helpers.split_by_plane(
             item=shape, layer_height=self.layer_height, nz=self.number_of_layers
         )
 

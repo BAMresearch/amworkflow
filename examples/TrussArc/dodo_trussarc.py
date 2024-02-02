@@ -53,7 +53,7 @@ def task_create_design():
     geometry = GeometryCenterline(**params)
 
     return {
-        "actions": [(geometry.create, [out_file_step, out_file_stl, out_file_points])],
+        "actions": [(geometry.create, [out_file_step,  out_file_points, out_file_stl])],
         "targets": [out_file_step, out_file_stl, out_file_points],
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],

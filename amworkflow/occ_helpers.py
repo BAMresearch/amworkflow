@@ -2,15 +2,23 @@ import numpy as np
 from OCC.Core.Bnd import Bnd_Box
 from OCC.Core.BOPAlgo import BOPAlgo_Splitter
 from OCC.Core.BRep import BRep_Builder
-from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
+from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Common, BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
 from OCC.Core.BRepBndLib import brepbndlib_Add
 from OCC.Core.BRepBuilderAPI import (
     BRepBuilderAPI_Copy,
+    BRepBuilderAPI_MakeEdge,
+    BRepBuilderAPI_MakeFace,
+    BRepBuilderAPI_MakePolygon,
+    BRepBuilderAPI_MakeShell,
     BRepBuilderAPI_MakeSolid,
+    BRepBuilderAPI_MakeWire,
     BRepBuilderAPI_Sewing,
+    BRepBuilderAPI_Transform,
+    brepbuilderapi_Precision,
 )
-from OCC.Core.BRepGProp import brepgprop_SurfaceProperties
-from OCC.Core.gp import gp_Pln, gp_Pnt, gp_Trsf, gp_Vec
+from OCC.Core.BRepGProp import brepgprop_SurfaceProperties, brepgprop_VolumeProperties
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder, BRepPrimAPI_MakePrism
+from OCC.Core.gp import gp_Ax1, gp_Dir, gp_Pln, gp_Pnt, gp_Trsf, gp_Vec
 from OCC.Core.GProp import GProp_GProps
 from OCC.Core.TopAbs import (
     TopAbs_COMPOUND,
@@ -22,11 +30,19 @@ from OCC.Core.TopAbs import (
 )
 from OCC.Core.TopExp import TopExp_Explorer
 from OCC.Core.TopLoc import TopLoc_Location
-from OCC.Core.TopoDS import TopoDS_Compound, TopoDS_Face, TopoDS_Shape
+from OCC.Core.TopoDS import (
+    TopoDS_Compound,
+    TopoDS_Face,
+    TopoDS_Iterator,
+    TopoDS_Shape,
+    TopoDS_Shell,
+    TopoDS_Solid,
+    TopoDS_Wire,
+    topods_Face,
+)
+from OCC.Core.TopTools import TopTools_ListOfShape
 from OCCUtils.Construct import make_face, vec_to_dir
 from OCCUtils.Topology import Topo
-
-from amworkflow.geometry import simple_geometries as sgeom
 
 
 def sew_face(*component) -> TopoDS_Shape:
@@ -38,15 +54,17 @@ def sew_face(*component) -> TopoDS_Shape:
     return sewed_shape
 
 
-def cutter3D(shape1: TopoDS_Shape, shape2: TopoDS_Shape) -> TopoDS_Shape:
-    """
-    @brief Cut a TopoDS_Shape from shape1 by shape2. It is possible to use this function to cut an object in 3D
-    @param shape1 shape that is to be cut
-    @param shape2 shape that is to be cut. It is possible to use this function to cut an object in 3D
-    @return a shape that is the result of cutting shape1 by shape2 ( or None if shape1 and shape2 are equal
-    """
-    comm = BRepAlgoAPI_Cut(shape1, shape2)
-    return comm.Shape()
+def create_solid(item: TopoDS_Shape) -> TopoDS_Shape:
+    return BRepBuilderAPI_MakeSolid(item).Shape()
+
+
+def create_compound(*args):
+    builder = BRep_Builder()
+    obj = TopoDS_Compound()
+    builder.MakeCompound(obj)
+    for item in args[0]:
+        builder.Add(obj, item)
+    return obj
 
 
 def translate(item: TopoDS_Shape, vector: list):
@@ -82,7 +100,18 @@ def geom_copy(item: TopoDS_Shape):
     return new_item
 
 
-def split(
+def split(item: TopoDS_Shape, *tools: TopoDS_Shape) -> TopoDS_Compound:
+    top_list = TopTools_ListOfShape()
+    for i in tools:
+        top_list.Append(i)
+    cut = BOPAlgo_Splitter()
+    print(tools)
+    cut.SetArguments(top_list)
+    cut.Perform()
+    return cut.Shape()
+
+
+def split_by_plane(
     item: TopoDS_Shape,
     nz: int = None,
     layer_height: float = None,
@@ -98,7 +127,7 @@ def split(
     @param ny Number of sub - shapes in the y - direction.
     @return a compound of sub-shapes
     """
-    # assert [nz, layer_height].count(None) == 1
+    assert [nz, layer_height].count(None) == 1
 
     xmin, ymin, zmin, xmax, ymax, zmax = get_occ_bounding_box(item)
     plan_len = 1.2 * max(abs(xmin - xmax), abs(ymin - ymax))
@@ -138,24 +167,8 @@ def split(
             bo.AddArgument(fc1)
     bo.Perform()
     top = Topo(bo.Shape())
-    geo = sgeom.create_compound(top.solids())
+    geo = create_compound(top.solids())
     return geo
-
-
-def get_face_center_of_mass(face: TopoDS_Face, gp_pnt: bool = False) -> tuple:
-    """
-    @brief Get the center of mass of a TopoDS_Face. This is useful for determining the center of mass of a face or to get the centre of mass of an object's surface.
-    @param face TopoDS_Face to get the center of mass of
-    @param gp_pnt If True return an gp_Pnt object otherwise a tuple of coordinates.
-    """
-    props = GProp_GProps()
-    brepgprop_SurfaceProperties(face, props)
-    face_surf = props.CentreOfMass()
-    # face_surf. Coord if gp_pnt returns the face surface.
-    if gp_pnt:
-        return face_surf
-    else:
-        return face_surf.Coord()
 
 
 def get_occ_bounding_box(shape: TopoDS_Shape) -> tuple:
@@ -170,7 +183,7 @@ def get_occ_bounding_box(shape: TopoDS_Shape) -> tuple:
     return xmin, ymin, zmin, xmax, ymax, zmax
 
 
-def topo_explorer(shape: TopoDS_Shape, shape_type: str) -> list:
+def explore_topo(shape: TopoDS_Shape, shape_type: str) -> list:
     """
     @brief TopoDS Explorer for shape_type. This is a wrapper around TopExp_Explorer to allow more flexibility in the explorer
     @param shape TopoDS_Shape to be explored.
@@ -192,3 +205,245 @@ def topo_explorer(shape: TopoDS_Shape, shape_type: str) -> list:
         result.append(explorer.Current())
         explorer.Next()
     return result
+
+
+def intersect(item: TopoDS_Shape, position: float, axis: str) -> TopoDS_Shape:
+    """
+    Returns the topo shape intersecting the item at the given position.
+
+    Args:
+        item: TopoDS_Shape to be intersected.
+        position: Position of the plane in world coordinates.
+        axis: Axis along which of the direction.
+    return TopoDS_Shape with intersection or empty TopoDS_Shape if no intersection is found.
+    """
+    intsctr = BRepAlgoAPI_Common
+    xmin, ymin, zmin, xmax, ymax, zmax = get_occ_bounding_box(item)
+    bnd_x = abs(xmin - xmax) * 1.2
+    bnd_y = abs(ymin - ymax) * 1.2
+    bnd_z = abs(zmin - zmax) * 1.2
+    match axis:
+        case "z":
+            plan_len = max(bnd_x, bnd_y)
+            p1, v1 = gp_Pnt(0, 0, position), gp_Vec(0, 0, 1)
+            fc1 = make_face(
+                gp_Pln(p1, vec_to_dir(v1)), -plan_len, plan_len, -plan_len, plan_len
+            )
+    common = intsctr(item, fc1)
+    common.Build()
+
+
+def scale(item: TopoDS_Shape, cnt_pnt: gp_Pnt, factor: float) -> TopoDS_Shape:
+    """
+    @brief Scales TopoDS_Shape to a given value. This is useful for scaling shapes that are in a shape with respect to another shape.
+    @param item TopoDS_Shape to be scaled.
+    @param cnt_pnt the point of the scaling center.
+    @param factor Factor to scale the shape by. Default is 1.
+    @return a scaled TopoDS_Shape with scaling applied to it.
+    """
+    scaling_transform = gp_Trsf()
+    scaling_transform.SetScale(cnt_pnt, factor)
+    scaled_shape = BRepBuilderAPI_Transform(item, scaling_transform, True).Shape()
+    return scaled_shape
+
+
+def carve_hollow(face: TopoDS_Shape, factor: float):
+    """
+    @brief (This can be replaced by cutter3D() now.)Carving on a face with a shape scaling down from itself.
+    @param face TopoDS_Shape to be cutted.
+    @param factor Factor to be used to scale the cutter.
+    @return A shape with the cutter in it's center of mass scaled by factor
+    """
+    cnt = get_face_center_of_mass(face, gp_pnt=True)
+    cutter = scale(face, cnt, factor)
+    cut = BRepAlgoAPI_Cut(face, cutter).Shape()
+    return cut
+
+
+def rotate_face(shape: TopoDS_Shape, angle: float, axis: str = "z", cnt: tuple = None):
+    """
+    @brief Rotate the topography by the given angle around the center of mass of the face.
+    @param shape TopoDS_Shape to be rotated.
+    @param angle Angle ( in degrees ) to rotate by.
+    @param axis determine the rotation axis.
+    @return the rotated shape.
+    """
+    transform = gp_Trsf()
+    if cnt is None:
+        cnt = get_face_center_of_mass(shape, gp_pnt=True)
+    match axis:
+        case "z":
+            ax = gp_Ax1(cnt, gp_Dir(0, 0, 1))
+        case "y":
+            ax = gp_Ax1(cnt, gp_Dir(0, 1, 0))
+        case "x":
+            ax = gp_Ax1(cnt, gp_Dir(1, 0, 0))
+    transform.SetRotation(ax, angle)
+    transformed = BRepBuilderAPI_Transform(shape, transform).Shape()
+    return transformed
+
+
+def fuse(shape1: TopoDS_Shape, shape2: TopoDS_Shape) -> TopoDS_Shape:
+    """
+    @brief Fuse two shapes into one.
+    @param shape1 first shape to fuse.
+    @param shape2 second shape to fuse.
+    @return topoDS_Shape
+    """
+    fuse = BRepAlgoAPI_Fuse(shape1, shape2).Shape()
+    return fuse
+
+
+def cut(shape1: TopoDS_Shape, shape2: TopoDS_Shape) -> TopoDS_Shape:
+    """
+    @brief Cut a TopoDS_Shape from shape1 by shape2. It is possible to use this function to cut an object in 3D
+    @param shape1 shape that is to be cut
+    @param shape2 shape that is to be cut. It is possible to use this function to cut an object in 3D
+    @return a shape that is the result of cutting shape1 by shape2 ( or None if shape1 and shape2 are equal
+    """
+    comm = BRepAlgoAPI_Cut(shape1, shape2)
+    return comm.Shape()
+
+
+def create_prism(shape: TopoDS_Shape, vector: list, copy: bool = True) -> TopoDS_Shell:
+    """
+    @brief Create prism from TopoDS_Shape and vector. It is possible to copy the based wire(s) if copy is True. I don't know what if it's False so it is recommended to always use True.
+    @param shape TopoDS_Shape to be used as base
+    @param vector list of 3 elements ( x y z ). Normally only use z to define the height of the prism.
+    @param copy boolean to indicate if the shape should be copied
+    @return return the prism
+    """
+    return BRepPrimAPI_MakePrism(
+        shape, gp_Vec(vector[0], vector[1], vector[2]), copy
+    ).Shape()
+
+
+def common(shape1: TopoDS_Shape, shape2: TopoDS_Shape) -> TopoDS_Shape:
+    """
+    @brief Common between two TopoDS_Shapes. The result is a shape that has all components of shape1 and shape2
+    @param shape1 the first shape to be compared
+    @param shape2 the second shape to be compared ( must be same shape! )
+    @return the common shape or None if there is no common shape between shape1 and shape2 in the sense that both shapes are
+    """
+    comm = BRepAlgoAPI_Common(shape1, shape2)
+    return comm.Shape()
+
+
+def get_boundary(item: TopoDS_Shape) -> TopoDS_Wire:
+    bbox = get_occ_bounding_box(item)
+    edge = explore_topo(item, "edge")  # get all edges from imported model.
+    xx = []
+    yy = []
+    # select all edges on the boundary.
+    for e in edge:
+        xmin, ymin, zmin, xmax, ymax, zmax = get_occ_bounding_box(
+            e
+        )  # get bounding box of an edge
+        if (ymin + ymax < 1e-3) or (
+            abs((ymin + ymax) * 0.5 - bbox[4]) < 1e-3
+        ):  # if the edge is either
+            xx.append(e)
+        if (xmin + xmax < 1e-3) or (abs((xmin + xmax) * 0.5 - bbox[3]) < 1e-3):
+            yy.append(e)
+    edges = xx + yy
+    # build a compound of all edges
+    wire = create_compound(edges)
+    return wire
+
+
+def get_face_center_of_mass(face: TopoDS_Face, gp_pnt: bool = False) -> tuple:
+    """
+    @brief Get the center of mass of a TopoDS_Face. This is useful for determining the center of mass of a face or to get the centre of mass of an object's surface.
+    @param face TopoDS_Face to get the center of mass of
+    @param gp_pnt If True return an gp_Pnt object otherwise a tuple of coordinates.
+    """
+    props = GProp_GProps()
+    brepgprop_SurfaceProperties(face, props)
+    face_surf = props.CentreOfMass()
+    # face_surf. Coord if gp_pnt returns the face surface.
+    if gp_pnt:
+        return face_surf
+    else:
+        return face_surf.Coord()
+
+
+def get_volume_center_of_mass(vol: TopoDS_Solid, gp_pnt: bool = False):
+    """
+    @brief Return the center of mass of a volume. This is an approximation of the centroid of the volume.
+    @param vol TopoDS_Solid object representing a volume
+    @param gp_pnt If True return an gp_Pnt object otherwise a tuple of coordinates.
+    @return Center of mass of a volume.
+    """
+    props = GProp_GProps()
+    brepgprop_VolumeProperties(vol, props)
+    cog = props.CentreOfMass()
+    # Return the current coordinate of the current coordinate system.
+    if gp_pnt:
+        return cog
+    else:
+        return cog.Coord()
+
+
+def get_face_area(face: TopoDS_Face) -> float:
+    """
+    @brief Get the area of a TopoDS_Face. This is an approximation of the area of the face.
+    @param face to get the area of.
+    @return The area of the face.
+    """
+    props = GProp_GProps()
+    brepgprop_SurfaceProperties(face, props)
+    face_area = props.Mass()
+    return face_area
+
+
+def get_faces(_shape):
+    """
+    @brief Get faces of a shape. This is a list of topods_Face objects that correspond to the faces of the shape
+    @param _shape shape to get faces of
+    @return list of topods_Face objects ( one for each face in the shape ) for each face
+    """
+    topExp = TopExp_Explorer()
+    topExp.Init(_shape, TopAbs_FACE)
+    _faces = []
+
+    # Add faces to the faces list
+    while topExp.More():
+        fc = topods_Face(topExp.Current())
+        _faces.append(fc)
+        topExp.Next()
+
+    return _faces
+
+
+def traverse(item: TopoDS_Shape) -> Topo:
+    return Topo(item)
+
+
+def create_face(wire: TopoDS_Wire) -> TopoDS_Face:
+    """
+    @brief Create a BRep face from a TopoDS_Wire. This is a convenience function to use : func : ` BRepBuilderAPI_MakeFace ` and
+    @param wire The wire to create a face from. Must be a TopoDS_Wire.
+    @return A Face object with the properties specified
+    """
+    return BRepBuilderAPI_MakeFace(wire).Face()
+
+
+def create_polygon(points: list, isface: bool = True) -> TopoDS_Face or TopoDS_Wire:
+    """
+    @brief Creates a polygon in any shape. If isface is True the polygon is made face - oriented otherwise it is wires
+    @param points List of points defining the polygon
+    @param isface True if you want to create a face - oriented
+    @return A polygon
+    """
+    pb = BRepBuilderAPI_MakePolygon()
+    # Add points to the points.
+    for pt in points:
+        pb.Add(pt)
+    pb.Build()
+    pb.Close()
+    # Create a face or a wire.
+    if isface:
+        return create_face(pb.Wire())
+    else:
+        return pb.Wire()
+
