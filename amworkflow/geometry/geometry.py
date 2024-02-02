@@ -4,6 +4,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from OCC.Core.StlAPI import StlAPI_Writer
 from OCC.Core.TopoDS import TopoDS_Shape
 from OCC.Extend.DataExchange import write_step_file, write_stl_file
@@ -45,6 +46,8 @@ class Geometry:
 
 
 class GeometryOCC(Geometry):
+    """Geometry base class for OCC geometry creation."""
+
     def __init__(
         self,
         stl_linear_deflection: float = 0.001,
@@ -71,6 +74,7 @@ class GeometryOCC(Geometry):
             stl_angular_deflection: Angular deflection parameter of OCC stl export (Lower, more accurate_mesh: OCC default is 0.5).
         """
 
+
         self.stl_linear_deflection = stl_linear_deflection
         self.stl_angular_deflection = stl_angular_deflection
 
@@ -86,6 +90,7 @@ class GeometryOCC(Geometry):
 
         Returns:
             shape: OCC shape.
+            points: list of centerline points (x,y,z)
         """
         raise NotImplementedError
 
@@ -97,12 +102,12 @@ class GeometryOCC(Geometry):
         Args:
             out_step: File path of step file.
             out_path: File path of file containing the print path points.
-            out_stl: File path of step file.
+            out_stl: File path of stl file.
 
         Returns:
 
         """
-        self.shape = self.geometry_spawn()
+        self.shape, self.points = self.geometry_spawn()
 
         # stl_write = StlAPI_Writer()
         # stl_write.SetASCIIMode(True)  # Set to False for binary STL output
@@ -122,7 +127,11 @@ class GeometryOCC(Geometry):
 
         write_step_file(a_shape=self.shape, filename=str(out_step))
 
-        # TODO: save print path points
+        # save print path points
+        dict = {'x': np.array(self.points)[:, 0], 'y': np.array(self.points)[:, 1]}
+        df = pd.DataFrame(dict)
+        df.to_csv(str(out_path),index=False)
+
 
 
 class GeometryParamWall(GeometryOCC):
@@ -185,6 +194,7 @@ class GeometryParamWall(GeometryOCC):
                 height=self.height,
                 radius=self.radius,
             )
+            points = [[0,0,0],[0,0,0]]
 
         elif self.infill == "honeycomb":
             points = self.honeycomb_infill(self.length, self.width, self.line_width)
@@ -211,7 +221,7 @@ class GeometryParamWall(GeometryOCC):
         else:
             raise ValueError(f"Unknown infill type {self.infill}")
 
-        return shape
+        return shape, points
 
     def honeycomb_infill(
         self,
@@ -733,8 +743,7 @@ class GeometryCenterline(GeometryOCC):
         self,
         points: np.ndarray | None = None,
         layer_thickness: float | None = None,
-        number_of_layers: int | None = None,
-        layer_height: float | None = None,
+        height: float | None = None,
         **kwargs,
     ) -> None:
         """OCC geometry class for creating a layer by layer geometry from a given array of centerline points (x,y,z)
@@ -743,15 +752,13 @@ class GeometryCenterline(GeometryOCC):
         Args:
             points: Array with the centerline points with shape (n_points, 3).
             layer_thickness: Thickness of the layers.
-            number_of_layers: Number of layers.
-            layer_height: Height of the layers.
+            height: Height of total structure (number of layer x layer height).
 
 
         """
         self.points = points
         self.layer_thickness = layer_thickness
-        self.number_of_layers = number_of_layers
-        self.layer_height = layer_height
+        self.height = height
 
         super().__init__(**kwargs)
 
@@ -762,17 +769,11 @@ class GeometryCenterline(GeometryOCC):
         """
         assert self.points is not None
         assert self.layer_thickness is not None
-        assert self.number_of_layers is not None
-        assert self.layer_height is not None
+        assert self.height is not None
 
-        # where to put those geometry building function?
-        # is_close as global parameter?
-        wall_maker = composite_geometries.CreateWallByPoints(
-            self.points,
-            self.layer_thickness,
-            self.layer_height * self.number_of_layers,
-            is_close=False,
+        creator = composite_geometries.CreateWallByPoints(
+            self.points, th=self.layer_thickness, height=self.height
         )
-        design = wall_maker.Shape()
-        # design = None
-        return design
+        shape = creator.Shape()
+        return shape, self.points
+    

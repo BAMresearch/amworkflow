@@ -57,6 +57,9 @@ cd examples/<example_name>
 doit -f dodo_<example_name>.py
 ```
 
+### Toy
+The toy example is a simple example to show the basic workflow steps.
+
 ### Wall [![wall](https://github.com/BAMresearch/amworkflow/actions/workflows/wall.yml/badge.svg)](https://github.com/BAMresearch/amworkflow/actions/workflows/wall.yml)
 The workflow is created for a curved wall element with geometrical parameters like length, thickness, width and height with different infill structures.
 

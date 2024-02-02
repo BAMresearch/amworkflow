@@ -10,13 +10,14 @@ from doit.tools import config_changed
 # > doit s <taskname> # for specific task
 # > doit clean # for deleting task output
 
-# use parameter class from fenicsXconcrete ?? TODO
-params = {'name': 'template',
-          'out_dir': str(Path(__file__).parent / 'output'),  # TODO datastore stuff??
-    # ....
+params = {...
 }
 
-OUTPUT = Path(params['out_dir'])
+# TODO datastore stuff??
+OUTPUT_NAME = Path(__file__).parent.name
+OUTPUT = (
+    Path(__file__).parent / "output"
+)  # / f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
 
 def task_create_design():
     """create the design
@@ -30,13 +31,15 @@ def task_create_design():
     """
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
-    out_file = OUTPUT / f"{params['name']}.step" # plus stl
+    out_file_step = OUTPUT / f"{OUTPUT_NAME}.stp"
+    out_file_stl = OUTPUT / f"{OUTPUT_NAME}.stl"
+    out_file_points = OUTPUT / f"{OUTPUT_NAME}.csv"
 
     # geometry = ...(params)
 
     return {
         "actions": [(geometry.create,[])],
-        "targets": [out_file],
+        "targets": [out_file_step, out_file_stl, out_file_points],
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],
     }
@@ -46,23 +49,24 @@ def task_create_design():
 def task_meshing():
     """meshing a given design from a step file
 
+        choose a meshing class or create a new one
         required parameters in params:
-        - name: name of the design
         - mesh_size: size of the mesh
         - meshing via number of layers or layer height possible
     """
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
-    in_file = f"{params['name']}.step"
-    out_file = f"{params['name']}.xdmf" # plus vtk
+    in_file_step = OUTPUT / f"{OUTPUT_NAME}.stp"
+    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
+    out_file_vtk = OUTPUT / f"{OUTPUT_NAME}.vtk"
 
     # new_meshing = ...(params)
 
     return {
         "file_dep": [in_file],
-        "actions": [(new_meshing.create, [in_file])],
-        "targets": [out_file],
+        "actions": [(new_meshing.create, [in_file_step, out_file_xdmf, out_file_vtk])],
+        "targets": [out_file_xdmf, out_file_vtk],
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],
     }
@@ -84,15 +88,16 @@ def task_simulation():
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
-    in_file = OUTPUT / f"{params['name']}.stl"
-    out_file = OUTPUT / f"{params['name']}.gcode"
+    in_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
+    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim.xdmf"
 
-    # gcode = ...(params)
+    # params_sim["experiment_type"] = "structure" * ureg("") # or "process"
+    # simulation = SimulationFenicsXConcrete(params_sim)
 
     return {
         "file_dep": [in_file],
-        "actions": [(gcode.create, [in_file])],
-        "targets": [out_file],
+        "actions": [(simulation.run, [in_file_xdmf, out_file_xdmf])],
+        "targets": [out_file_xdmf],
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],
     }
@@ -101,7 +106,22 @@ def task_simulation():
 
 @create_after(executed="create_design")
 def task_gcode():
-    """generate gcode from stl file"""
+    """generate gcode from stl  or csv point file"""
+
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+
+    in_file_points = OUTPUT / f"{OUTPUT_NAME}.csv"
+    out_file_gcode = OUTPUT / f"{OUTPUT_NAME}.gcode"
+
+    #gcd = GcodeFromPoints(**params)
+
+    return {
+        "file_dep": [in_file_points],
+        "actions": [(gcd.create, [in_file_points, out_file_gcode])],
+        "targets": [out_file_gcode],
+        "clean": [clean_targets],
+        "uptodate": [config_changed(params)],
+    }
 
     pass
 
