@@ -56,6 +56,7 @@ from OCCUtils.Topology import Topo
 import amworkflow.geometry.builtinCAD as bcad
 from amworkflow import occ_helpers as occh
 
+
 class Pnt:
     def __init__(self, *coords: list):
         self.coords = coords
@@ -311,7 +312,7 @@ class Segments(Pnt):
                 visited.update({(i, j): True, (j, i): True})
 
 
-class CreateWallByPointsUpdate:
+class CreateWallByPoints:
     def __init__(self, coords: list, th: float, height: float, is_close: bool = True):
         self.coords = Pnt(coords).coords
         self.height = height
