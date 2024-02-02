@@ -20,11 +20,12 @@ logging.basicConfig(level=logging.INFO)
 # define required parameters
 params = {  # geometry parameters
     "csv_points": "print110823.csv",
-    "layer_thickness": 5,  # mm
-    "height": 100,  # mm
+    "layer_thickness": 50,  # mm
+    "number_of_layers": 10,
+    "layer_height": 10,  # mm
     # mesh parameters (meshing by layer height)
     "mesh_size_factor": 10,
-    "number_of_layers": 10,
+    # ....
 }
 
 # TODO datastore stuff??
@@ -48,33 +49,35 @@ def task_create_design():
     data["z"] = np.zeros(len(data))  # add z coordinate
     # print(data)
     # params["points"] = np.array(data[['x', 'y', 'z']])
-    params["points"] = np.array(data[["x", "y", "z"]]).tolist()
+    point_list = data[["x", "y", "z"]].values.tolist()
+    params["points"] = point_list
     geometry = GeometryCenterline(**params)
 
     return {
-        "actions": [(geometry.create, [out_file_step,  out_file_points, out_file_stl])],
+        "actions": [(geometry.create, [out_file_step, out_file_points, out_file_stl])],
         "targets": [out_file_step, out_file_stl, out_file_points],
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],
     }
 
 
-# @create_after(executed="create_design")
-# def task_meshing():
-#     """Meshing a given design from a step file."""
-#
-#     OUTPUT.mkdir(parents=True, exist_ok=True)
-#
-#     in_file_step = OUTPUT / f"{OUTPUT_NAME}.stp"
-#     out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
-#     out_file_vtk = OUTPUT / f"{OUTPUT_NAME}.vtk"
-#
-#     meshing = MeshingGmsh(**params)
-#
-#     return {
-#         "file_dep": [in_file_step],
-#         "actions": [(meshing.create, [in_file_step, out_file_xdmf, out_file_vtk])],
-#         "targets": [out_file_xdmf, out_file_vtk],
-#         "clean": [clean_targets],
-#         "uptodate": [config_changed(params)],
-#     }
+@create_after(executed="create_design")
+def task_meshing():
+    """Meshing a given design from a step file."""
+
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+
+    in_file_step = OUTPUT / f"{OUTPUT_NAME}.stp"
+    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
+    out_file_vtk = OUTPUT / f"{OUTPUT_NAME}.vtk"
+
+    params["number_of_layers"] = None
+    meshing = MeshingGmsh(**params)
+
+    return {
+        "file_dep": [in_file_step],
+        "actions": [(meshing.create, [in_file_step, out_file_xdmf, out_file_vtk])],
+        "targets": [out_file_xdmf, out_file_vtk],
+        "clean": [clean_targets],
+        "uptodate": [config_changed(params)],
+    }
