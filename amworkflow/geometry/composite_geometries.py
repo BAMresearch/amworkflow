@@ -388,7 +388,6 @@ class CreateWallByPoints:
                         ang_th = np.pi - ang2
                     nth = np.abs(self.th / np.cos(ang_th))
                 else:
-
                     dr = bcad.get_literal_vector(a1, True)
                     nth = self.th
             self.vecs.append(a1)
@@ -405,6 +404,7 @@ class CreateWallByPoints:
         else:
             self.rgt_coords = self.rgt_coords[::-1]
             self.side_coords = self.lft_coords + self.rgt_coords + [self.lft_coords[0]]
+
     def check_pnt_in_wall(self):
         for pnt, coord in self.pnts.pts_index.items():
             for vec in self.central_segments:
