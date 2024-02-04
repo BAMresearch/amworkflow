@@ -1,5 +1,6 @@
 import logging
 from pprint import pprint
+from typing import Union
 
 import numpy as np
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
@@ -72,6 +73,7 @@ class DuplicationCheck:
         self.check_type_validity(item_type=self.gtype)
         self.new, self.exist_object = self.new_item(gvalue, gtype)
         if not self.new:
+            self.exist_object.re_init = True
             logging.info(
                 f"{TYPE_INDEX[gtype]} {gvalue} already exists, return the old one."
             )
@@ -271,12 +273,17 @@ class Pnt(TopoObj):
         point = pnt(coord)
         checker = DuplicationCheck(0, point)
         if checker.new:
-            return super().__new__(cls)
+            instance = super().__new__(cls)
+            instance.re_init = False
+            return instance
         else:
             return checker.exist_object
 
     def __init__(self, coord: list) -> None:
+        if self.re_init:
+            return
         super().__init__()
+        self.re_init = False
         self.type = 0
         self.coord = pnt(coord)
         self.value = self.coord
@@ -289,12 +296,17 @@ class Segment(TopoObj):
     def __new__(cls, pnt2: Pnt, pnt1: Pnt = Pnt([])):
         checker = DuplicationCheck(1, [pnt1.id, pnt2.id])
         if checker.new:
-            return super().__new__(cls)
+            instance = super().__new__(cls)
+            instance.re_init = False
+            return instance
         else:
             return checker.exist_object
 
     def __init__(self, pnt2: Pnt, pnt1: Pnt = Pnt([])) -> None:
         super().__init__()
+        if self.re_init:
+            return
+        self.re_init = False
         pnt1, pnt2 = self.check_input(pnt1=pnt1, pnt2=pnt2)
         self.start_pnt = pnt1.id
         self.end_pnt = pnt2.id
@@ -337,12 +349,17 @@ class Wire(TopoObj):
     def __new__(cls, *segments: Segment):
         checker = DuplicationCheck(2, [item.id for item in segments])
         if checker.new:
-            return super().__new__(cls)
+            instance = super().__new__(cls)
+            instance.re_init = False
+            return instance
         else:
             return checker.exist_object
 
     def __init__(self, *segments: Segment) -> None:
         super().__init__()
+        if self.re_init:
+            return
+        self.re_init = False
         self.type = 2
         self.seg_ids = [item.id for item in segments]
         self.occ_wire = create_wire(*[item.occ_edge for item in segments])
@@ -356,12 +373,17 @@ class Surface(TopoObj):
     def __new__(cls, *wire: Wire):
         checker = DuplicationCheck(3, [item.id for item in wire])
         if checker.new:
-            return super().__new__(cls)
+            instance = super().__new__(cls)
+            instance.re_init = False
+            return instance
         else:
             return checker.exist_object
 
     def __init__(self, *wires: Wire) -> None:
         super().__init__()
+        if self.re_init:
+            return
+        self.re_init = False
         self.type = 3
         self.wire_ids = [item.id for item in wires]
         self.value = self.wire_ids
@@ -375,12 +397,17 @@ class Shell(TopoObj):
     def __new__(cls, *surfaces: Surface):
         checker = DuplicationCheck(4, [item.id for item in surfaces])
         if checker.new:
-            return super().__new__(cls)
+            instance = super().__new__(cls)
+            instance.re_init = False
+            return instance
         else:
             return checker.exist_object
 
     def __init__(self, *surfaces: Surface) -> None:
         super().__init__()
+        if self.re_init:
+            return
+        self.re_init = False
         self.type = 4
         self.surf_ids = [item.id for item in surfaces]
         self.value = self.surf_ids
@@ -394,12 +421,17 @@ class Solid(TopoObj):
     def __new__(cls, shell: Shell):
         checker = DuplicationCheck(5, shell.id)
         if checker.new:
-            return super().__new__(cls)
+            instance = super().__new__(cls)
+            instance.re_init = False
+            return instance
         else:
-            return checker
+            return checker.exist_object
 
     def __init__(self, shell: Shell) -> None:
         super().__init__()
+        if self.re_init:
+            return
+        self.re_init = False
         self.type = 5
         self.shell_id = shell.id
         self.value = [self.shell_id]
@@ -612,9 +644,15 @@ def shortest_distance_line_line(line1, line2):
     return distance, np.array([pti1, pti2])
 
 
-def check_parallel_line_line(line1: np.ndarray, line2: np.ndarray) -> tuple:
+def check_parallel_line_line(
+    line1: Union[np.ndarray, Segment], line2: Union[np.ndarray, Segment]
+) -> tuple:
     parallel = False
     colinear = False
+    if isinstance(line1, Segment):
+        line1 = line1.value
+    if isinstance(line2, Segment):
+        line2 = line2.value
     pt1, pt2 = line1
     pt3, pt4 = line2
 
@@ -643,7 +681,13 @@ def check_parallel_line_line(line1: np.ndarray, line2: np.ndarray) -> tuple:
     return parallel, colinear
 
 
-def check_overlap(line1: np.ndarray, line2: np.ndarray) -> np.ndarray:
+def check_overlap(
+    line1: Union[np.ndarray, Segment], line2: Union[np.ndarray, Segment]
+) -> np.ndarray:
+    if isinstance(line1, Segment):
+        line1 = line1.value
+    if isinstance(line2, Segment):
+        line2 = line2.value
     A, B = line1
     C, D = line2
     s = B - A
@@ -714,13 +758,19 @@ def get_literal_vector(a: np.ndarray, d: bool):
     return na / norm
 
 
-def bisect_angle(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
+def bisect_angle(
+    a1: Union[np.ndarray, Segment], a2: Union[np.ndarray, Segment]
+) -> np.ndarray:
     """
     @brief Angular bisector between two vectors. The result is a vector splitting the angle between two vectors uniformly.
     @param a1 1xN numpy array
     @param a2 1xN numpy array
     @return the bisector vector
     """
+    if isinstance(a1, Segment):
+        a1 = a1.vector
+    if isinstance(a2, Segment):
+        a2 = a2.vector
     norm1 = np.linalg.norm(a1)
     norm2 = np.linalg.norm(a2)
     bst = a1 / norm1 + a2 / norm2
@@ -732,63 +782,31 @@ def bisect_angle(a1: np.ndarray, a2: np.ndarray) -> np.ndarray:
         opt = bst / norm3
     return opt
 
+
 def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
-    pts = np.array([np.array(list(i.Coord())) if isinstance(
-        i, gp_Pnt) else np.array(i) for i in pts])
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
     pts = [i + direct for i in pts]
     return list(pts)
 
+
 def center_of_mass(pts: np.ndarray) -> np.ndarray:
-    pts = np.array([np.array(list(i.Coord())) if isinstance(
-        i, gp_Pnt) else np.array(i) for i in pts])
+    pts = np.array(
+        [
+            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
+            for i in pts
+        ]
+    )
 
     return np.mean(pts.T, axis=1)
 
-def rotate(pts: np.ndarray, angle_x: float = 0, angle_y: float = 0, angle_z: float = 0, cnt: np.ndarray = None) -> np.ndarray:
-    pts = np.array([np.array(list(i.Coord())) if isinstance(
-        i, gp_Pnt) else np.array(i) for i in pts])
-    com = center_of_mass(pts)
-    if cnt is None:
-        cnt = np.array([0, 0, 0])
-    t_vec = cnt - com
-    pts += t_vec
-    rot_x = np.array([[1, 0, 0],
-                      [0, np.cos(angle_x), -np.sin(angle_x)],
-                      [0, np.sin(angle_x), np.cos(angle_x)]])
-    rot_y = np.array([[np.cos(angle_y), 0, np.sin(angle_y)],
-                      [0, 1, 0],
-                      [-np.sin(angle_y), np.cos(angle_y), 0]])
-    rot_z = np.array([[np.cos(angle_z), -np.sin(angle_z), 0],
-                      [np.sin(angle_z), np.cos(angle_z), 0],
-                      [0, 0, 1]])
-    R = rot_x@rot_y@rot_z
-    rt_pts = pts@R
-    r_pts = rt_pts - t_vec
-    return r_pts
 
 def distance(p1: Pnt, p2: Pnt) -> float:
     return np.linalg.norm(p1.value - p2.value)
-
-def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
-    pts = np.array(
-        [
-            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
-            for i in pts
-        ]
-    )
-    pts = [i + direct for i in pts]
-    return list(pts)
-
-
-def center_of_mass(pts: np.ndarray) -> np.ndarray:
-    pts = np.array(
-        [
-            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
-            for i in pts
-        ]
-    )
-
-    return np.mean(pts.T, axis=1)
 
 
 def rotate(
@@ -834,21 +852,6 @@ def rotate(
     rt_pts = pts @ R
     r_pts = rt_pts - t_vec
     return r_pts
-
-
-def distance(p1: Pnt, p2: Pnt) -> float:
-    return np.linalg.norm(p1.value - p2.value)
-
-
-def translate(pts: np.ndarray, direct: np.ndarray) -> np.ndarray:
-    pts = np.array(
-        [
-            np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
-            for i in pts
-        ]
-    )
-    pts = [i + direct for i in pts]
-    return list(pts)
 
 
 def get_center_of_mass(pts: np.ndarray) -> np.ndarray:
@@ -956,17 +959,44 @@ def p_rotate(
     return r_pts
 
 
-def get_random_pnt(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
+def get_random_pnt(xmin, xmax, ymin, ymax, zmin=0, zmax=0, numpy_array=True):
     random_x = np.random.randint(xmin, xmax)
     random_y = np.random.randint(ymin, ymax)
     if zmin == 0 and zmax == 0:
         random_z = 0
     else:
         random_z = np.random.randint(zmin, zmax)
-    return np.array([random_x, random_y, random_z])
+    if numpy_array:
+        result = np.array([random_x, random_y, random_z])
+    else:
+        result = Pnt([random_x, random_y, random_z])
+    return result
 
 
 def get_random_line(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
     pt1 = get_random_pnt(xmin, xmax, ymin, ymax, zmin, zmax)
     pt2 = get_random_pnt(xmin, xmax, ymin, ymax, zmin, zmax)
     return np.array([pt1, pt2])
+
+
+def find_intersect_node_on_edge(
+    line1: Union[np.ndarray, Segment], line2: Union[np.ndarray, Segment]
+):
+    """Find possible intersect node on two lines
+
+    :param line1: The first line
+    :type line1: Union[np.ndarray, Segment]
+    :param line2: The second line
+    :type line2: Union[np.ndarray, Segment]
+    """
+
+    parallel, colinear = check_parallel_line_line(line1, line2)
+    if parallel:
+        if colinear:
+            index, coords = check_overlap(line1, line2)
+            if len(index) < 4:
+                for ind in index:
+                    if ind in [0, 1]:
+                        add_pending_change(tuple(line2), line1[ind])
+                    else:
+                        add_pending_change(tuple(line1), line2[ind - 2])

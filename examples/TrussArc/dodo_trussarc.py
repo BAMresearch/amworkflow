@@ -15,7 +15,7 @@ from amworkflow.meshing import MeshingGmsh
 # > doit -f <filename> s <taskname> # for specific task
 # > doit -f <filename> clean # for deleting task output
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 # define required parameters
 params = {  # geometry parameters
@@ -79,3 +79,9 @@ def task_meshing():
         "clean": [clean_targets],
         "uptodate": [config_changed(params)],
     }
+
+
+if __name__ == "__main__":
+    import doit
+
+    doit.run(globals())

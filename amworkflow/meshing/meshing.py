@@ -93,6 +93,7 @@ class MeshingGmsh(Meshing):
         )
 
         model = gmsh.model()
+        gmsh.option.setNumber("General.Verbosity", 0)
         threads_count = multiprocessing.cpu_count()
         # gmsh.option.setNumber("General.NumThreads", threads_count) # FIX: Conflict with doit. Will looking for solutions.
         # model.add("model name") # TODO: required? Not necessarily but perhaps for output .msh
@@ -128,8 +129,6 @@ class MeshingGmsh(Meshing):
 
         if out_vtk:
             gmsh.write(str(out_vtk))
-
-        return
 
     def create_mesh(self, mesh, cell_type: str, prune_z: bool = False) -> meshio.Mesh:
         """Convert meshio mesh to fenics compatible mesh.
