@@ -601,9 +601,8 @@ class GcodeMultiplier(object):
         else:
             self.keep_distance(dist_horizont, dist_vertic)
         for ind, gcd in enumerate(self.gcodelist):
-            gcd.create(
-                gcd.in_file_path, f"{self.gcode_params['standard']}_P{ind+1}.gcode"
-            )
+            gcode_name = Path(self.gcode_params["in_file_path"]).stem
+            gcd.create(gcd.in_file_path, f"{gcode_name}_P{ind+1}.gcode")
 
     def read_gcode(self, in_file_path: str):
         """Read gcode from file
