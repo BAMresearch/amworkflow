@@ -22,11 +22,16 @@ class CreateWallByPoints:
         self.right_pnts = []
         self.left_segments = []
         self.right_segments = []
+        self.imaginary_pnt = {}
+        self.imaginary_segments = {}
         self.digraph_points = {}
         self.init_points(self.coords, {"position": "center", "active": True})
         self.index_points = []
-        self.modify_edges = {}
+        self.index_segments = []
+        self.edges_to_be_modified = {}
         self.create_sides()
+        self.find_overlap_node_on_edge_parallel()
+        self.modify_edge()
 
     def init_points(self, points: list, prop: dict = None):
         for i, p in enumerate(points):
@@ -35,16 +40,24 @@ class CreateWallByPoints:
             self.enrich_component(p, prop.copy())
             self.center_pnts.append(p)
 
-    def update_index_points(self):
-        index_points = []
+    def update_index_component(self, component: str = "all"):
+        match component:
+            case "point":
+                temp_list = self.index_points
+                property_name = "point"
+            case "segment":
+                temp_list = self.index_segments
+                property_name = "segment"
+            case "all":
+                temp_list_1 = self.index_points
+                temp_list_2 = self.index_segments
         for i in bcad.id_index.values():
-            if i["type"] == 0 and "CWBP" in i["point"].property:
-                if i["point"].property["CWBP"]["active"]:
-                    index_points.append(i["id"])
-        self.index_points = index_points
+            if i["type"] == 0 and "CWBP" in i[property_name].property:
+                if i[component].property["CWBP"]["active"]:
+                    temp_list.append(i["id"])
 
     def enrich_component(
-        self, component: bcad.TopoObj, prop: dict = {}
+        self, component: bcad.TopoObj, prop: dict = None
     ) -> bcad.TopoObj:
         if not isinstance(component, bcad.TopoObj):
             raise ValueError("Component must be a TopoObj")
@@ -113,6 +126,8 @@ class CreateWallByPoints:
             seg_side = bcad.Segment(self.side_pnts[i + 1], self.side_pnts[i])
             self.enrich_component(seg_side, {"position": "side", "active": True})
             self.side_segments.append(seg_side)
+        self.update_index_component("point")
+        self.update_index_component("segment")
 
     def update_digraph(
         self,
@@ -121,7 +136,7 @@ class CreateWallByPoints:
         insert_node: int = None,
         build_new_edge: bool = True,
     ) -> None:
-        self.update_index_points()
+        self.update_index_component("point")
         if start_node not in self.index_points:
             raise Exception(f"Unrecognized start node: {start_node}.")
         if end_node not in self.index_points:
@@ -150,8 +165,8 @@ class CreateWallByPoints:
     def find_overlap_node_on_edge_parallel(self):
         visited = []
         line_pairs = []
-        for line1 in cwbp.side_segments:
-            for line2 in cwbp.side_segments:
+        for line1 in self.side_segments:
+            for line2 in self.side_segments:
                 if line1.id != line2.id:
                     if [line1.id, line2.id] not in visited or [
                         line2.id,
@@ -160,18 +175,34 @@ class CreateWallByPoints:
                         visited.append([line1.id, line2.id])
                         line_pairs.append((line1, line2))
         num_processes = multiprocessing.cpu_count()
-        # chunk_size = len(line_pairs) // num_processes
-        # chunks = [
-        #     line_pairs[i : i + chunk_size]
-        #     for i in range(0, len(line_pairs), chunk_size)
-        # ]
         with multiprocessing.Pool(num_processes) as pool:
             results = pool.starmap(bcad.find_intersect_node_on_edge, line_pairs)
             for result in results:
                 if result is not None:
                     for pair in result:
-                        print(pair)
-                        self.modify_edges.update({pair[0]: pair[1]})
+                        if pair[0] not in self.edges_to_be_modified:
+                            self.edges_to_be_modified.update({pair[0]: [pair[1]]})
+                        else:
+                            self.edges_to_be_modified[pair[0]].append(pair[1])
+
+    def modify_edge(self):
+        for edge, nodes in self.edges_to_be_modified.items():
+            edge_0_coords = edge.raw_value[0]
+            nodes_coords = [node.value for node in nodes]
+            distances = [np.linalg.norm(i - edge_0_coords) for i in nodes_coords]
+            order = np.argsort(distances)
+            nodes = [nodes[i] for i in order]
+            self.digraph_points[edge[0]].remove(edge[1])
+            pts_list = [edge.value[0]] + nodes + [edge.value[1]]
+            for i, nd in enumerate(pts_list):
+                if i == 0:
+                    continue
+                self.update_digraph(pts_list[i - 1], nd, build_new_edge=False)
+                if (i != 1) and (i != len(pts_list) - 1):
+                    if (pts_list[i - 1] in self.imaginary_pnt) and nd in (
+                        self.imaginary_pnt
+                    ):
+                        self.imaginary_segments.update({pts_list[i - 1]: nd})
 
 
 n = 20
@@ -189,19 +220,22 @@ y_coords = y_lft_coords + y_rgt_coords
 
 
 # print(cwbp.left_pnts[1].property["CWBP"])
-# cwbp.update_index_points()
+# cwbp.update_index_component()
 # print(cwbp.index_points)
 # bcad.id_index[0]["point"].property["CWBP"]["active"] = False
-# cwbp.update_index_points()
+# cwbp.update_index_component()
 # print(cwbp.index_points)
 # print(bcad.id_index)
 # line1, line2 = cwbp.side_segments[0], cwbp.side_segments[1]
 # result = bcad.find_intersect_node_on_edge(line1, line2)
 # print(result)
-cwbp.find_overlap_node_on_edge_parallel()
+# cwbp.find_overlap_node_on_edge_parallel()
 from pprint import pprint
 
-pprint(cwbp.modify_edges)
+# pprint(cwbp.edges_to_be_modified)
+# pprint(cwbp.digraph_points)
+pprint(cwbp.index_points)
+pprint(cwbp.index_segments)
 
 
 def plot_pnts(x, y):

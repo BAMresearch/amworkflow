@@ -269,7 +269,7 @@ class Pnt(TopoObj):
     Create a point.
     """
 
-    def __new__(cls, coord: list) -> None:
+    def __new__(cls, coord: list = []) -> None:
         point = pnt(coord)
         checker = DuplicationCheck(0, point)
         if checker.new:
@@ -279,7 +279,7 @@ class Pnt(TopoObj):
         else:
             return checker.exist_object
 
-    def __init__(self, coord: list) -> None:
+    def __init__(self, coord: list = []) -> None:
         if self.re_init:
             return
         super().__init__()
@@ -1014,5 +1014,5 @@ def find_intersect_node_on_edge(line1: Segment, line2: Segment) -> tuple:
         distance = shortest_distance_line_line(line1, line2)
         intersect = np.isclose(distance[0], 0)
         if intersect:
-            intersect_pnt = distance[1][0]
+            intersect_pnt = Pnt(distance[1][0])
             return ((line1, intersect_pnt), (line2, intersect_pnt))

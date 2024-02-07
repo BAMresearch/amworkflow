@@ -270,47 +270,47 @@ class Segments(Pnt):
                 yield args
             visited.update({(i, j): True, (j, i): True})
 
-    # def find_overlap_node_on_edge(self):
-    #     visited = {}
-    #     for i, v in enumerate(self.init_pts_sequence):
-    #         for j, vv in enumerate(self.init_pts_sequence):
-    #             if i == j:
-    #                 continue
-    #             if i == j + 1:
-    #                 continue
-    #             if j == i + 1:
-    #                 continue
-    #             if i == len(self.init_pts_sequence) * 2 - 1 - i:
-    #                 continue
-    #             if (i, j) in visited or (j, i) in visited:
-    #                 continue
-    #             print(i, j)
-    #             lin1 = self.get_segment(v[0], v[1])
-    #             lin2 = self.get_segment(vv[0], vv[1])
-    #             self_edge = self.check_self_edge(lin1) or self.check_self_edge(lin2)
-    #             if not self_edge:
-    #                 parallel, colinear = bcad.check_parallel_line_line(lin1, lin2)
-    #                 # if v == [13,14]:
-    #                 #     print("line:",(v,vv), parallel, colinear)
-    #                 if parallel:
-    #                     if colinear:
-    #                         index, coords = bcad.check_overlap(lin1, lin2)
-    #                         if len(index) < 4:
-    #                             for ind in index:
-    #                                 if ind in [0, 1]:
-    #                                     self.add_pending_change(tuple(vv), v[ind])
-    #                                 else:
-    #                                     self.add_pending_change(tuple(v), vv[ind - 2])
-    #                 else:
-    #                     distance = bcad.shortest_distance_line_line(lin1, lin2)
-    #                     intersect = np.isclose(distance[0], 0)
-    #                     new, pt = self.new_pnt(distance[1][0])
-    #                     if intersect and new:
-    #                         pnt_id = self.register_pnt(distance[1][0])
-    #                         self.virtual_pnt.update({pnt_id: True})
-    #                         self.add_pending_change(tuple(v), pnt_id)
-    #                         self.add_pending_change(tuple(vv), pnt_id)
-    #             visited.update({(i, j): True, (j, i): True})
+    def find_overlap_node_on_edge(self):
+        visited = {}
+        for i, v in enumerate(self.init_pts_sequence):
+            for j, vv in enumerate(self.init_pts_sequence):
+                if i == j:
+                    continue
+                if i == j + 1:
+                    continue
+                if j == i + 1:
+                    continue
+                if i == len(self.init_pts_sequence) * 2 - 1 - i:
+                    continue
+                if (i, j) in visited or (j, i) in visited:
+                    continue
+                print(i, j)
+                lin1 = self.get_segment(v[0], v[1])
+                lin2 = self.get_segment(vv[0], vv[1])
+                self_edge = self.check_self_edge(lin1) or self.check_self_edge(lin2)
+                if not self_edge:
+                    parallel, colinear = bcad.check_parallel_line_line(lin1, lin2)
+                    # if v == [13,14]:
+                    #     print("line:",(v,vv), parallel, colinear)
+                    if parallel:
+                        if colinear:
+                            index, coords = bcad.check_overlap(lin1, lin2)
+                            if len(index) < 4:
+                                for ind in index:
+                                    if ind in [0, 1]:
+                                        self.add_pending_change(tuple(vv), v[ind])
+                                    else:
+                                        self.add_pending_change(tuple(v), vv[ind - 2])
+                    else:
+                        distance = bcad.shortest_distance_line_line(lin1, lin2)
+                        intersect = np.isclose(distance[0], 0)
+                        new, pt = self.new_pnt(distance[1][0])
+                        if intersect and new:
+                            pnt_id = self.register_pnt(distance[1][0])
+                            self.virtual_pnt.update({pnt_id: True})
+                            self.add_pending_change(tuple(v), pnt_id)
+                            self.add_pending_change(tuple(vv), pnt_id)
+                visited.update({(i, j): True, (j, i): True})
     
     def find_overlap_node_on_edge(self, line1, line2):
         print(line1, line2)
