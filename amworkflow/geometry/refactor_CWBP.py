@@ -1,3 +1,6 @@
+import multiprocessing
+
+multiprocessing.set_start_method("fork")
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -22,13 +25,14 @@ class CreateWallByPoints:
         self.digraph_points = {}
         self.init_points(self.coords, {"position": "center", "active": True})
         self.index_points = []
+        self.modify_edges = {}
         self.create_sides()
 
-    def init_points(self, points: list, prop: dict = {}):
+    def init_points(self, points: list, prop: dict = None):
         for i, p in enumerate(points):
             if not isinstance(p, bcad.Pnt):
                 p = bcad.Pnt(p)
-            self.enrich_component(p, prop)
+            self.enrich_component(p, prop.copy())
             self.center_pnts.append(p)
 
     def update_index_points(self):
@@ -143,10 +147,36 @@ class CreateWallByPoints:
             else:
                 raise Exception("No edge found for insertion option.")
 
+    def find_overlap_node_on_edge_parallel(self):
+        visited = []
+        line_pairs = []
+        for line1 in cwbp.side_segments:
+            for line2 in cwbp.side_segments:
+                if line1.id != line2.id:
+                    if [line1.id, line2.id] not in visited or [
+                        line2.id,
+                        line1.id,
+                    ] not in visited:
+                        visited.append([line1.id, line2.id])
+                        line_pairs.append((line1, line2))
+        num_processes = multiprocessing.cpu_count()
+        # chunk_size = len(line_pairs) // num_processes
+        # chunks = [
+        #     line_pairs[i : i + chunk_size]
+        #     for i in range(0, len(line_pairs), chunk_size)
+        # ]
+        with multiprocessing.Pool(num_processes) as pool:
+            results = pool.starmap(bcad.find_intersect_node_on_edge, line_pairs)
+            for result in results:
+                if result is not None:
+                    for pair in result:
+                        print(pair)
+                        self.modify_edges.update({pair[0]: pair[1]})
 
-n = 10
-# pnt_set = [bcad.get_random_pnt(0, 10, 0, 50, 0, 0, numpy_array=False) for i in range(n)]
-pnt_set = [bcad.Pnt([0, 0]), bcad.Pnt([2, 0]), bcad.Pnt([2, 2])]
+
+n = 20
+pnt_set = [bcad.get_random_pnt(0, 10, 0, 50, 0, 0, numpy_array=False) for i in range(n)]
+# pnt_set = [bcad.Pnt([0, 0]), bcad.Pnt([2, 0]), bcad.Pnt([2, 2])]
 cwbp = CreateWallByPoints(pnt_set, 0.5, 0, True)
 lft_coords = [i.coord for i in cwbp.left_pnts]
 rgt_coords = [i.coord for i in cwbp.right_pnts]
@@ -156,12 +186,22 @@ x_rgt_coords = [i[0] for i in rgt_coords]
 y_rgt_coords = [i[1] for i in rgt_coords]
 x_coords = x_lft_coords + x_rgt_coords
 y_coords = y_lft_coords + y_rgt_coords
-print(cwbp.left_pnts[1].property["CWBP"])
-cwbp.update_index_points()
-print(cwbp.index_points)
-bcad.id_index[1]["point"].property["CWBP"]["active"] = False
-cwbp.update_index_points()
-print(cwbp.index_points)
+
+
+# print(cwbp.left_pnts[1].property["CWBP"])
+# cwbp.update_index_points()
+# print(cwbp.index_points)
+# bcad.id_index[0]["point"].property["CWBP"]["active"] = False
+# cwbp.update_index_points()
+# print(cwbp.index_points)
+# print(bcad.id_index)
+# line1, line2 = cwbp.side_segments[0], cwbp.side_segments[1]
+# result = bcad.find_intersect_node_on_edge(line1, line2)
+# print(result)
+cwbp.find_overlap_node_on_edge_parallel()
+from pprint import pprint
+
+pprint(cwbp.modify_edges)
 
 
 def plot_pnts(x, y):
@@ -183,4 +223,9 @@ def plot_pnts(x, y):
     plt.show()
 
 
-plot_pnts(x_coords, y_coords)
+# plot_pnts(x_coords, y_coords)
+# if __name__ == "__main__":
+#     main()
+#     from pprint import pprint
+
+#     pprint(stored)

@@ -293,7 +293,7 @@ class Pnt(TopoObj):
 
 
 class Segment(TopoObj):
-    def __new__(cls, pnt2: Pnt, pnt1: Pnt = Pnt([])):
+    def __new__(cls, pnt2: Pnt = Pnt([1]), pnt1: Pnt = Pnt([])):
         checker = DuplicationCheck(1, [pnt1.id, pnt2.id])
         if checker.new:
             instance = super().__new__(cls)
@@ -315,6 +315,10 @@ class Segment(TopoObj):
         self.normal = self.vector / self.length
         self.type = 1
         self.value = [self.start_pnt, self.end_pnt]
+        self.raw_value = [
+            id_index[self.start_pnt]["value"],
+            id_index[self.end_pnt]["value"],
+        ]
         self.occ_edge = create_edge(pnt1.occ_pnt, pnt2.occ_pnt)
         self.enrich_property(
             {
@@ -583,7 +587,13 @@ def bounding_box(pts: list):
     return mx_pt, mn_pt
 
 
-def shortest_distance_line_line(line1, line2):
+def shortest_distance_line_line(
+    line1: Union[np.ndarray, Segment], line2: Union[np.ndarray, Segment]
+):
+    if isinstance(line1, Segment):
+        line1 = line1.raw_value
+    if isinstance(line2, Segment):
+        line2 = line2.raw_value
     pt11, pt12 = line1
     pt21, pt22 = line2
     s1 = pt12 - pt11
@@ -650,9 +660,9 @@ def check_parallel_line_line(
     parallel = False
     colinear = False
     if isinstance(line1, Segment):
-        line1 = line1.value
+        line1 = line1.raw_value
     if isinstance(line2, Segment):
-        line2 = line2.value
+        line2 = line2.raw_value
     pt1, pt2 = line1
     pt3, pt4 = line2
 
@@ -685,9 +695,9 @@ def check_overlap(
     line1: Union[np.ndarray, Segment], line2: Union[np.ndarray, Segment]
 ) -> np.ndarray:
     if isinstance(line1, Segment):
-        line1 = line1.value
+        line1 = line1.raw_value
     if isinstance(line2, Segment):
-        line2 = line2.value
+        line2 = line2.raw_value
     A, B = line1
     C, D = line2
     s = B - A
@@ -979,9 +989,7 @@ def get_random_line(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
     return np.array([pt1, pt2])
 
 
-def find_intersect_node_on_edge(
-    line1: Union[np.ndarray, Segment], line2: Union[np.ndarray, Segment]
-):
+def find_intersect_node_on_edge(line1: Segment, line2: Segment) -> tuple:
     """Find possible intersect node on two lines
 
     :param line1: The first line
@@ -989,7 +997,6 @@ def find_intersect_node_on_edge(
     :param line2: The second line
     :type line2: Union[np.ndarray, Segment]
     """
-
     parallel, colinear = check_parallel_line_line(line1, line2)
     if parallel:
         if colinear:
@@ -997,6 +1004,15 @@ def find_intersect_node_on_edge(
             if len(index) < 4:
                 for ind in index:
                     if ind in [0, 1]:
-                        add_pending_change(tuple(line2), line1[ind])
+                        pnt_candidate = [line1.start_pnt, line1.end_pnt]
+                        return (line2, pnt_candidate[ind])
                     else:
-                        add_pending_change(tuple(line1), line2[ind - 2])
+                        pnt_candidate = [line2.start_pnt, line2.end_pnt]
+                        return (line1, pnt_candidate[ind - 2])
+
+    else:
+        distance = shortest_distance_line_line(line1, line2)
+        intersect = np.isclose(distance[0], 0)
+        if intersect:
+            intersect_pnt = distance[1][0]
+            return ((line1, intersect_pnt), (line2, intersect_pnt))
