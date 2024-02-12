@@ -1,10 +1,9 @@
-import multiprocessing
-
-multiprocessing.set_start_method("fork")
 import matplotlib.pyplot as plt
 import numpy as np
 
 import amworkflow.geometry.builtinCAD as bcad
+
+# multiprocessing.set_start_method("fork")
 
 
 class CreateWallByPoints:
@@ -26,8 +25,7 @@ class CreateWallByPoints:
         self.imaginary_segments = {}
         self.digraph_points = {}
         self.init_points(self.coords, {"position": "center", "active": True})
-        self.index_points = []
-        self.index_segments = []
+        self.index_components = {}
         self.edges_to_be_modified = {}
         self.create_sides()
         self.find_overlap_node_on_edge_parallel()
@@ -40,21 +38,16 @@ class CreateWallByPoints:
             self.enrich_component(p, prop.copy())
             self.center_pnts.append(p)
 
-    def update_index_component(self, component: str = "all"):
-        match component:
-            case "point":
-                temp_list = self.index_points
-                property_name = "point"
-            case "segment":
-                temp_list = self.index_segments
-                property_name = "segment"
-            case "all":
-                temp_list_1 = self.index_points
-                temp_list_2 = self.index_segments
-        for i in bcad.id_index.values():
-            if i["type"] == 0 and "CWBP" in i[property_name].property:
-                if i[component].property["CWBP"]["active"]:
-                    temp_list.append(i["id"])
+    def update_index_component(self):
+        for i in bcad.component_lib.values():
+            if "CWBP" not in i[bcad.TYPE_INDEX[i["type"]]].property:
+                continue
+            property_name = bcad.TYPE_INDEX[i["type"]]
+            if i[property_name].property["CWBP"]["active"]:
+                if i[property_name].id not in self.index_components:
+                    self.index_components.update({property_name: [i[property_name].id]})
+                else:
+                    self.index_component[property_name].append(i[property_name].id)
 
     def enrich_component(
         self, component: bcad.TopoObj, prop: dict = None
@@ -92,14 +85,14 @@ class CreateWallByPoints:
             index_n = self.compute_index(i + 1, len(self.center_pnts))
             # The segment from the current index to the next index
             seg_current_next = bcad.Segment(
-                self.center_pnts[index_n], self.center_pnts[index]
+                self.center_pnts[index], self.center_pnts[index_n]
             )
             self.enrich_component(
                 seg_current_next, {"position": "center", "active": True}
             )
             # The segment from the previous index to the current index
             seg_previous_current = bcad.Segment(
-                self.center_pnts[index], self.center_pnts[index_l]
+                self.center_pnts[index_l], self.center_pnts[index]
             )
             self.enrich_component(
                 seg_previous_current, {"position": "center", "active": True}
@@ -123,11 +116,10 @@ class CreateWallByPoints:
         self.right_pnts = self.right_pnts[::-1]
         self.side_pnts = self.left_pnts + self.right_pnts
         for i in range(len(self.side_pnts) - 1):
-            seg_side = bcad.Segment(self.side_pnts[i + 1], self.side_pnts[i])
+            seg_side = bcad.Segment(self.side_pnts[i], self.side_pnts[i + 1])
             self.enrich_component(seg_side, {"position": "side", "active": True})
             self.side_segments.append(seg_side)
-        self.update_index_component("point")
-        self.update_index_component("segment")
+        self.update_index_component()
 
     def update_digraph(
         self,
@@ -136,12 +128,12 @@ class CreateWallByPoints:
         insert_node: int = None,
         build_new_edge: bool = True,
     ) -> None:
-        self.update_index_component("point")
-        if start_node not in self.index_points:
+        self.update_index_component()
+        if start_node not in self.index_components:
             raise Exception(f"Unrecognized start node: {start_node}.")
-        if end_node not in self.index_points:
+        if end_node not in self.index_components:
             raise Exception(f"Unrecognized end node: {end_node}.")
-        if (insert_node not in self.index_points) and (insert_node is not None):
+        if (insert_node not in self.index_components) and (insert_node is not None):
             raise Exception(f"Unrecognized inserting node: {insert_node}.")
         if start_node in self.digraph_points:
             # Directly update the end node
@@ -154,6 +146,18 @@ class CreateWallByPoints:
                 end_node_list_index = self.digraph_points[start_node].index(end_node)
                 self.digraph_points[start_node][end_node_list_index] = insert_node
                 if build_new_edge:
+                    edge1 = bcad.Segment(
+                        bcad.component_lib[start_node], bcad.component_lib[insert_node]
+                    )
+                    self.enrich_component(
+                        edge1, {"position": "digraph", "active": True}
+                    )
+                    edge2 = bcad.Segment(
+                        bcad.component_lib[insert_node], bcad.component_lib[end_node]
+                    )
+                    self.enrich_component(
+                        edge2, {"position": "digraph", "active": True}
+                    )
                     self.digraph_points.update({insert_node: [end_node]})
         else:
             # If there is no edge for the start node, a new edge will be built.
@@ -173,6 +177,7 @@ class CreateWallByPoints:
                         line1.id,
                     ] not in visited:
                         visited.append([line1.id, line2.id])
+                        visited.append([line2.id, line1.id])
                         line_pairs.append((line1, line2))
         num_processes = multiprocessing.cpu_count()
         with multiprocessing.Pool(num_processes) as pool:
@@ -186,18 +191,20 @@ class CreateWallByPoints:
                             self.edges_to_be_modified[pair[0]].append(pair[1])
 
     def modify_edge(self):
-        for edge, nodes in self.edges_to_be_modified.items():
+        for edge_id, nodes_id in self.edges_to_be_modified.items():
+            edge = bcad.component_lib[edge_id]["segment"]
+            nodes = [bcad.component_lib[i]["point"] for i in nodes_id]
             edge_0_coords = edge.raw_value[0]
             nodes_coords = [node.value for node in nodes]
             distances = [np.linalg.norm(i - edge_0_coords) for i in nodes_coords]
             order = np.argsort(distances)
             nodes = [nodes[i] for i in order]
-            self.digraph_points[edge[0]].remove(edge[1])
+            bcad.component_lib[edge_id]["segment"].property["CWBP"]["active"] = False
             pts_list = [edge.value[0]] + nodes + [edge.value[1]]
             for i, nd in enumerate(pts_list):
                 if i == 0:
                     continue
-                self.update_digraph(pts_list[i - 1], nd, build_new_edge=False)
+                self.update_digraph(pts_list[i - 1], nd)
                 if (i != 1) and (i != len(pts_list) - 1):
                     if (pts_list[i - 1] in self.imaginary_pnt) and nd in (
                         self.imaginary_pnt
@@ -205,7 +212,7 @@ class CreateWallByPoints:
                         self.imaginary_segments.update({pts_list[i - 1]: nd})
 
 
-n = 20
+n = 5
 pnt_set = [bcad.get_random_pnt(0, 10, 0, 50, 0, 0, numpy_array=False) for i in range(n)]
 # pnt_set = [bcad.Pnt([0, 0]), bcad.Pnt([2, 0]), bcad.Pnt([2, 2])]
 cwbp = CreateWallByPoints(pnt_set, 0.5, 0, True)
@@ -222,10 +229,10 @@ y_coords = y_lft_coords + y_rgt_coords
 # print(cwbp.left_pnts[1].property["CWBP"])
 # cwbp.update_index_component()
 # print(cwbp.index_points)
-# bcad.id_index[0]["point"].property["CWBP"]["active"] = False
+# bcad.component_lib[0]["point"].property["CWBP"]["active"] = False
 # cwbp.update_index_component()
 # print(cwbp.index_points)
-# print(bcad.id_index)
+# print(bcad.component_lib)
 # line1, line2 = cwbp.side_segments[0], cwbp.side_segments[1]
 # result = bcad.find_intersect_node_on_edge(line1, line2)
 # print(result)

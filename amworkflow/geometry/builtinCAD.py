@@ -1,4 +1,6 @@
 import logging
+import multiprocessing
+import pickle
 from pprint import pprint
 from typing import Union
 
@@ -18,16 +20,20 @@ from OCC.Core.TopoDS import (
 from amworkflow.geometry.simple_geometries import create_edge, create_face, create_wire
 from amworkflow.occ_helpers import create_solid, sew_face
 
-level = logging.WARNING
+if multiprocessing.get_start_method(True) != "fork":
+    multiprocessing.set_start_method("fork")
+level = logging.INFO
 logging.basicConfig(
     level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("amworkflow.geometry.builtinCAD")
 # logger.setLevel(logging.INFO)
+logging.info(f"{multiprocessing.current_process().name} starting.")
 
 count_id = 0
 count_gid = [0 for i in range(7)]
-id_index = {}
+component_lib = {}
+component_container = {}
 TYPE_INDEX = {
     0: "point",
     1: "segment",
@@ -37,6 +43,13 @@ TYPE_INDEX = {
     5: "solid",
     6: "compound",
 }
+manager1 = multiprocessing.Manager()
+# manager2 = multiprocessing.Manager()
+component_lib = manager1.dict(component_lib)
+component_container = manager1.dict(component_container)
+count_gid = manager1.list(count_gid)
+count_id = manager1.Value("i", count_gid)
+TYPE_INDEX = manager1.dict(TYPE_INDEX)
 
 
 def pnt(pt_coord) -> np.ndarray:
@@ -74,8 +87,9 @@ class DuplicationCheck:
         self.new, self.exist_object = self.new_item(gvalue, gtype)
         if not self.new:
             self.exist_object.re_init = True
+            exist_obj_id = self.exist_object.id
             logging.info(
-                f"{TYPE_INDEX[gtype]} {gvalue} already exists, return the old one."
+                f"{TYPE_INDEX[gtype]} {exist_obj_id} {gvalue} already exists, return the old one."
             )
 
     def check_type_coincide(self, base_type: int, item_type: int) -> bool:
@@ -128,10 +142,11 @@ class DuplicationCheck:
         Check if a value already exits in the index
         :param item_value: value to be examined.
         """
-        for _, item in id_index.items():
+        for _, item in component_lib.items():
             if self.check_type_coincide(item["type"], item_type):
                 if self.check_value_repetition(item["value"], item_value):
-                    return False, item[f"{TYPE_INDEX[item_type]}"]
+                    # return False, item[f"{TYPE_INDEX[item_type]}"]
+                    return False, component_container[item["id"]]
         return True, None
 
 
@@ -188,6 +203,10 @@ class TopoObj:
         doc = f"\033[1mType\033[0m: {TYPE_INDEX[self.type]}\n\033[1mID\033[0m: {self.id}\n\033[1mValue\033[0m: {value}\n\033[1mOwn\033[0m: {own}\n\033[1mBelong\033[0m: {belong}\n"
         return doc
 
+    def __getstate__(self):
+        attributes = self.__dict__.copy()
+        return attributes
+
     def enrich_property(self, new_property: dict):
         """Enrich the property out of the basic property.
 
@@ -205,7 +224,7 @@ class TopoObj:
         self.property.update(
             {
                 "type": self.type,
-                f"{TYPE_INDEX[self.type]}": self,
+                # f"{TYPE_INDEX[self.type]}": self,
                 "id": self.id,
                 "gid": self.gid,
                 "own": self.own,
@@ -213,6 +232,9 @@ class TopoObj:
                 "value": self.value,
             }
         )
+
+    def update_component_container(self):
+        component_container.update({self.id: self})
 
     def update_property(self, property_key: str, property_value: any):
         """Update a property of the item.
@@ -226,8 +248,8 @@ class TopoObj:
             raise Exception(f"Unrecognized property key: {property_key}.")
         self.property.update({property_key: property_value})
 
-    def update_id_index(self):
-        id_index[self.id].update(self.property)
+    def update_component_lib(self):
+        component_lib[self.id].update(self.property)
 
     def register_item(self) -> int:
         """
@@ -238,12 +260,21 @@ class TopoObj:
         global count_id
         global count_gid
         # if new:
-        self.id = count_id
+        if isinstance(count_id, int):
+            self.id = count_id
+        else:
+            self.id = count_id.value
         self.gid = count_gid[self.type]
         count_gid[self.type] += 1
         self.update_basic_property()
-        id_index.update({self.id: self.property})
-        count_id += 1
+        self.update_component_container()
+        component_lib.update({self.id: self.property})
+        if isinstance(count_id, int):
+            count_id += 1
+        else:
+            count_id.value += 1
+        # Logging the registration
+        logging.info(f"Register {TYPE_INDEX[self.type]}: {self.id}")
         return self.id
         # else:
         #     return old_id
@@ -261,7 +292,7 @@ class TopoObj:
             else:
                 item.belong.update({self.type: [self.id]})
         # self.update_basic_property()
-        # self.update_id_index()
+        # self.update_component_lib()
 
 
 class Pnt(TopoObj):
@@ -293,7 +324,7 @@ class Pnt(TopoObj):
 
 
 class Segment(TopoObj):
-    def __new__(cls, pnt2: Pnt = Pnt([1]), pnt1: Pnt = Pnt([])):
+    def __new__(cls, pnt1: Pnt = Pnt([]), pnt2: Pnt = Pnt([1])):
         checker = DuplicationCheck(1, [pnt1.id, pnt2.id])
         if checker.new:
             instance = super().__new__(cls)
@@ -302,7 +333,7 @@ class Segment(TopoObj):
         else:
             return checker.exist_object
 
-    def __init__(self, pnt2: Pnt, pnt1: Pnt = Pnt([])) -> None:
+    def __init__(self, pnt1: Pnt = Pnt([]), pnt2: Pnt = Pnt([1])) -> None:
         super().__init__()
         if self.re_init:
             return
@@ -316,8 +347,8 @@ class Segment(TopoObj):
         self.type = 1
         self.value = [self.start_pnt, self.end_pnt]
         self.raw_value = [
-            id_index[self.start_pnt]["value"],
-            id_index[self.end_pnt]["value"],
+            component_lib[self.start_pnt]["value"],
+            component_lib[self.end_pnt]["value"],
         ]
         self.occ_edge = create_edge(pnt1.occ_pnt, pnt2.occ_pnt)
         self.enrich_property(
@@ -333,13 +364,15 @@ class Segment(TopoObj):
 
     def check_input(self, pnt1: Pnt, pnt2: Pnt) -> tuple:
         if type(pnt2) is int:
-            if pnt2 not in id_index:
+            if pnt2 not in component_lib:
                 raise Exception(f"Unrecognized point id: {pnt2}.")
-            pnt2 = id_index[pnt2]["point"]
+            # pnt2 = component_lib[pnt2]["point"]
+            pnt2 = component_container[pnt2]
         if type(pnt1) is int:
-            if pnt1 not in id_index:
+            if pnt1 not in component_lib:
                 raise Exception(f"Unrecognized point id: {pnt1}.")
-            pnt1 = id_index[pnt1]["point"]
+            # pnt1 = component_lib[pnt1]["point"]
+            pnt1 = component_container[pnt1]
         if not isinstance(pnt1, Pnt):
             raise Exception(f"Wrong type of point: {type(pnt1)}.")
         if not isinstance(pnt2, Pnt):
@@ -519,7 +552,7 @@ def angle_of_two_arrays(a1: np.ndarray, a2: np.ndarray, rad: bool = True) -> flo
 # seg3 = Segment(pnt3, pnt1)
 # wire1 = Wire(seg1, seg2,seg3)
 # surf1 = Surface(wire1)
-# pprint(id_index)
+# pprint(component_lib)
 # print(seg3)
 # print(pnt1.property["occ_pnt"])
 
@@ -1005,14 +1038,228 @@ def find_intersect_node_on_edge(line1: Segment, line2: Segment) -> tuple:
                 for ind in index:
                     if ind in [0, 1]:
                         pnt_candidate = [line1.start_pnt, line1.end_pnt]
-                        return (line2, pnt_candidate[ind])
+                        return (line2.id, pnt_candidate[ind])
                     else:
                         pnt_candidate = [line2.start_pnt, line2.end_pnt]
-                        return (line1, pnt_candidate[ind - 2])
+                        return (line1.id, pnt_candidate[ind - 2])
 
     else:
         distance = shortest_distance_line_line(line1, line2)
         intersect = np.isclose(distance[0], 0)
         if intersect:
             intersect_pnt = Pnt(distance[1][0])
-            return ((line1, intersect_pnt), (line2, intersect_pnt))
+            return ((line1.id, intersect_pnt.id), (line2.id, intersect_pnt.id))
+
+
+class CreateWallByPoints:
+    def __init__(self, coords: list, th: float, height: float, is_close: bool = True):
+        self.coords = coords
+        self.height = height
+        self.th = th
+        self.is_close = is_close
+        self.volume = 0
+        self.center_pnts = []
+        self.side_pnts = []
+        self.center_segments = []
+        self.side_segments = []
+        self.left_pnts = []
+        self.right_pnts = []
+        self.left_segments = []
+        self.right_segments = []
+        self.imaginary_pnt = {}
+        self.imaginary_segments = {}
+        self.digraph_points = {}
+        self.init_points(self.coords, {"position": "center", "active": True})
+        self.index_components = {}
+        self.edges_to_be_modified = {}
+        self.create_sides()
+        self.find_overlap_node_on_edge_parallel()
+        self.modify_edge()
+
+    def init_points(self, points: list, prop: dict = None):
+        for i, p in enumerate(points):
+            if not isinstance(p, Pnt):
+                p = Pnt(p)
+            self.enrich_component(p, prop.copy())
+            self.center_pnts.append(p)
+
+    def update_index_component(self):
+        for i in component_lib.values():
+            if "CWBP" not in i[TYPE_INDEX[i["type"]]].property:
+                continue
+            property_name = TYPE_INDEX[i["type"]]
+            if i[property_name].property["CWBP"]["active"]:
+                if i[property_name].id not in self.index_components:
+                    self.index_components.update({property_name: [i[property_name].id]})
+                else:
+                    self.index_component[property_name].append(i[property_name].id)
+
+    def enrich_component(self, component: TopoObj, prop: dict = None) -> TopoObj:
+        if not isinstance(component, TopoObj):
+            raise ValueError("Component must be a TopoObj")
+        component.enrich_property({"CWBP": prop})
+
+    def compute_index(self, ind, length):
+        return ind % length if ind > 0 else -(-ind % length)
+
+    def compute_support_vector(self, seg1: Segment, seg2: Segment = None):
+        lit_vector = get_literal_vector(seg1.vector, True)
+        if seg2 is None:
+            th = self.th * 0.5
+            angle = np.pi / 2
+            sup_vector = lit_vector
+        else:
+            sup_vector = bisect_angle(-seg2.vector, seg1)
+            angle = angle_of_two_arrays(lit_vector, sup_vector)
+            if angle > np.pi / 2:
+                sup_vector *= -1
+                angle = np.pi - angle
+            th = np.abs(self.th * 0.5 / np.cos(angle))
+        return sup_vector, th
+
+    def create_sides(self):
+        close = 1 if self.is_close else 0
+        for i in range(len(self.center_pnts) + close):
+            # The previous index
+            index_l = self.compute_index(i - 1, len(self.center_pnts))
+            # The current index
+            index = self.compute_index(i, len(self.center_pnts))
+            # The next index
+            index_n = self.compute_index(i + 1, len(self.center_pnts))
+            # The segment from the current index to the next index
+            seg_current_next = Segment(
+                self.center_pnts[index], self.center_pnts[index_n]
+            )
+            self.enrich_component(
+                seg_current_next, {"position": "center", "active": True}
+            )
+            # The segment from the previous index to the current index
+            seg_previous_current = Segment(
+                self.center_pnts[index_l], self.center_pnts[index]
+            )
+            self.enrich_component(
+                seg_previous_current, {"position": "center", "active": True}
+            )
+            if index == 0 and not self.is_close:
+                seg1 = seg_current_next
+                seg2 = None
+            elif index == len(self.center_pnts) - 1 and not self.is_close:
+                seg1 = seg_previous_current
+                seg2 = None
+            else:
+                seg1 = seg_current_next
+                seg2 = seg_previous_current
+            su_vector, su_len = self.compute_support_vector(seg1, seg2)
+            lft_pnt = Pnt(su_vector * su_len + self.center_pnts[index].coord)
+            rgt_pnt = Pnt(-su_vector * su_len + self.center_pnts[index].coord)
+            self.left_pnts.append(lft_pnt)
+            self.enrich_component(lft_pnt, {"position": "left", "active": True})
+            self.right_pnts.append(rgt_pnt)
+            self.enrich_component(rgt_pnt, {"position": "right", "active": True})
+        self.right_pnts = self.right_pnts[::-1]
+        self.side_pnts = self.left_pnts + self.right_pnts
+        for i in range(len(self.side_pnts) - 1):
+            seg_side = Segment(self.side_pnts[i], self.side_pnts[i + 1])
+            self.enrich_component(seg_side, {"position": "side", "active": True})
+            self.side_segments.append(seg_side)
+        self.update_index_component()
+
+    def update_digraph(
+        self,
+        start_node: int,
+        end_node: int,
+        insert_node: int = None,
+        build_new_edge: bool = True,
+    ) -> None:
+        self.update_index_component()
+        if start_node not in self.index_components:
+            raise Exception(f"Unrecognized start node: {start_node}.")
+        if end_node not in self.index_components:
+            raise Exception(f"Unrecognized end node: {end_node}.")
+        if (insert_node not in self.index_components) and (insert_node is not None):
+            raise Exception(f"Unrecognized inserting node: {insert_node}.")
+        if start_node in self.digraph_points:
+            # Directly update the end node
+            if insert_node is None:
+                self.digraph_points[start_node].append(end_node)
+            # Insert a new node between the start and end nodes
+            # Basically, the inserted node replaces the end node
+            # If build new edge is True, a new edge consists of inserted node and the new end node will be built.
+            else:
+                end_node_list_index = self.digraph_points[start_node].index(end_node)
+                self.digraph_points[start_node][end_node_list_index] = insert_node
+                if build_new_edge:
+                    edge1 = Segment(
+                        component_container[start_node],
+                        component_container[insert_node],
+                    )
+                    self.enrich_component(
+                        edge1, {"position": "digraph", "active": True}
+                    )
+                    edge2 = Segment(
+                        component_container[insert_node], component_container[end_node]
+                    )
+                    self.enrich_component(
+                        edge2, {"position": "digraph", "active": True}
+                    )
+                    self.digraph_points.update({insert_node: [end_node]})
+        else:
+            # If there is no edge for the start node, a new edge will be built.
+            if insert_node is None:
+                self.digraph_points.update({start_node: [end_node]})
+            else:
+                raise Exception("No edge found for insertion option.")
+
+    def find_overlap_node_on_edge_parallel(self):
+        visited = []
+        line_pairs = []
+        for line1 in self.side_segments:
+            for line2 in self.side_segments:
+                if line1.id != line2.id:
+                    if [line1.id, line2.id] not in visited or [
+                        line2.id,
+                        line1.id,
+                    ] not in visited:
+                        visited.append([line1.id, line2.id])
+                        visited.append([line2.id, line1.id])
+                        line_pairs.append((line1, line2))
+        num_processes = multiprocessing.cpu_count()
+        with multiprocessing.Pool(num_processes) as pool:
+            results = pool.starmap(find_intersect_node_on_edge, line_pairs)
+            for result in results:
+                if result is not None:
+                    for pair in result:
+                        if pair[0] not in self.edges_to_be_modified:
+                            self.edges_to_be_modified.update({pair[0]: [pair[1]]})
+                        else:
+                            self.edges_to_be_modified[pair[0]].append(pair[1])
+
+    def modify_edge(self):
+        for edge_id, nodes_id in self.edges_to_be_modified.items():
+            # edge = component_lib[edge_id]["segment"]
+            edge = component_container[edge_id]
+            nodes = [component_container[i] for i in nodes_id]
+            edge_0_coords = edge.raw_value[0]
+            nodes_coords = [node.value for node in nodes]
+            distances = [np.linalg.norm(i - edge_0_coords) for i in nodes_coords]
+            order = np.argsort(distances)
+            nodes = [nodes[i] for i in order]
+            # component_lib[edge_id]["segment"].property["CWBP"]["active"] = False
+            component_container[edge_id].property["CWBP"]["active"] = False
+            pts_list = [edge.value[0]] + nodes + [edge.value[1]]
+            for i, nd in enumerate(pts_list):
+                if i == 0:
+                    continue
+                self.update_digraph(pts_list[i - 1], nd)
+                if (i != 1) and (i != len(pts_list) - 1):
+                    if (pts_list[i - 1] in self.imaginary_pnt) and nd in (
+                        self.imaginary_pnt
+                    ):
+                        self.imaginary_segments.update({pts_list[i - 1]: nd})
+
+
+initialization()
+n = 5
+# pnt_set = [get_random_pnt(0, 10, 0, 50, 0, 0, numpy_array=False) for i in range(n)]
+# pnt_set = [bcad.Pnt([0, 0]), bcad.Pnt([2, 0]), bcad.Pnt([2, 2])]
+# cwbp = CreateWallByPoints(pnt_set, 0.5, 0, True)
