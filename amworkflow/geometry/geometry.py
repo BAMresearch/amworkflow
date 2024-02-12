@@ -11,7 +11,6 @@ from OCC.Extend.DataExchange import write_step_file, write_stl_file
 from scipy.optimize import fsolve
 
 import amworkflow.geometry.builtinCAD as bcad
-from amworkflow.geometry import composite_geometries, simple_geometries
 
 typing.override = lambda x: x
 
