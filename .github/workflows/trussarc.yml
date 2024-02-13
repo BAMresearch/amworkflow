@@ -1,0 +1,51 @@
+# This workflow will install the environment, run the example/Wall
+name: trussarc
+
+on:
+  push:
+    branches-ignore:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  CACHE_NUMBER: 1 # increase to reset cache manually
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout repo content
+        uses: actions/checkout@v2
+      - name: Setup Mambaforge
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+            miniforge-variant: Mambaforge
+            miniforge-version: latest
+            activate-environment: amworkflow
+            use-mamba: true
+
+      - name: Set cache date
+        run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+
+      - uses: actions/cache@v2
+        with:
+          path: "/usr/share/miniconda3/envs/amworkflow"
+          key: conda-${{ hashFiles('environment.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+        id: cache
+
+      - name: Update environment
+        run: mamba env update -n amworkflow -f environment.yml
+        if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: Install package
+        run: git clone https://github.com/tpaviot/pythonocc-utils.git && pip install ./pythonocc-utils
+
+      - name: Install amworkflow
+        run: python -m pip install .
+
+      - name: run dodo_trussarc
+        shell: bash -l {0} #new shell
+        run: |
+          doit -f examples/TrussArc/dodo_trussarc.py
