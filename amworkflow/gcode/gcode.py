@@ -133,7 +133,6 @@ class GcodeFromPoints(Gcode):
         self.read_points(self.in_file_path)
         super().__init__(**kwargs)
 
-    @typing.override
     def create(self, in_file: Path, out_gcode: str, out_gcode_dir: Path = None) -> None:
         """Create gcode file by given path point file
 
@@ -587,11 +586,11 @@ class GcodeMultiplier(object):
         if auto_balance:
             for i in range(0, self.num_vertic):
                 for j in range(0, self.num_horizant):
-                    self.gcodelist[
-                        i * self.num_horizant + j
-                    ].points = self.auto_balance(
-                        self.grid[i * self.num_horizant + j],
-                        self.gcodelist[i * self.num_horizant + j].points,
+                    self.gcodelist[i * self.num_horizant + j].points = (
+                        self.auto_balance(
+                            self.grid[i * self.num_horizant + j],
+                            self.gcodelist[i * self.num_horizant + j].points,
+                        )
                     )
                     self.visualize_cache.append(
                         bcad.bounding_box(
@@ -746,11 +745,11 @@ class GcodeMultiplier(object):
         if auto_balance:
             for i in range(0, self.num_vertic):
                 for j in range(0, self.num_horizant):
-                    self.gcodelist[
-                        i * self.num_horizant + j
-                    ].points = self.auto_balance(
-                        self.grid[i * self.num_horizant + j],
-                        self.gcodelist[i * self.num_horizant + j].points,
+                    self.gcodelist[i * self.num_horizant + j].points = (
+                        self.auto_balance(
+                            self.grid[i * self.num_horizant + j],
+                            self.gcodelist[i * self.num_horizant + j].points,
+                        )
                     )
                     self.visualize_cache.append(
                         bcad.bounding_box(
