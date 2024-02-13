@@ -133,7 +133,6 @@ class GcodeFromPoints(Gcode):
         self.read_points(self.in_file_path)
         super().__init__(**kwargs)
 
-    @typing.override
     def create(self, in_file: Path, out_gcode: str, out_gcode_dir: Path = None) -> None:
         """Create gcode file by given path point file
 
