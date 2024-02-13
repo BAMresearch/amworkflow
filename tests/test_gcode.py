@@ -33,9 +33,10 @@ params = {  # geometry parameters
 
 
 def test_gcode(tmp_path):
-    gcd = GcodeFromPoints(**params)
     caller_path = Path(os.path.dirname(__file__))
     file_point = caller_path / "RandomPoints.csv"
+    params["in_file_path"] = file_point
+    gcd = GcodeFromPoints(**params)
     file_gcode = tmp_path / "RandomPoints.gcode"
     gcd.create(file_point, file_gcode)
     assert file_gcode.exists()
