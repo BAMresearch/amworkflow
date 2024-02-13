@@ -961,6 +961,11 @@ class GcodeMultiplier(object):
                             self.grid[i * self.num_horizant + j],
                             self.gcodelist[i * self.num_horizant + j].points,
                         )
+                    self.gcodelist[i * self.num_horizant + j].points = (
+                        self.auto_balance(
+                            self.grid[i * self.num_horizant + j],
+                            self.gcodelist[i * self.num_horizant + j].points,
+                        )
                     )
                     self.visualize_cache.append(
                         bcad.bounding_box(
