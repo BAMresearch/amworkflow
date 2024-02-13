@@ -22,12 +22,16 @@ params = {  # geometry parameters
     "nozzle_diameter": 0.4,
     # Diameter of the nozzle in mm
     "kappa": 1,
-    # Parameter for the calculation of the extrusion width
+    # Coefficient of rectifying the extrusion length
+    "delta": 0.1,
+    # Coefficient of rectifying the feedrate, as well as the line width
+    "gamma": 1,
+    # Coefficient of rectifying the feedrate, as well as the line width
     "tool_number": 0,
     # Tool number of the extruder. Expected to be an integer
     "feedrate": 1800,
     # Feedrate of the extruder in mm/min. Expected to be an integer
-    "in_file_path": "/home/yhe/Documents/amworkflow_restruct/examples/RandomPoints/RandomPoints.csv",
+    "in_file_path": "",
     # Path to the input file
 }
 
@@ -37,6 +41,6 @@ def test_gcode(tmp_path):
     file_point = caller_path / "RandomPoints.csv"
     params["in_file_path"] = file_point
     gcd = GcodeFromPoints(**params)
-    file_gcode = tmp_path / "RandomPoints.gcode"
-    gcd.create(file_point, file_gcode)
+    file_gcode = tmp_path
+    gcd.create(file_point, "test.gcode", file_gcode)
     assert file_gcode.exists()
