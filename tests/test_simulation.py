@@ -13,7 +13,6 @@ from amworkflow.simulation import SimulationFenicsXConcrete
 
 
 def test_simulation_structure(tmp_path):
-
     # tmp output files directory
     d = tmp_path / f"test_sim"
     d.mkdir(parents=True, exist_ok=True)
@@ -40,7 +39,7 @@ def test_simulation_structure(tmp_path):
     }
 
     simulation = SimulationFenicsXConcrete(params_sim_structure)
-    print('check parameters needed', simulation.parameter_description())
+    print("check parameters needed", simulation.parameter_description())
 
     simulation.run(file_xdmf, file_xdmf_sim)
 
@@ -60,7 +59,6 @@ def test_simulation_structure(tmp_path):
 
 
 def test_simulation_process(tmp_path):
-
     # tmp output files directory
     d = tmp_path / f"test_sim"
     d.mkdir(parents=True, exist_ok=True)
@@ -93,7 +91,7 @@ def test_simulation_process(tmp_path):
     }
 
     simulation = SimulationFenicsXConcrete(params_sim_process)
-    print('check parameters needed', simulation.parameter_description())
+    print("check parameters needed", simulation.parameter_description())
 
     simulation.run(file_xdmf, file_xdmf_sim)
 
@@ -113,17 +111,10 @@ def test_simulation_process(tmp_path):
         assert abs(y[:]).max() > 0.0
 
 
-#
-
-
-
 ###
 if __name__ == "__main__":
-
     test_simulation_structure(Path.cwd())
     test_simulation_process(Path.cwd())
-
-
 import os
 from pathlib import Path
 

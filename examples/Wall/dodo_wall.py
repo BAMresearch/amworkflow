@@ -1,18 +1,18 @@
-from pathlib import Path
 import datetime
 import logging
+from pathlib import Path
 
+import numpy as np
+import pandas as pd
 from doit import create_after, get_var
 from doit.task import clean_targets
 from doit.tools import config_changed
-
-import pandas as pd
-import numpy as np
 from fenicsxconcrete.util import ureg
 
 from amworkflow.geometry import GeometryParamWall
 from amworkflow.meshing import MeshingGmsh
-from amworkflow.simulation import SimulationFenicsXConcrete
+
+# from amworkflow.simulation import SimulationFenicsXConcrete
 
 # > doit -f <filename>   # for execution of all task
 # > doit -f <filename> s <taskname> # for specific task
@@ -22,47 +22,54 @@ logging.basicConfig(level=logging.INFO)
 
 # define required parameters
 params = {  # geometry parameters
-    "length": 200,  # mm
-    "height": 200,  # mm
-    "width": 200,  # mm
+    "length": 150,  # mm
+    "height": 150,  # mm
+    "width": 150,  # mm
     "radius": None,  # mm
-    "infill": "solid",
+    "infill": "zigzag",
     # mesh parameters (meshing by layer height)
+    "line_width": 10,  # mm
     "mesh_size_factor": 10,
     "layer_height": 10,  # mm
 }
 # simulation parameters needs to be in pint units!!
 params_sim_structure = {
-        'mesh_unit': 'mm' * ureg(""), # which unit is used in mesh file important since fenicsxconcrete converts all in base units!
-        'dim': 3*ureg(""),
-        "degree": 2 * ureg(""),
-        'q_degree': 2 * ureg(""),
-        'bc_setting': 'fixed_y_bottom' * ureg(""),
-        'rho': 2400 * ureg("kg/m^3"),
-        'g': 9.81 * ureg("m/s^2"),
-        'E': 33000*ureg("MPa"),
-        'nu': 0.2*ureg(""),
-        'top_displacement': -20.0 * ureg("mm"),
-        'material_type': 'linear' * ureg(""),
+    "mesh_unit": "mm"
+    * ureg(
+        ""
+    ),  # which unit is used in mesh file important since fenicsxconcrete converts all in base units!
+    "dim": 3 * ureg(""),
+    "degree": 2 * ureg(""),
+    "q_degree": 2 * ureg(""),
+    "bc_setting": "fixed_y_bottom" * ureg(""),
+    "rho": 2400 * ureg("kg/m^3"),
+    "g": 9.81 * ureg("m/s^2"),
+    "E": 33000 * ureg("MPa"),
+    "nu": 0.2 * ureg(""),
+    "top_displacement": -20.0 * ureg("mm"),
+    "material_type": "linear" * ureg(""),
 }
 params_sim_process = {
-        'mesh_unit': 'mm' * ureg(""), # which unit is used in mesh file important since fenicsxconcrete converts all in base units!
-        'dim': 3*ureg(""),
-        "degree": 2 * ureg(""),
-        'q_degree': 2 * ureg(""),
-        'material_type': 'thixo' * ureg(""),
-        "rho": 2070 * ureg("kg/m^3"),  # density of fresh concrete
-        "nu": 0.3 * ureg(""),  # Poissons Ratio
-        "E_0": 0.0779 * ureg("MPa"),  # Youngs Modulus at age=0
-        "R_E": 0 * ureg("Pa/s"),  # Reflocculation (first) rate
-        "A_E": 0.00002 * ureg("MPa/s"),  # Structuration (second) rate
-        "tf_E": 0 * ureg("s"),  # Reflocculation time (switch point)
-        "age_0": 0 * ureg("s"),  # start age of concrete
-        # layer parameter
-        'layer_height': params["layer_height"] * ureg("mm"),  # to activate layer by layer
-        'num_layers': params["height"]/params["layer_height"] * ureg(""),
-        'time_per_layer': 6 * ureg("s"),  # or velocity and layer thickness
-        'num_time_steps_per_layer': 2 * ureg(""),
+    "mesh_unit": "mm"
+    * ureg(
+        ""
+    ),  # which unit is used in mesh file important since fenicsxconcrete converts all in base units!
+    "dim": 3 * ureg(""),
+    "degree": 2 * ureg(""),
+    "q_degree": 2 * ureg(""),
+    "material_type": "thixo" * ureg(""),
+    "rho": 2070 * ureg("kg/m^3"),  # density of fresh concrete
+    "nu": 0.3 * ureg(""),  # Poissons Ratio
+    "E_0": 0.0779 * ureg("MPa"),  # Youngs Modulus at age=0
+    "R_E": 0 * ureg("Pa/s"),  # Reflocculation (first) rate
+    "A_E": 0.00002 * ureg("MPa/s"),  # Structuration (second) rate
+    "tf_E": 0 * ureg("s"),  # Reflocculation time (switch point)
+    "age_0": 0 * ureg("s"),  # start age of concrete
+    # layer parameter
+    "layer_height": params["layer_height"] * ureg("mm"),  # to activate layer by layer
+    "num_layers": params["height"] / params["layer_height"] * ureg(""),
+    "time_per_layer": 6 * ureg("s"),  # or velocity and layer thickness
+    "num_time_steps_per_layer": 2 * ureg(""),
 }
 
 # TODO datastore stuff??
@@ -113,6 +120,7 @@ def task_meshing():
         "verbosity": 2,
     }
 
+
 @create_after(executed="meshing")
 def task_structure_simulation():
     """Simulating the final structure loaded parallel to layers in y-direction with displacement."""
@@ -122,7 +130,7 @@ def task_structure_simulation():
     in_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
     out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_structure.xdmf"
 
-    params_sim_structure['experiment_type'] = 'structure' * ureg("")
+    params_sim_structure["experiment_type"] = "structure" * ureg("")
     simulation = SimulationFenicsXConcrete(params_sim_structure)
 
     return {
@@ -134,6 +142,7 @@ def task_structure_simulation():
         "verbosity": 2,
     }
 
+
 @create_after(executed="meshing")
 def task_process_simulation():
     """Simulating the final structure loaded parallel to layers."""
@@ -143,7 +152,7 @@ def task_process_simulation():
     in_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
     out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_process.xdmf"
 
-    params_sim_process['experiment_type'] = 'process' * ureg("")
+    params_sim_process["experiment_type"] = "process" * ureg("")
     simulation = SimulationFenicsXConcrete(params_sim_process)
 
     return {
