@@ -59,6 +59,7 @@ params_sim_structure = {
     "E": 33000 * ureg("MPa"),
     "nu": 0.2 * ureg(""),
     "top_displacement": -5.0 * ureg("mm"),
+    "number_steps": 1 * ureg(""),
     "material_type": "linear" * ureg(""),
 }
 

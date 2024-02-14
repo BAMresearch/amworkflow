@@ -36,6 +36,7 @@ def test_simulation_structure(tmp_path):
         'E': 33000 * ureg("MPa"),
         'nu': 0.2 * ureg(""),
         'top_displacement': -20.0 * ureg("mm"),
+        "number_steps": 1 * ureg(""),
         'material_type': 'linear' * ureg(""),
         'experiment_type': 'structure' * ureg(""),
     }
