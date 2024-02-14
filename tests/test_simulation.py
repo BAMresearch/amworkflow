@@ -30,7 +30,7 @@ def test_simulation_structure(tmp_path):
         'dim': 3 * ureg(""),
         "degree": 2 * ureg(""),
         'q_degree': 2 * ureg(""),
-        'bc_setting': 'compr_disp_y' * ureg(""),
+        'bc_setting': 'fixed_y' * ureg(""),
         'rho': 2400 * ureg("kg/m^3"),
         'g': 9.81 * ureg("m/s^2"),
         'E': 33000 * ureg("MPa"),

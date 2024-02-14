@@ -29,7 +29,7 @@ params = {  # geometry parameters
     "infill": get_var('infill',"zigzag"), # default infill changeable via command line doit -f dodo_wall.py infill=zigzag or solid or honeycomb
     # mesh parameters (meshing by layer height)
     "line_width": 10,  # mm
-    "mesh_size_factor": 4,
+    "mesh_size_factor": float(get_var('mesh_size',4)), # default mesh size factor changeable via command line doit -f dodo_wall.py mesh_size=4
     "layer_height": 10,  # mm
 }
 # simulation parameters needs to be in pint units!!
@@ -53,7 +53,7 @@ params_sim_structure = {
 }
 
 # TODO datastore stuff??
-OUTPUT_NAME = Path(__file__).parent.name
+OUTPUT_NAME = f"{Path(__file__).parent.name}_{params['infill']}_mesh_{params['mesh_size_factor']}"
 OUTPUT = (
     Path(__file__).parent / "output"
 )  # / f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
@@ -108,7 +108,7 @@ def task_structure_simulation_disp_y():
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
     in_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
-    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_{params['infill']}_disp_y.xdmf"
+    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_disp_y.xdmf"
 
     # displacment load in y direction
     params_sim_structure["bc_setting"] = "compr_disp_y" * ureg("")
@@ -125,12 +125,12 @@ def task_structure_simulation_disp_y():
 
 @create_after(executed="meshing")
 def task_structure_simulation_disp_x():
-    """Simulating the final structure loaded parallel to layers in y-direction with displacement."""
+    """Simulating the final structure loaded parallel to layers in x-direction with displacement."""
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
     in_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
-    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_{params['infill']}_disp_x.xdmf"
+    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_disp_x.xdmf"
 
     # displacment load in y direction
     params_sim_structure["bc_setting"] = "compr_disp_x" * ureg("")
