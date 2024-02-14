@@ -1,4 +1,6 @@
+import inspect
 import logging
+import os
 import pickle
 from pprint import pprint
 from typing import Union
@@ -7,25 +9,32 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 
-from amworkflow.config.settings import ENABLE_CONCURRENT_MODE, ENABLE_OCC, LOG_LEVEL
+# Import several signals from Configuration.
+from amworkflow.config.settings import (
+    ENABLE_CONCURRENT_MODE,
+    ENABLE_OCC,
+    ENABLE_SHELF,
+    ENABLE_SQL_DATABASE,
+    LOG_LEVEL,
+)
 
+# Import multiprocessing and initialize the start method to 'fork' if concurrent mode is enabled. this also means the code will only be suitable for Unix-like systems.
 if ENABLE_CONCURRENT_MODE:
     import multiprocessing
 
     if multiprocessing.get_start_method(True) != "fork":
         multiprocessing.set_start_method("fork")
-        logging.debug(f"{multiprocessing.current_process().name} starting.")
+        logging.debug("%s starting.", multiprocessing.current_process().name)
 
-
+# Setting up the logging configuration.
 logging.basicConfig(
     level=LOG_LEVEL, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("amworkflow.geometry.builtinCAD")
 
-
+# Import OCC if enabled.
 if ENABLE_OCC:
     try:
-        from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
         from OCC.Core.gp import gp_Pnt
 
         import amworkflow.occ_helpers as occh
@@ -36,7 +45,7 @@ if ENABLE_OCC:
 else:
     logging.warning("OCC is disabled. Try running without it now.")
 
-
+# Initialize some containers to store the objects and their properties.
 count_id = 0
 count_gid = [0 for i in range(7)]
 component_lib = {}
@@ -51,6 +60,113 @@ TYPE_INDEX = {
     6: "compound",
 }
 
+# Create a database to store the objects. Though python data structures can be used to store the objects, a database is used to store the objects for the support of concurrent access.
+if ENABLE_SQL_DATABASE:
+    logger.debug("SQL Database is enabled.")
+    import sqlite3
+
+    db_path = os.path.join(os.getcwd(), "bcad_sql.db")
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    # Create the modified 'objects' table to store only Oid references
+    c.execute(
+        """CREATE TABLE IF NOT EXISTS objects
+                (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                object_type TEXT, 
+                gid INTEGER)"""
+    )
+
+    # Create tables for each type of object
+    for key, value in TYPE_INDEX.items():
+        c.execute(
+            f"""CREATE TABLE IF NOT EXISTS {value}
+                    (gid INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    value BLOB,
+                    obj BLOB)"""
+        )
+    logger.debug("Database created successfully.")
+    conn.commit()
+    conn.close()
+
+    def store_obj_to_db(obj_type: str, obj: any) -> tuple:
+        """
+        Insert an object to the database and return its id.
+        :param obj_type: The type of the object to be inserted.
+        :type obj_type: str
+        :param obj: The object to be inserted.
+        :type obj: any
+        :return: The id, gid of the object.
+        :rtype: tuple
+        """
+        if obj_type not in TYPE_INDEX.values():
+            raise ValueError(f"Unrecognized object type: {obj_type}.")
+        local_conn = sqlite3.connect(db_path)
+        local_c = conn.cursor()
+        local_value = obj.value
+        local_c.execute(
+            f"INSERT INTO {obj_type} (obj, value) VALUES (?,?)",
+            (pickle.dumps(obj), pickle.dumps(local_value)),
+        )
+        gid = local_c.lastrowid
+        local_c.execute(
+            "INSERT INTO objects (object_type, gid) VALUES (?,?)",
+            (obj_type, gid),
+        )
+        oid = local_c.lastrowid
+        local_conn.commit()
+        local_conn.close()
+        return oid, gid
+
+    def get_obj_from_db(oid: int) -> any:
+        """
+        Get an object from the database by its id.
+        :param oid: The id of the object to be retrieved.
+        :type oid: int
+        :return: The object retrieved.
+        :rtype: any
+        """
+        local_conn = sqlite3.connect(db_path)
+        local_c = conn.cursor()
+        local_c.execute("SELECT object_type FROM objects WHERE id = ?", (oid,))
+        obj_type = local_c.fetchone()[0]
+        local_c.execute(
+            f"""SELECT {obj_type}.obj
+                    FROM objects
+                    INNER JOIN {obj_type} ON objects.gid = point.gid
+                    WHERE objects.id = ?)"""
+        )
+        row = local_c.fetchone()
+        if row:
+            obj = pickle.loads(row[0])
+        local_conn.close()
+        return obj
+
+
+if ENABLE_SHELF:
+    logger.debug("DBM Database is enabled.")
+    import shelve
+
+    shelf_path = os.path.join(os.getcwd(), "bcad_shelf")
+    bcad_shelf = shelve.open(shelf_path, "c")
+    logger.debug("Shelf database created successfully.")
+
+    def get_next_id(db, update=False):
+        """Retrieve the next available ID, incrementing the stored value."""
+        if "next_id" not in db:
+            db["next_id"] = 0
+        elif update:
+            db["next_id"] += 1
+        else:
+            pass
+        return db["next_id"]
+
+    def add_entry(db, data):
+        """Add a new entry with an auto-incremented ID."""
+        next_id = get_next_id(db)
+        db[str(next_id)] = data
+        get_next_id(db, update=True)
+        return next_id
+
 
 def pnt(pt_coord) -> np.ndarray:
     """
@@ -63,7 +179,7 @@ def pnt(pt_coord) -> np.ndarray:
     opt = np.array(pt_coord)
     dim = np.shape(pt_coord)[0]
     if dim > 3:
-        raise Exception(
+        raise ValueError(
             f"Got wrong point {pt_coord}: Dimension more than 3rd provided."
         )
     if dim < 3:
@@ -89,8 +205,17 @@ class DuplicationCheck:
             self.exist_object.re_init = True
             exist_obj_id = self.exist_object.id
             logging.debug(
-                f"{TYPE_INDEX[gtype]} {exist_obj_id} {gvalue} already exists, return the old one."
+                "%s %s %s already exists, return the old one.",
+                TYPE_INDEX[gtype],
+                exist_obj_id,
+                gvalue,
             )
+
+    def __setstate__(self, state):
+        # This method is called during deserialization.
+        # Update the state to indicate this instance was deserialized from pickle.
+        state["deserialized_from_pickle"] = True
+        self.__dict__.update(state)
 
     def check_type_coincide(self, base_type: int, item_type: int) -> bool:
         """Check if items has the same type with the base item.
@@ -114,13 +239,13 @@ class DuplicationCheck:
 
         :param item_type: The type to be examined
         :type item_type: int
-        :raises Exception: Wrong geometry object type, perhaps a mistake made in development.
+        :raises ValueError: Wrong geometry object type, perhaps a mistake made in development.
         :return: True if valid
         :rtype: bool
         """
         valid = item_type in TYPE_INDEX
         if not valid:
-            raise Exception(
+            raise ValueError(
                 "Wrong geometry object type, perhaps a mistake made in development."
             )
         return valid
@@ -142,15 +267,57 @@ class DuplicationCheck:
         Check if a value already exits in the index
         :param item_value: value to be examined.
         """
-        for _, item in component_lib.items():
-            if self.check_type_coincide(item["type"], item_type):
-                if self.check_value_repetition(item["value"], item_value):
-                    # return False, item[f"{TYPE_INDEX[item_type]}"]
-                    return False, component_container[item["id"]]
+        if (not ENABLE_SQL_DATABASE) and (not ENABLE_SHELF):
+            for _, item in component_lib.items():
+                if self.check_type_coincide(item["type"], item_type):
+                    if self.check_value_repetition(item["value"], item_value):
+                        # return False, item[f"{TYPE_INDEX[item_type]}"]
+                        return False, component_container[item["id"]]
+        elif not ENABLE_SHELF:
+            obj_type = TYPE_INDEX[item_type]
+            local_conn = sqlite3.connect(db_path)
+            local_c = conn.cursor()
+            local_c.execute(
+                f"""
+                    SELECT gid, value FROM {obj_type}"""
+            )
+            rows = local_c.fetchall()
+            components = {}
+            for row in rows:
+                gid, value_blob = row
+                obj = pickle.loads(value_blob)
+                components.update({gid: obj})
+
+            for gid, item in components.items():
+                if self.check_value_repetition(item, item_value):
+                    local_c.execute(
+                        f"""SELECT obj FROM {obj_type} WHERE gid = ?""", (gid,)
+                    )
+                    exist_obj = pickle.loads(local_c.fetchone()[0])
+                    return False, exist_obj  # BUG: Recursion Problem.
+            local_conn.close()
+        else:
+            for local_key, local_value in bcad_shelf.items():
+                try:
+                    local_key = int(local_key)
+                except:
+                    continue
+                dict_db = dict(bcad_shelf)
+                it_value = local_value["info"]["value"]
+                it_type = local_value["info"]["type"]
+                it_obj = local_value["obj"]
+                if self.check_type_coincide(it_type, item_type):
+                    if self.check_value_repetition(it_value, item_value):
+                        exist_obj = it_obj
+                        return False, exist_obj
+
         return True, None
 
 
 class TopoObj:
+    # Class-level attribute to indicate deserialization
+    _is_deserializing = False
+
     def __init__(self) -> None:
         """
         TopoObj
@@ -178,6 +345,7 @@ class TopoObj:
         self.belong = {}
         self.property = {}
         self.property_enriched = False
+        self.re_init = False
 
     def __str__(self) -> str:
         own = ""
@@ -197,25 +365,35 @@ class TopoObj:
                 else:
                     belong += f"{item_id}({item_type})"
         if self.type == 0:
-            value = str(self.value) + "(coordinate)"
+            local_value = str(self.value) + "(coordinate)"
         else:
-            value = str(self.value) + "(IDs)"
-        doc = f"\033[1mType\033[0m: {TYPE_INDEX[self.type]}\n\033[1mID\033[0m: {self.id}\n\033[1mValue\033[0m: {value}\n\033[1mOwn\033[0m: {own}\n\033[1mBelong\033[0m: {belong}\n"
+            local_value = str(self.value) + "(IDs)"
+        doc = f"\033[1mType\033[0m: {TYPE_INDEX[self.type]}\n\033[1mID\033[0m: {self.id}\n\033[1mValue\033[0m: {local_value}\n\033[1mOwn\033[0m: {own}\n\033[1mBelong\033[0m: {belong}\n"
         return doc
 
-    def __getstate__(self):
-        attributes = self.__dict__.copy()
-        return attributes
+    # def __getstate__(self):
+    #     # Automatically handle most of the state
+    #     state = self.__dict__.copy()
+    #     # Maybe modify the state or add something extra
+    #     state["extra"] = "Extra data"
+
+    #     return state
+
+    # def __setstate__(self, state):
+    #     self._is_deserializing = True
+    #     # Restore the instance attributes
+    #     self.__dict__.update(state)
+    #     # Restore the class attributes
 
     def enrich_property(self, new_property: dict):
         """Enrich the property out of the basic property.
 
         :param new_property: A dictionary containing new properties and their values.
         :type new_property: dict
-        :raises Exception: New properties override existing properties.
+        :raises ValueError: New properties override existing properties.
         """
         if new_property in self.property.items():
-            raise Exception("New properties override existing properties.")
+            raise ValueError("New properties override existing properties.")
         self.property.update(new_property)
         self.property_enriched = True
 
@@ -245,7 +423,7 @@ class TopoObj:
         :type property_value: any
         """
         if property_key not in self.property:
-            raise Exception(f"Unrecognized property key: {property_key}.")
+            raise ValueError(f"Unrecognized property key: {property_key}.")
         self.property.update({property_key: property_value})
 
     def register_item(self) -> int:
@@ -254,22 +432,31 @@ class TopoObj:
         :param item_value: value to be registered.
         """
         # new, old_id = self.new_item(self.value, self.type)
-        global count_id
-        global count_gid
-        # if new:
-        if isinstance(count_id, int):
-            self.id = count_id
-            count_id += 1
+        if (not ENABLE_SQL_DATABASE) and (not ENABLE_SHELF):
+            global count_id
+            global count_gid
+            # if new:
+            if isinstance(count_id, int):
+                self.id = count_id
+                count_id += 1
+            else:
+                self.id = count_id.value
+                count_id.value += 1
+            self.gid = count_gid[self.type]
+            count_gid[self.type] += 1
+            self.update_basic_property()
+            component_lib.update({self.id: self.property})
+            self.update_component_container()
+        elif not ENABLE_SHELF:
+            self.update_basic_property()
+            self.id, self.gid = store_obj_to_db(TYPE_INDEX[self.type], self)
         else:
-            self.id = count_id.value
-            count_id.value += 1
-        self.gid = count_gid[self.type]
-        count_gid[self.type] += 1
-        self.update_basic_property()
-        component_lib.update({self.id: self.property})
-        self.update_component_container()
+            self.id = get_next_id(bcad_shelf)
+            self.update_basic_property()
+            self.id = add_entry(bcad_shelf, {"info": self.property, "obj": self})
+
         # Logging the registration
-        logging.debug(f"Register {TYPE_INDEX[self.type]}: {self.id}")
+        logging.debug("Registered %s: %s", TYPE_INDEX[self.type], self.id)
         return self.id
         # else:
         #     return old_id
@@ -286,6 +473,18 @@ class TopoObj:
                     item.belong[self.type].append(self.id)
             else:
                 item.belong.update({self.type: [self.id]})
+        if ENABLE_SQL_DATABASE:
+            local_conn = sqlite3.connect(db_path)
+            local_c = conn.cursor()
+            obj = pickle.dumps(self)
+            local_c.execute(
+                f"UPDATE {TYPE_INDEX[self.type]} SET obj = ? WHERE gid = ?",
+                (obj, self.gid),
+            )
+            local_conn.commit()
+            local_conn.close()
+        if ENABLE_SHELF:
+            bcad_shelf[str(self.gid)] = self.property
         # self.update_basic_property()
         # self.update_component_lib()
 
@@ -295,7 +494,9 @@ class Pnt(TopoObj):
     Create a point.
     """
 
-    def __new__(cls, coord: list = []) -> None:
+    def __new__(cls, coord: list = [], loading_state=None) -> None:
+        if cls._is_deserializing:
+            return super().__new__(cls)
         point = pnt(coord)
         checker = DuplicationCheck(0, point)
         if checker.new:
@@ -305,22 +506,48 @@ class Pnt(TopoObj):
         else:
             return checker.exist_object
 
-    def __init__(self, coord: list = []) -> None:
-        if self.re_init:
+    def __init__(self, coord: list = [], loading_state=None) -> None:
+        if self._is_deserializing:
+            for key, value in loading_state.items():
+                setattr(self, key, value)
+        elif self.re_init:
             return
-        super().__init__()
-        self.re_init = False
-        self.type = 0
-        self.coord = pnt(coord)
-        self.value = self.coord
-        if ENABLE_OCC:
-            self.occ_pnt = gp_Pnt(*self.coord.tolist())
-            self.enrich_property({"occ_pnt": self.occ_pnt})
-        self.id = self.register_item()
+        else:
+            super().__init__()
+            self.re_init = False
+            self.type = 0
+            self.coord = pnt(coord)
+            self.value = self.coord
+            if ENABLE_OCC:
+                self.occ_pnt = gp_Pnt(*self.coord.tolist())
+                self.enrich_property({"occ_pnt": self.occ_pnt})
+            self.id = self.register_item()
+
+    @classmethod
+    def my_custom_reconstructor(cls, state_dict):
+        # Set the flag to indicate deserialization is in progress
+        cls._is_deserializing = True
+        # Create a new instance (which calls __new__ and then __init__)
+        instance = cls(loading_state=state_dict)
+        # Reset the flag to avoid affecting other instantiations
+        # Apply the saved state
+        instance.__dict__.update(state_dict)
+        cls._is_deserializing = False
+        return instance
+
+    def __reduce__(self):
+        return (self.my_custom_reconstructor, (self.__dict__,))
 
 
 class Segment(TopoObj):
-    def __new__(cls, pnt1: Union[Pnt, int] = Pnt([]), pnt2: Union[Pnt, int] = Pnt([1])):
+    def __new__(
+        cls,
+        pnt1: Union[Pnt, int] = Pnt([]),
+        pnt2: Union[Pnt, int] = Pnt([1]),
+        loading_state=None,
+    ):
+        if cls._is_deserializing:
+            return super().__new__(cls)
         if isinstance(pnt1, int):
             pnt1 = component_container[pnt1]
         if isinstance(pnt2, int):
@@ -334,59 +561,106 @@ class Segment(TopoObj):
             return checker.exist_object
 
     def __init__(
-        self, pnt1: Union[Pnt, int] = Pnt([]), pnt2: Union[Pnt, int] = Pnt([1])
+        self,
+        pnt1: Union[Pnt, int] = Pnt([]),
+        pnt2: Union[Pnt, int] = Pnt([1]),
+        loading_state=None,
     ) -> None:
-        if self.re_init:
+        if self._is_deserializing:
+            for key, value in loading_state.items():
+                setattr(self, key, value)
+        elif self.re_init:
             return
-        super().__init__()
-        if isinstance(pnt1, int):
-            pnt1 = component_container[pnt1]
-        if isinstance(pnt2, int):
-            pnt2 = component_container[pnt2]
-        self.re_init = False
-        pnt1, pnt2 = self.check_input(pnt1=pnt1, pnt2=pnt2)
-        self.start_pnt = pnt1.id
-        self.end_pnt = pnt2.id
-        self.vector = pnt2.value - pnt1.value
-        self.length = np.linalg.norm(self.vector)
-        self.normal = self.vector / self.length
-        self.type = 1
-        self.value = [self.start_pnt, self.end_pnt]
-        self.raw_value = [
-            component_lib[self.start_pnt]["value"],
-            component_lib[self.end_pnt]["value"],
-        ]
-        if ENABLE_OCC:
-            self.occ_edge = occh.create_edge(pnt1.occ_pnt, pnt2.occ_pnt)
-            self.enrich_property({"occ_edge": self.occ_edge})
-        self.enrich_property(
-            {
-                "vector": self.vector,
-                "length": self.length,
-                "normal": self.normal,
-            }
-        )
-        self.register_item()
-        self.update_dependency(pnt1, pnt2)
+        else:
+            super().__init__()
+            if isinstance(pnt1, int):
+                if not ENABLE_SQL_DATABASE and not ENABLE_SHELF:
+                    pnt1 = component_container[pnt1]
+                elif not ENABLE_SHELF:
+                    pass
+                else:
+                    pnt1 = bcad_shelf[str(pnt1)]["obj"]
+            if isinstance(pnt2, int):
+                if not ENABLE_SQL_DATABASE and not ENABLE_SHELF:
+                    pnt2 = component_container[pnt2]
+                elif not ENABLE_SHELF:
+                    pass
+                else:
+                    pnt2 = bcad_shelf[str(pnt2)]["obj"]
+            self.raw_value = [pnt1.value, pnt2.value]
+            self.re_init = False
+            pnt1, pnt2 = self.check_input(pnt1=pnt1, pnt2=pnt2)
+            self.start_pnt = pnt1.id
+            self.end_pnt = pnt2.id
+            self.vector = pnt2.value - pnt1.value
+            self.length = np.linalg.norm(self.vector)
+            self.normal = self.vector / self.length
+            self.type = 1
+            self.value = [self.start_pnt, self.end_pnt]
+            if ENABLE_OCC:
+                self.occ_edge = occh.create_edge(pnt1.occ_pnt, pnt2.occ_pnt)
+                self.enrich_property({"occ_edge": self.occ_edge})
+            self.enrich_property(
+                {
+                    "vector": self.vector,
+                    "length": self.length,
+                    "normal": self.normal,
+                }
+            )
+            self.register_item()
+            self.update_dependency(pnt1, pnt2)
 
     def check_input(self, pnt1: Pnt, pnt2: Pnt) -> tuple:
+        if not ENABLE_SQL_DATABASE and not ENABLE_SHELF:
+            component_info = component_lib
+            component_bucket = component_container
+        elif not ENABLE_SHELF:
+            component_info = {}
+            component_bucket = {}
+        else:
+            component_info = {}
+            component_bucket = {}
+            for local_key, local_value in bcad_shelf.items():
+                try:
+                    local_key = int(local_key)
+                except:
+                    continue
+                it_obj = local_value["obj"]
+                it_key = int(local_key)
+                component_info.update({it_key: local_value["info"]})
+                component_bucket.update({it_key: it_obj})
         if type(pnt2) is int:
-            if pnt2 not in component_lib:
-                raise Exception(f"Unrecognized point id: {pnt2}.")
+            if pnt2 not in component_info:
+                raise ValueError(f"Unrecognized point id: {pnt2}.")
             # pnt2 = component_lib[pnt2]["point"]
-            pnt2 = component_container[pnt2]
+            pnt2 = component_bucket[pnt2]
         if type(pnt1) is int:
-            if pnt1 not in component_lib:
-                raise Exception(f"Unrecognized point id: {pnt1}.")
+            if pnt1 not in component_info:
+                raise ValueError(f"Unrecognized point id: {pnt1}.")
             # pnt1 = component_lib[pnt1]["point"]
-            pnt1 = component_container[pnt1]
+            pnt1 = component_bucket[pnt1]
         if not isinstance(pnt1, Pnt):
-            raise Exception(f"Wrong type of point: {type(pnt1)}.")
+            raise ValueError(f"Wrong type of point: {type(pnt1)}.")
         if not isinstance(pnt2, Pnt):
-            raise Exception(f"Wrong type of point: {type(pnt2)}.")
+            raise ValueError(f"Wrong type of point: {type(pnt2)}.")
         if pnt1.id == pnt2.id:
-            raise Exception(f"Start point and end point are the same: {pnt1.id}.")
+            raise ValueError(f"Start point and end point are the same: {pnt1.id}.")
         return pnt1, pnt2
+
+    @classmethod
+    def my_custom_reconstructor(cls, state_dict):
+        # Set the flag to indicate deserialization is in progress
+        cls._is_deserializing = True
+        # Create a new instance (which calls __new__ and then __init__)
+        instance = cls(loading_state=state_dict)
+        # Reset the flag to avoid affecting other instantiations
+        # Apply the saved state
+        instance.__dict__.update(state_dict)
+        cls._is_deserializing = False
+        return instance
+
+    def __reduce__(self):
+        return (self.my_custom_reconstructor, (self.__dict__,))
 
 
 class Wire(TopoObj):

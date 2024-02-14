@@ -2,4 +2,8 @@ import logging
 
 ENABLE_OCC = True
 ENABLE_CONCURRENT_MODE = False
+ENABLE_SQL_DATABASE = False
+ENABLE_SHELF = True
+if ENABLE_SQL_DATABASE + ENABLE_SHELF == 2:
+    raise ValueError("ENABLE_SQL_DATABASE and ENABLE_SHELF cannot be both True")
 LOG_LEVEL = logging.INFO
