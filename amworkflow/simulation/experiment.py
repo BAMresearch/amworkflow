@@ -345,6 +345,7 @@ class ExperimentStructure(Experiment):
                     entity_dim=self.mesh.topology.dim - 1,  # surface
                 )
                 # one point in all dirc and one in z direction fixed
+                print('bc points: ', self.min_x, self.min_y, self.min_z, 'and', self.max_x, self.min_y, self.min_z)
                 bc_generator.add_dirichlet_bc(
                     np.array([0.0, 0.0, 0.0], dtype=ScalarType),
                     boundary=point_at([self.min_x, self.min_y, self.min_z]),
@@ -394,6 +395,7 @@ class ExperimentStructure(Experiment):
                     entity_dim=self.mesh.topology.dim - 1,  # surface
                 )
                 #
+                print('bc points: ', self.min_x, self.min_y, self.min_z, 'and', self.min_x, self.max_y, self.min_z)
                 bc_generator.add_dirichlet_bc(
                     np.array([0.0, 0.0, 0.0], dtype=ScalarType),
                     boundary=point_at([self.min_x, self.min_y, self.min_z]),

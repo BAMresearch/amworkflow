@@ -186,6 +186,21 @@ class GeometryParamWall(GeometryOCC):
             )
             points = [[0,0,0],[0,0,0]]
 
+        elif self.infill == "no":
+            W = self.width
+            L = self.length
+            t= self.line_width
+            points = [[0., 0., 0.],
+                      [0., (W - t) / 2, 0.],
+                      [(L - t), (W - t) / 2, 0.],
+                      [(L - t), -(W - t) / 2, 0.],
+                      [0., -(W - t) / 2, 0.]]
+
+            creator = composite_geometries.CreateWallByPoints(
+                points, th=self.line_width, height=self.height
+            )
+            shape = creator.Shape()
+
         elif self.infill == "honeycomb":
             points = self.honeycomb_infill(self.length, self.width, self.line_width)
             creator = composite_geometries.CreateWallByPoints(
