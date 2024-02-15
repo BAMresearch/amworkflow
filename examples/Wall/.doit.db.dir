@@ -1,4 +1,4 @@
 'create_design', (1024, 109)
-'structure_simulation_disp_x', (6144, 1402)
-'meshing', (9216, 1326)
-'structure_simulation_disp_y', (12288, 625)
+'structure_simulation_disp_x', (6144, 1405)
+'meshing', (9216, 1328)
+'structure_simulation_disp_y', (13312, 1263)

@@ -138,11 +138,11 @@ class SimulationFenicsXConcrete(Simulation):
             if self.pint_parameters["bc_setting"].magnitude == "compr_disp_y":
                 force_y = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 1].min()
                 u_max = d_disp
-                print('equivalent modulus', force_y/(u_max*0.15))
+                print('equivalent modulus', force_y/(u_max*0.15)*10**(-6))
             elif self.pint_parameters["bc_setting"].magnitude == "compr_disp_x":
                 force_y = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 0].min()
                 u_max = d_disp
-                print('equivalent modulus', force_y/(u_max*0.15))
+                print('equivalent modulus', force_y/(u_max*0.15)*10**(-6))
 
             # save sensor output as csv file for postprocessing
             if experiment.p["bc_setting"] == "compr_disp_x" or experiment.p["bc_setting"] == "compr_disp_y":
