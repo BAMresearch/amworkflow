@@ -2,6 +2,7 @@ import inspect
 import logging
 import os
 import pickle
+import platform
 from pprint import pprint
 from typing import Union
 
@@ -16,6 +17,13 @@ from amworkflow.config.settings import (
     ENABLE_SHELF,
     ENABLE_SQL_DATABASE,
     LOG_LEVEL,
+    STORAGE_PATH,
+)
+
+STATUS = (
+    "memory"
+    if (not ENABLE_SQL_DATABASE and not ENABLE_SHELF)
+    else ("database" if ENABLE_SQL_DATABASE else "shelf")
 )
 
 # Import multiprocessing and initialize the start method to 'fork' if concurrent mode is enabled. this also means the code will only be suitable for Unix-like systems.
@@ -65,7 +73,8 @@ if ENABLE_SQL_DATABASE:
     logger.debug("SQL Database is enabled.")
     import sqlite3
 
-    db_path = os.path.join(os.getcwd(), "bcad_sql.db")
+    db_name = "bcad_sql"
+    db_path = os.path.join(STORAGE_PATH, f"{db_name}.db")
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     # Create the modified 'objects' table to store only Oid references
@@ -73,7 +82,8 @@ if ENABLE_SQL_DATABASE:
         """CREATE TABLE IF NOT EXISTS objects
                 (id INTEGER PRIMARY KEY AUTOINCREMENT, 
                 object_type TEXT, 
-                gid INTEGER)"""
+                gid INTEGER,
+                property BLOB)"""
     )
 
     # Create tables for each type of object
@@ -81,14 +91,16 @@ if ENABLE_SQL_DATABASE:
         c.execute(
             f"""CREATE TABLE IF NOT EXISTS {value}
                     (gid INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    id INTEGER,
                     value BLOB,
-                    obj BLOB)"""
+                    obj BLOB,
+                    FOREIGN KEY (id) REFERENCES objects(id) ON DELETE CASCADE)"""
         )
     logger.debug("Database created successfully.")
     conn.commit()
     conn.close()
 
-    def store_obj_to_db(obj_type: str, obj: any) -> tuple:
+    def store_obj_to_db(obj_type: str, obj: any, obj_property: dict) -> tuple:
         """
         Insert an object to the database and return its id.
         :param obj_type: The type of the object to be inserted.
@@ -98,26 +110,56 @@ if ENABLE_SQL_DATABASE:
         :return: The id, gid of the object.
         :rtype: tuple
         """
+        oid, gid = get_last_id_from_db(table=obj_type, gid=True)
+        obj.id = oid + 1
+        obj.gid = gid + 1
         if obj_type not in TYPE_INDEX.values():
             raise ValueError(f"Unrecognized object type: {obj_type}.")
         local_conn = sqlite3.connect(db_path)
-        local_c = conn.cursor()
+        local_c = local_conn.cursor()
+
         local_value = obj.value
         local_c.execute(
-            f"INSERT INTO {obj_type} (obj, value) VALUES (?,?)",
-            (pickle.dumps(obj), pickle.dumps(local_value)),
+            f"INSERT INTO {obj_type} (obj, value, id) VALUES (?,?,?)",
+            (pickle.dumps(obj), pickle.dumps(local_value), obj.id),
         )
-        gid = local_c.lastrowid
         local_c.execute(
-            "INSERT INTO objects (object_type, gid) VALUES (?,?)",
-            (obj_type, gid),
+            "INSERT INTO objects (object_type, gid, property) VALUES (?,?,?)",
+            (
+                obj_type,
+                gid,
+                pickle.dumps(obj_property),
+            ),
         )
-        oid = local_c.lastrowid
         local_conn.commit()
         local_conn.close()
         return oid, gid
 
-    def get_obj_from_db(oid: int) -> any:
+    def get_last_id_from_db(table: str = "", gid: bool = False) -> int:
+        """
+        Get the last id from the database.
+        :return: The last id from the database.
+        :rtype: int
+        """
+        local_conn = sqlite3.connect(db_path)
+        local_c = local_conn.cursor()
+        local_c.execute("SELECT MAX(id) FROM objects")
+        last_id = local_c.fetchone()[0]
+        if last_id is None:
+            last_id = 0
+        if gid:
+            local_c.execute(f"SELECT MAX(gid) FROM {table}")
+            last_gid = local_c.fetchone()[0]
+            local_conn.close()
+            if last_gid is None:
+                last_gid = 0
+            return last_id, last_gid
+        local_conn.close()
+        return last_id
+
+    def get_obj_from_db(
+        oid: int = None, it_value: list = None, obj_type: str = None
+    ) -> any:
         """
         Get an object from the database by its id.
         :param oid: The id of the object to be retrieved.
@@ -127,26 +169,179 @@ if ENABLE_SQL_DATABASE:
         """
         local_conn = sqlite3.connect(db_path)
         local_c = conn.cursor()
-        local_c.execute("SELECT object_type FROM objects WHERE id = ?", (oid,))
-        obj_type = local_c.fetchone()[0]
-        local_c.execute(
-            f"""SELECT {obj_type}.obj
-                    FROM objects
-                    INNER JOIN {obj_type} ON objects.gid = point.gid
-                    WHERE objects.id = ?)"""
-        )
-        row = local_c.fetchone()
-        if row:
-            obj = pickle.loads(row[0])
-        local_conn.close()
+        if oid is not None:
+            local_c.execute("SELECT object_type FROM objects WHERE id = ?", (oid,))
+            obj_type = local_c.fetchone()[0]
+            local_c.execute(
+                f"""SELECT {obj_type}.obj
+                        FROM objects
+                        INNER JOIN {obj_type} ON objects.gid = point.gid
+                        WHERE objects.id = ?)"""
+            )
+            row = local_c.fetchone()
+            if row:
+                obj = pickle.loads(row[0])
+            local_conn.close()
+        elif it_value is not None:
+            local_c.execute(
+                f"""SELECT {obj_type}.obj
+                        FROM {obj_type}
+                        WHERE {obj_type}.value = ?)""",
+                (pickle.dumps(it_value),),
+            )
+            row = local_c.fetchone()
+            if row:
+                obj = pickle.loads(row[0])
+            local_conn.close()
+        else:
+            local_c.execute(
+                f"""SELECT {obj_type}.obj
+                        FROM {obj_type}
+                        INNER JOIN objects ON {obj_type}.gid = objects.gid
+                        """
+            )
+            rows = local_c.fetchall()
+            local_conn.close()
+            for row in rows:
+                obj = pickle.loads(row[0])
+                yield obj
         return obj
+
+    def get_property_from_db(oid: int = None) -> dict:
+        """
+        Get the property of an object from the database by its id.
+        :param oid: The id of the object to be retrieved.
+        :type oid: int
+        :return: The property of the object retrieved.
+        :rtype: dict
+        """
+        local_conn = sqlite3.connect(db_path)
+        local_c = conn.cursor()
+        if int is not None:
+            local_c.execute("SELECT property FROM objects WHERE id = ?", (oid,))
+            it_property = pickle.loads(local_c.fetchone()[0])
+        else:
+            local_c.execute("SELECT property FROM objects")
+            rows = local_c.fetchall()
+            it_property = {}
+            for row in rows:
+                it_property.update(pickle.loads(row[0]))
+        local_conn.close()
+        return it_property
+
+    def update_obj_in_db(
+        obj: any, obj_property: dict, oid: int = None, obj_type: str = None
+    ):
+        """
+        Update an object in the database.
+        :param oid: The id of the object to be updated.
+        :type oid: int
+        :param obj: The object to be updated.
+        :type obj: any
+        :param obj_property: The property of the object to be updated.
+        :type obj_property: dict
+        """
+        local_conn = sqlite3.connect(db_path)
+        local_c = conn.cursor()
+        if oid is None:
+            oid = obj.id
+        if obj_type is None:
+            obj_type = TYPE_INDEX[obj.type]
+        local_c.execute(
+            "UPDATE objects SET property = ? WHERE id = ?",
+            (pickle.dumps(obj_property), oid),
+        )
+        local_c.execute(
+            f"UPDATE {obj_type} SET obj = ? WHERE gid = ?", (pickle.dumps(obj), obj.gid)
+        )
+        local_conn.commit()
+        local_conn.close()
+
+    def delete_obj_from_db(oid: int):
+        """
+        Delete an object from the database.
+        :param oid: The id of the object to be deleted.
+        :type oid: int
+        """
+        local_conn = sqlite3.connect(db_path)
+        local_c = local_conn.cursor()
+        local_c.execute("DELETE FROM objects WHERE id = ?", (oid,))
+
+    def delete_sql_db_file(db_name):
+        # Construct the full filename including the extension
+        db_file = f"{db_name}.db"
+        db_path = os.path.join(STORAGE_PATH, db_file)
+        # Check if the file exists and delete it
+        try:
+            if os.path.exists(db_path):
+                os.remove(db_path)
+                print(f"Deleted database file: {db_file}")
+            else:
+                print(f"Database file {db_file} does not exist and cannot be deleted.")
+        except Exception as ex:
+            print(f"Error deleting database file {db_file}: {ex}")
 
 
 if ENABLE_SHELF:
-    logger.debug("DBM Database is enabled.")
     import shelve
 
-    shelf_path = os.path.join(os.getcwd(), "bcad_shelf")
+    logger.debug("Shelf is enabled.")
+
+    def check_shelve_db_exists(shelve_name):
+        # Determine the current operating system
+        os_name = platform.system()
+        # Define file extensions based on the operating system
+        if os_name == "Darwin":  # macOS
+            files_to_check = [f"{shelve_name}.db"]
+        elif os_name == "Linux":
+            files_to_check = [
+                f"{shelve_name}.dat",
+                f"{shelve_name}.dir",
+            ]
+        else:
+            raise NotImplementedError(f"OS {os_name} not supported.")
+
+        # Check if all required files exist
+        return all(
+            os.path.exists(os.path.join(STORAGE_PATH, file)) for file in files_to_check
+        )
+
+    def delete_shelve_db_files(shelve_name):
+        # Determine the current operating system
+        os_name = platform.system()
+        # Start with the common file extensions
+        if os_name == "Darwin":  # macOS
+            files_to_delete = [
+                f"{shelve_name}.db"
+            ]  # macOS typically uses a single .db file
+        elif os_name == "Linux" or os_name == "Windows":
+            # For Linux and Windows, start with .dat and .dir which are commonly used
+            files_to_delete = [f"{shelve_name}.dat", f"{shelve_name}.dir"]
+        else:
+            raise NotImplementedError(f"OS {os_name} not supported.")
+
+        # Always check for a .bak file regardless of the OS
+        bak_file = f"{shelve_name}.bak"
+        if os.path.exists(os.path.join(STORAGE_PATH, bak_file)):
+            files_to_delete.append(bak_file)
+
+        # Delete the files
+        for file in files_to_delete:
+            try:
+                if os.path.exists(os.path.join(STORAGE_PATH, file)):
+                    os.remove(file)
+                    print(f"Deleted {file}")
+                else:
+                    print(f"{file} does not exist and cannot be deleted.")
+            except Exception as e:
+                print(f"Error deleting {file}: {e}")
+
+    shelve_name = "bcad_shelf"  # Without the extension
+    if check_shelve_db_exists(shelve_name):
+        logger.debug("Shelve database exists.")
+    else:
+        logger.debug("Shelve database does not exist. Creating...")
+    shelf_path = os.path.join(STORAGE_PATH, shelve_name)
     bcad_shelf = shelve.open(shelf_path, "c")
     logger.debug("Shelf database created successfully.")
 
@@ -166,6 +361,45 @@ if ENABLE_SHELF:
         db[str(next_id)] = data
         get_next_id(db, update=True)
         return next_id
+
+    def get_entry(db: shelve.Shelf, oid: int = None):
+        """Get  an entry from the shelf. If oid is not specified, return all entries.
+
+        :param db: shelf specified
+        :type db: Shelve
+        :param oid: id of the entry
+        :type oid: int
+        """
+        if oid is not None:
+            return db[str(oid)]
+        else:
+            for local_key, local_value in bcad_shelf.items():
+                try:
+                    local_key = int(local_key)
+                except:
+                    continue
+                yield local_value
+
+    def update_entry(db: shelve.Shelf, oid: int, obj: any):
+        """Update an entry in the shelf.
+
+        :param db: shelf specified
+        :type db: Shelve
+        :param oid: id of the entry
+        :type oid: int
+        :param data: data to be updated
+        :type data: any
+        """
+        db[str(oid)] = {"info": obj.property, "obj": obj}
+
+
+def clean_up():
+    if ENABLE_SQL_DATABASE:
+        conn.close()
+        delete_sql_db_file(db_name)
+    if ENABLE_SHELF:
+        bcad_shelf.close()
+        delete_shelve_db_files(shelve_name)
 
 
 def pnt(pt_coord) -> np.ndarray:
@@ -267,50 +501,43 @@ class DuplicationCheck:
         Check if a value already exits in the index
         :param item_value: value to be examined.
         """
-        if (not ENABLE_SQL_DATABASE) and (not ENABLE_SHELF):
-            for _, item in component_lib.items():
-                if self.check_type_coincide(item["type"], item_type):
-                    if self.check_value_repetition(item["value"], item_value):
-                        # return False, item[f"{TYPE_INDEX[item_type]}"]
-                        return False, component_container[item["id"]]
-        elif not ENABLE_SHELF:
-            obj_type = TYPE_INDEX[item_type]
-            local_conn = sqlite3.connect(db_path)
-            local_c = conn.cursor()
-            local_c.execute(
-                f"""
-                    SELECT gid, value FROM {obj_type}"""
-            )
-            rows = local_c.fetchall()
-            components = {}
-            for row in rows:
-                gid, value_blob = row
-                obj = pickle.loads(value_blob)
-                components.update({gid: obj})
+        match STATUS:
+            case "memory":
+                for _, item in component_lib.items():
+                    if self.check_type_coincide(item["type"], item_type):
+                        if self.check_value_repetition(item["value"], item_value):
+                            return False, component_container[item["id"]]
+            case "database":
+                obj_type = TYPE_INDEX[item_type]
+                local_conn = sqlite3.connect(db_path)
+                local_c = local_conn.cursor()
+                local_c.execute(
+                    f"""
+                        SELECT gid, value FROM {obj_type}"""
+                )
+                rows = local_c.fetchall()
+                components = {}
+                for row in rows:
+                    gid, value_blob = row
+                    obj = pickle.loads(value_blob)
+                    components.update({gid: obj})
 
-            for gid, item in components.items():
-                if self.check_value_repetition(item, item_value):
-                    local_c.execute(
-                        f"""SELECT obj FROM {obj_type} WHERE gid = ?""", (gid,)
-                    )
-                    exist_obj = pickle.loads(local_c.fetchone()[0])
-                    return False, exist_obj  # BUG: Recursion Problem.
-            local_conn.close()
-        else:
-            for local_key, local_value in bcad_shelf.items():
-                try:
-                    local_key = int(local_key)
-                except:
-                    continue
-                dict_db = dict(bcad_shelf)
-                it_value = local_value["info"]["value"]
-                it_type = local_value["info"]["type"]
-                it_obj = local_value["obj"]
-                if self.check_type_coincide(it_type, item_type):
-                    if self.check_value_repetition(it_value, item_value):
-                        exist_obj = it_obj
-                        return False, exist_obj
-
+                for gid, item in components.items():
+                    if self.check_value_repetition(item, item_value):
+                        local_c.execute(
+                            f"""SELECT obj FROM {obj_type} WHERE gid = ?""", (gid,)
+                        )
+                        exist_obj = pickle.loads(local_c.fetchone()[0])
+                        return False, exist_obj  # BUG: Recursion Problem.
+                local_conn.close()
+            case "shelf":
+                for it_value in get_entry(bcad_shelf):
+                    if self.check_type_coincide(it_value["info"]["type"], item_type):
+                        if self.check_value_repetition(
+                            it_value["info"]["value"], item_value
+                        ):
+                            exist_obj = it_value["obj"]
+                            return False, exist_obj
         return True, None
 
 
@@ -432,28 +659,31 @@ class TopoObj:
         :param item_value: value to be registered.
         """
         # new, old_id = self.new_item(self.value, self.type)
-        if (not ENABLE_SQL_DATABASE) and (not ENABLE_SHELF):
-            global count_id
-            global count_gid
-            # if new:
-            if isinstance(count_id, int):
-                self.id = count_id
-                count_id += 1
-            else:
-                self.id = count_id.value
-                count_id.value += 1
-            self.gid = count_gid[self.type]
-            count_gid[self.type] += 1
-            self.update_basic_property()
-            component_lib.update({self.id: self.property})
-            self.update_component_container()
-        elif not ENABLE_SHELF:
-            self.update_basic_property()
-            self.id, self.gid = store_obj_to_db(TYPE_INDEX[self.type], self)
-        else:
-            self.id = get_next_id(bcad_shelf)
-            self.update_basic_property()
-            self.id = add_entry(bcad_shelf, {"info": self.property, "obj": self})
+        match STATUS:
+            case "memory":
+                global count_id
+                global count_gid
+                # if new:
+                if isinstance(count_id, int):
+                    self.id = count_id
+                    count_id += 1
+                else:
+                    self.id = count_id.value
+                    count_id.value += 1
+                self.gid = count_gid[self.type]
+                count_gid[self.type] += 1
+                self.update_basic_property()
+                component_lib.update({self.id: self.property})
+                self.update_component_container()
+            case "database":
+                self.update_basic_property()
+                self.id, self.gid = store_obj_to_db(
+                    TYPE_INDEX[self.type], self, self.property
+                )
+            case "shelf":
+                self.id = get_next_id(bcad_shelf)
+                self.update_basic_property()
+                self.id = add_entry(bcad_shelf, {"info": self.property, "obj": self})
 
         # Logging the registration
         logging.debug("Registered %s: %s", TYPE_INDEX[self.type], self.id)
@@ -473,9 +703,9 @@ class TopoObj:
                     item.belong[self.type].append(self.id)
             else:
                 item.belong.update({self.type: [self.id]})
-        if ENABLE_SQL_DATABASE:
+        if STATUS == "database":
             local_conn = sqlite3.connect(db_path)
-            local_c = conn.cursor()
+            local_c = local_conn.cursor()
             obj = pickle.dumps(self)
             local_c.execute(
                 f"UPDATE {TYPE_INDEX[self.type]} SET obj = ? WHERE gid = ?",
@@ -484,9 +714,129 @@ class TopoObj:
             local_conn.commit()
             local_conn.close()
         if ENABLE_SHELF:
-            bcad_shelf[str(self.gid)] = self.property
+            bcad_shelf[str(self.id)]["info"] = self.property
+            bcad_shelf[str(self.id)]["obj"] = self
         # self.update_basic_property()
         # self.update_component_lib()
+
+
+def get_from_source(
+    oid: int = None, it_value: list = None, obj_type: str = None, target: str = "object"
+):
+    """A wrapper function to get the object from the source.
+
+    :param oid: The id of the object to be retrieved.
+    :type oid: int
+    :param it_value: The value of the object to be retrieved.
+    :type it_value: list
+    :param obj_type: The type of the object to be retrieved.
+    :type obj_type: str
+    :param target: The target of the retrieval, either "object" or "property".
+    :type target: str
+    :return: The object retrieved.
+    :rtype: any
+    """
+    mode = (
+        "id"
+        if oid is not None
+        else (
+            "value"
+            if it_value is not None
+            else ("type" if obj_type is not None else "all")
+        )
+    )
+    match mode:
+        case "id":
+            match STATUS:
+                case "memory":
+                    if target == "object":
+                        return component_container[oid]
+                    elif target == "property":
+                        return component_lib[oid]
+                case "database":
+                    if target == "object":
+                        return get_obj_from_db(oid=oid)
+                    elif target == "property":
+                        return get_property_from_db(oid=oid)
+                case "shelf":
+                    if target == "object":
+                        return bcad_shelf[str(oid)]["obj"]
+                    elif target == "property":
+                        return bcad_shelf[str(oid)]["info"]
+        case "value":
+            match STATUS:
+                case "memory":
+                    return [
+                        item
+                        for item in component_lib.values()
+                        if item["value"] == it_value
+                    ]
+                case "database":
+                    return get_obj_from_db(it_value=it_value)
+                case "shelf":
+                    return [
+                        item
+                        for item in get_entry(bcad_shelf)
+                        if item["info"]["value"] == it_value
+                    ]
+        case "type":
+            match STATUS:
+                case "memory":
+                    return [
+                        item
+                        for item in component_lib.values()
+                        if item["type"] == TYPE_INDEX[obj_type]
+                    ]
+                case "database":
+                    return get_obj_from_db(obj_type=obj_type)
+                case "shelf":
+                    return [
+                        item
+                        for item in get_entry(bcad_shelf)
+                        if item["info"]["type"] == obj_type
+                    ]
+        case "all":
+            match STATUS:
+                case "memory":
+                    return component_lib
+                case "database":
+                    return get_obj_from_db()
+                case "shelf":
+                    return get_entry(bcad_shelf)
+
+
+def send_to_source(obj: TopoObj, obj_property: dict):
+    """A wrapper function to send the object to the source.
+
+    :param obj: The object to be sent.
+    :type obj: TopoObj
+    :param obj_property: The property of the object to be sent.
+    :type obj_property: dict
+    """
+    match STATUS:
+        case "memory":
+            obj.update_basic_property()
+            obj.update_component_container()
+        case "database":
+            store_obj_to_db(obj.type, obj, obj_property)
+        case "shelf":
+            add_entry(bcad_shelf, {"info": obj_property, "obj": obj})
+
+
+def update_source(obj: TopoObj, obj_property: dict):
+    """A wrapper function to update the source of the object.
+    :param obj: The object to be updated.
+    :type obj: TopoObj
+    :param obj_property: The property of the object to be updated.
+    :type obj_property: dict
+    """
+    match STATUS:
+        case "memory":
+            obj.update_property(obj_property)
+        case "database":
+            update_obj_in_db(obj, obj_property)
+        case "shelf":
+            update_entry(bcad_shelf, obj.id, obj)
 
 
 class Pnt(TopoObj):
@@ -574,19 +924,9 @@ class Segment(TopoObj):
         else:
             super().__init__()
             if isinstance(pnt1, int):
-                if not ENABLE_SQL_DATABASE and not ENABLE_SHELF:
-                    pnt1 = component_container[pnt1]
-                elif not ENABLE_SHELF:
-                    pass
-                else:
-                    pnt1 = bcad_shelf[str(pnt1)]["obj"]
+                get_from_source(oid=pnt1)
             if isinstance(pnt2, int):
-                if not ENABLE_SQL_DATABASE and not ENABLE_SHELF:
-                    pnt2 = component_container[pnt2]
-                elif not ENABLE_SHELF:
-                    pass
-                else:
-                    pnt2 = bcad_shelf[str(pnt2)]["obj"]
+                get_from_source(oid=pnt2)
             self.raw_value = [pnt1.value, pnt2.value]
             self.re_init = False
             pnt1, pnt2 = self.check_input(pnt1=pnt1, pnt2=pnt2)
