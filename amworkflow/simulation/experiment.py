@@ -176,6 +176,18 @@ class ExperimentProcess(Experiment):
 
         return L
 
+    def compute_volume(self) -> float:
+        """Computes the volume of the structure
+
+        Returns:
+            volume of the structure
+
+        """
+        dx = ufl.Measure("dx", domain=self.mesh, metadata={"quadrature_degree": 2})
+        volume = df.fem.assemble_scalar(df.fem.form(1.0 * dx))
+
+        return volume
+
 
 class ExperimentStructure(Experiment):
     """Experiment class for AM structure simulation in the end (after printing).
@@ -279,6 +291,7 @@ class ExperimentStructure(Experiment):
 
         # Attention:
         # normally geometries are defined as x/y and z in height due to AM production z is the direction perpendicular to the layers with is not usually the loading direction
+        # for each defined case please also define the bottom boundary for the reaction force sensor
 
         if self.p["bc_setting"] == "fixed_y":
             # loading displacement controlled in y direction at max_y surface, whereas y-z surface at min_y is full fixed
@@ -473,7 +486,7 @@ class ExperimentStructure(Experiment):
         Returns: fct defining if dof is at boundary
 
         """
-        if self.p["bc_setting"] == "compr_disp_y":
+        if self.p["bc_setting"] == "compr_disp_y" or self.p["bc_setting"] == "fixed_y":
             if self.p["dim"] == 3:
                 # get mesh_points to define boundaries
                 mesh_points = self.mesh.geometry.x
@@ -491,6 +504,18 @@ class ExperimentStructure(Experiment):
 
         else:
             raise ValueError(f"Wrong boundary setting: {self.p['bc_setting']}")
+
+    def compute_volume(self) -> float:
+        """Computes the volume of the structure
+
+        Returns:
+            volume of the structure
+
+        """
+        dx = ufl.Measure("dx", domain=self.mesh, metadata={"quadrature_degree": 2})
+        volume = df.fem.assemble_scalar(df.fem.form(1.0 * dx))
+
+        return volume
 
 
     # def create_body_force(self, v: ufl.argument.Argument) -> ufl.form.Form:

@@ -28,7 +28,7 @@ params = {  # geometry parameters
     "radius": None,  # mm
     "infill": get_var('infill',"zigzag"), # default infill changeable via command line doit -f dodo_wall.py infill=zigzag or solid or honeycomb
     # mesh parameters (meshing by layer height)
-    "line_width": 10,  # mm
+    "line_width": float(get_var('line_width', 11)),  # mm # 11 for zigzag 10 for honeycomb to get same volume reduction
     "mesh_size_factor": float(get_var('mesh_size',4)), # default mesh size factor changeable via command line doit -f dodo_wall.py mesh_size=4
     "layer_height": 10,  # mm
 }
@@ -45,7 +45,7 @@ params_sim_structure = {
     "rho": 0 * ureg("kg/m^3"), # density of the material -> no body force in the moment!
     "E": 33000 * ureg("MPa"), # Young's modulus
     "nu": 0.2 * ureg(""), # Poisson's ratio
-    "bc_setting": "compr_disp_y" * ureg(""), # bc setting for structure simulation
+    #"bc_setting": "compr_disp_y" * ureg(""), # bc setting for structure simulation -> defined in task_structure_simulation_...
     "top_displacement": -1.5 * ureg("mm"), # max displacement of top surface
     "number_steps": 3 * ureg(""), # number of steps for simulation
     "material_type": "linear" * ureg(""), # material type

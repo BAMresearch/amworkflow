@@ -99,6 +99,7 @@ class SimulationFenicsXConcrete(Simulation):
         if self.pint_parameters["experiment_type"].magnitude == "structure":
 
             experiment = ExperimentStructure(self.pint_parameters)
+            print('Volume of design', experiment.compute_volume())
 
             if self.pint_parameters["material_type"].magnitude == "linear":
                 self.problem = LinearElasticity(
@@ -114,11 +115,10 @@ class SimulationFenicsXConcrete(Simulation):
 
             # set sensors
             self.problem.add_sensor(ReactionForceSensor())
-            self.problem.add_sensor(StressSensor(where=experiment.sensor_location_middle_endge, name="stress sensor"))
-            self.problem.add_sensor(StrainSensor(where=experiment.sensor_location_middle_endge, name="strain sensor"))
-            self.problem.add_sensor(DisplacementSensor(where=experiment.sensor_location_corner_top, name="disp top"))
-
-
+            if experiment.p["bc_setting"] == "compr_disp_x" or experiment.p["bc_setting"] == "compr_disp_y":
+                self.problem.add_sensor(StressSensor(where=experiment.sensor_location_middle_endge, name="stress sensor"))
+                self.problem.add_sensor(StrainSensor(where=experiment.sensor_location_middle_endge, name="strain sensor"))
+                self.problem.add_sensor(DisplacementSensor(where=experiment.sensor_location_corner_top, name="disp top"))
 
             for i in range(0,self.pint_parameters["number_steps"].magnitude):
                 d_disp = 0 + (i+1) * self.pint_parameters["top_displacement"] / self.pint_parameters["number_steps"].magnitude
@@ -133,29 +133,29 @@ class SimulationFenicsXConcrete(Simulation):
                 "force_x_y_z",
                 np.array(self.problem.sensors["ReactionForceSensor"].data),self.problem.sensors["ReactionForceSensor"].units
             )
-            print("disp sensor", np.array(self.problem.sensors["disp top"].data))
-            print("stress sensor", np.array(self.problem.sensors["stress sensor"].data))
-            print("strain sensor", np.array(self.problem.sensors["strain sensor"].data))
 
+            ## temporary solution to get equivalent modulus TO BE DELTED
             if self.pint_parameters["bc_setting"].magnitude == "compr_disp_y":
-                force_y = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 1].max()
+                force_y = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 1].min()
                 u_max = d_disp
                 print('equivalent modulus', force_y/(u_max*0.15))
             elif self.pint_parameters["bc_setting"].magnitude == "compr_disp_x":
-                force_y = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 0].max()
+                force_y = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 0].min()
                 u_max = d_disp
                 print('equivalent modulus', force_y/(u_max*0.15))
 
             # save sensor output as csv file for postprocessing
-            sensor_dict = {}
-            sensor_dict["disp_x"] = np.array(self.problem.sensors["disp top"].data)[:, 0]
-            sensor_dict["disp_y"] = np.array(self.problem.sensors["disp top"].data)[:, 1]
-            sensor_dict["disp_z"] = np.array(self.problem.sensors["disp top"].data)[:, 2]
-            sensor_dict["force_x"] = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 0]
-            sensor_dict["force_y"] = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 1]
-            sensor_dict["force_z"] = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 2]
-            df_sensor = pd.DataFrame(sensor_dict)
-            df_sensor.to_csv(out_xdmf.parent / f"{out_xdmf.stem}.csv", index=False)
+            if experiment.p["bc_setting"] == "compr_disp_x" or experiment.p["bc_setting"] == "compr_disp_y":
+                sensor_dict = {}
+                sensor_dict["disp_x"] = np.array(self.problem.sensors["disp top"].data)[:, 0]
+                sensor_dict["disp_y"] = np.array(self.problem.sensors["disp top"].data)[:, 1]
+                sensor_dict["disp_z"] = np.array(self.problem.sensors["disp top"].data)[:, 2]
+                sensor_dict["force_x"] = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 0]
+                sensor_dict["force_y"] = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 1]
+                sensor_dict["force_z"] = np.array(self.problem.sensors["ReactionForceSensor"].data)[:, 2]
+                df_sensor = pd.DataFrame(sensor_dict)
+                print(df_sensor)
+                df_sensor.to_csv(out_xdmf.parent / f"{out_xdmf.stem}.csv", index=False)
 
 
         elif self.pint_parameters["experiment_type"].magnitude == "process":
