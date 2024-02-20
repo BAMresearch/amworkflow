@@ -6,6 +6,7 @@ from dolfinx.io import XDMFFile
 from fenicsxconcrete.boundary_conditions.bcs import BoundaryConditions
 from fenicsxconcrete.boundary_conditions.boundary import (
     plane_at,
+    line_at,
     point_at,
     within_range,
 )
@@ -175,6 +176,18 @@ class ExperimentProcess(Experiment):
 
         return L
 
+    def compute_volume(self) -> float:
+        """Computes the volume of the structure
+
+        Returns:
+            volume of the structure
+
+        """
+        dx = ufl.Measure("dx", domain=self.mesh, metadata={"quadrature_degree": 2})
+        volume = df.fem.assemble_scalar(df.fem.form(1.0 * dx))
+
+        return volume
+
 
 class ExperimentStructure(Experiment):
     """Experiment class for AM structure simulation in the end (after printing).
@@ -276,59 +289,142 @@ class ExperimentStructure(Experiment):
         # define boundary conditions generator
         bc_generator = BoundaryConditions(self.mesh, V)
 
-        if self.p["bc_setting"] == "fixed_y_bottom":
+        # Attention:
+        # normally geometries are defined as x/y and z in height due to AM production z is the direction perpendicular to the layers with is not usually the loading direction
+        # for each defined case please also define the bottom boundary for the reaction force sensor
+        # get mesh_points to define boundaries
+        mesh_points = self.mesh.geometry.x
+        if self.p["dim"] == 3:
+            self.min_x = mesh_points[:, 0].min()
+            self.max_x = mesh_points[:, 0].max()
+            self.min_y = mesh_points[:, 1].min()
+            self.max_y = mesh_points[:, 1].max()
+            self.min_z = mesh_points[:, 2].min()
+            self.max_z = mesh_points[:, 2].max()
+        else:
+            raise ValueError(f"wrong dimension: {self.p['dim']} is not implemented for problem setup")
+
+
+        if self.p["bc_setting"] == "fixed_y":
+            # loading displacement controlled in y direction at max_y surface, whereas y-z surface at min_y is full fixed
             if self.p["dim"] == 3:
-                # normally geometries are defined as x/y and z in height due to AM production here y is the height!!
-                # get mesh_points to define boundaries
-                mesh_points = self.mesh.geometry.x
-                min_y = mesh_points[:, 1].min()
-                max_y = mesh_points[:, 1].max()
-
-                # min_x = mesh_points[:, 0].min()
-                # max_x = mesh_points[:, 0].max()
-                # min_z = mesh_points[:, 2].min()
-                # max_z = mesh_points[:, 2].max()
-
-                print("fix at y=", min_y)
-                print("check points at y_min", mesh_points[mesh_points[:, 1] == min_y])
+                self.logger.info("fix at y= %s", self.min_y)
+                self.logger.debug("check points at y_min %s", mesh_points[mesh_points[:, 1] == self.min_y])
                 # dofs at bottom y_min fixed in x, y and z direction
                 bc_generator.add_dirichlet_bc(
                     np.array([0.0, 0.0, 0.0], dtype=ScalarType),
-                    boundary=plane_at(min_y, 1),
+                    boundary=plane_at(self.min_y, 'y'),
                     method="geometrical",
                     entity_dim=self.mesh.topology.dim - 1,  # surface
                 )
-                # dy = 0.001
-                # bc_generator.add_dirichlet_bc(
-                #     np.array([0.0, 0.0, 0.0], dtype=ScalarType),
-                #     boundary=within_range(
-                #         [min_x, min_y - dy, min_z], [max_x, min_y + dy, max_z]
-                #     ),
-                #     method="geometrical",
-                #     entity_dim=self.mesh.topology.dim - 2,  # points
-                # )
-
                 # top displacement at top (==max_y) in y direction
                 # look for max y values in mesh
-                print("apply disp where", max_y)
-                print("check points at max_y", mesh_points[mesh_points[:, 1] == max_y])
+                self.logger.info("apply disp where y= %s", self.max_y)
+                self.logger.debug("check points at max_y: %s", mesh_points[mesh_points[:, 1] == self.max_y])
                 bc_generator.add_dirichlet_bc(
                     self.top_displacement,
-                    boundary=plane_at(max_y, 1),
+                    boundary=plane_at(self.max_y, 'y'),
                     sub=1,
                     method="geometrical",
                     entity_dim=self.mesh.topology.dim - 1,
                 )
-                # dy = 0.001
-                # bc_generator.add_dirichlet_bc(
-                #     np.array([0.0, 0.0, 0.0], dtype=ScalarType),
-                #     boundary=within_range(
-                #         [min_x, max_y - dy, min_z], [max_x, max_y + dy, max_z]
-                #     ),
-                #     method="geometrical",
-                #     entity_dim=self.mesh.topology.dim - 2,  # points
-                # )
 
+        elif self.p["bc_setting"] == "compr_disp_y":
+            # loading displacement controlled in y direction at max_y surface, whereas y-z surface at min_y is sligthly fixed
+            if self.p["dim"] == 3:
+                self.logger.info("fix at y= %s", self.min_y)
+                self.logger.debug("check points at y_min %s", mesh_points[mesh_points[:, 1] == self.min_y])
+                # fixed bottom in y
+                bc_generator.add_dirichlet_bc(
+                    df.fem.Constant(
+                        domain=self.mesh, c=0.0
+                    ),
+                    boundary=plane_at(self.min_y, 'y'),
+                    sub=1,
+                    method="geometrical",
+                    entity_dim=self.mesh.topology.dim - 1,  # surface
+                )
+                # one point in all dirc and one in z direction fixed
+                print('bc points: ', self.min_x, self.min_y, self.min_z, 'and', self.max_x, self.min_y, self.min_z)
+                bc_generator.add_dirichlet_bc(
+                    np.array([0.0, 0.0, 0.0], dtype=ScalarType),
+                    boundary=point_at([self.min_x, self.min_y, self.min_z]),
+                    method="geometrical",
+                    entity_dim=0,  # point
+                )
+                bc_generator.add_dirichlet_bc(
+                    df.fem.Constant(
+                        domain=self.mesh, c=0.0
+                    ),
+                    boundary=point_at([self.max_x, self.min_y, self.min_z]),
+                    sub=2,
+                    method="geometrical",
+                    entity_dim=0,  # point
+                )
+
+                # top displacement at top (==max_y) in y direction
+                # look for max y values in mesh
+                self.logger.info("apply disp where y= %s", self.max_y)
+                self.logger.debug("check points at max_y: %s", mesh_points[mesh_points[:, 1] == self.max_y])
+                bc_generator.add_dirichlet_bc(
+                    self.top_displacement,
+                    boundary=plane_at(self.max_y, 'y'),
+                    sub=1,
+                    method="geometrical",
+                    entity_dim=self.mesh.topology.dim - 1,
+                )
+
+                # define displacement sensor position for this set-up
+                self.sensor_location_corner_top = [self.min_x, self.max_y, self.min_z]  # corner point
+                self.sensor_location_middle_endge = [self.min_x, (self.max_y-self.min_y)/2., self.min_z]  # point in the middle of the one edge
+
+
+        elif self.p["bc_setting"] == "compr_disp_x":
+            # loading displacement controlled in x direction at max_x surface, whereas x-z surface at min_x is sligthly fixed
+            if self.p["dim"] == 3:
+                self.logger.info("fix at x=%s", self.min_x)
+                self.logger.debug("check points at x_min %s", mesh_points[mesh_points[:, 0] == self.min_x])
+                # fixed in x
+                bc_generator.add_dirichlet_bc(
+                    df.fem.Constant(
+                        domain=self.mesh, c=0.0
+                    ),
+                    boundary=plane_at(self.min_x, 'x'),
+                    sub=0,
+                    method="geometrical",
+                    entity_dim=self.mesh.topology.dim - 1,  # surface
+                )
+                #
+                print('bc points: ', self.min_x, self.min_y, self.min_z, 'and', self.min_x, self.max_y, self.min_z)
+                bc_generator.add_dirichlet_bc(
+                    np.array([0.0, 0.0, 0.0], dtype=ScalarType),
+                    boundary=point_at([self.min_x, self.min_y, self.min_z]),
+                    method="geometrical",
+                    entity_dim=0,  # point
+                )
+                bc_generator.add_dirichlet_bc(
+                    df.fem.Constant(
+                        domain=self.mesh, c=0.0
+                    ),
+                    boundary=point_at([self.min_x, self.max_y, self.min_z]),
+                    sub=2,
+                    method="geometrical",
+                    entity_dim=0,  # point
+                )
+
+                # top displacement at top (==max_x) in x direction
+                self.logger.info("apply disp where x=%s", self.max_x)
+                self.logger.debug("check points at max_x: %s", mesh_points[mesh_points[:, 0] == self.max_x])
+                bc_generator.add_dirichlet_bc(
+                    self.top_displacement,
+                    boundary=plane_at(self.max_x, 'x'),
+                    sub=0,
+                    method="geometrical",
+                    entity_dim=self.mesh.topology.dim - 1,
+                )
+                # define displacement sensor position for this set-up
+                self.sensor_location_corner_top = [self.max_x, self.min_y, self.min_z] # corner point
+                self.sensor_location_middle_endge = [(self.max_x-self.min_x)/2, self.min_y, self.min_z]  # point in the middle of the one edge
         else:
             raise ValueError(f"Wrong boundary setting: {self.p['bc_setting']}")
 
@@ -343,6 +439,36 @@ class ExperimentStructure(Experiment):
         """
         top_displacement.ito_base_units()
         self.top_displacement.value = top_displacement.magnitude
+
+    def boundary_bottom(self):
+        """specifies boundary: plane at bottom because different for different bc_setting
+
+        Returns: fct defining if dof is at boundary
+
+        """
+        if self.p["bc_setting"] == "compr_disp_y" or self.p["bc_setting"] == "fixed_y":
+            if self.p["dim"] == 3:
+                return plane_at(self.min_y, "y")
+
+        elif self.p["bc_setting"] == "compr_disp_x":
+            if self.p["dim"] == 3:
+                return plane_at(self.min_x, "x")
+
+        else:
+            raise ValueError(f"Wrong boundary setting: {self.p['bc_setting']}")
+
+    def compute_volume(self) -> float:
+        """Computes the volume of the structure
+
+        Returns:
+            volume of the structure
+
+        """
+        dx = ufl.Measure("dx", domain=self.mesh, metadata={"quadrature_degree": 2})
+        volume = df.fem.assemble_scalar(df.fem.form(1.0 * dx))
+
+        return volume
+
 
     # def create_body_force(self, v: ufl.argument.Argument) -> ufl.form.Form:
     #     """defines body force
