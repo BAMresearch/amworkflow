@@ -435,19 +435,6 @@ def cut(shape1: TopoDS_Shape, shape2: TopoDS_Shape) -> TopoDS_Shape:
     return comm.Shape()
 
 
-def create_prism(shape: TopoDS_Shape, vector: list, copy: bool = True) -> TopoDS_Shell:
-    """
-    @brief Create prism from TopoDS_Shape and vector. It is possible to copy the based wire(s) if copy is True. I don't know what if it's False so it is recommended to always use True.
-    @param shape TopoDS_Shape to be used as base
-    @param vector list of 3 elements ( x y z ). Normally only use z to define the height of the prism.
-    @param copy boolean to indicate if the shape should be copied
-    @return return the prism
-    """
-    return BRepPrimAPI_MakePrism(
-        shape, gp_Vec(vector[0], vector[1], vector[2]), copy
-    ).Shape()
-
-
 def common(shape1: TopoDS_Shape, shape2: TopoDS_Shape) -> TopoDS_Shape:
     """
     @brief Common between two TopoDS_Shapes. The result is a shape that has all components of shape1 and shape2

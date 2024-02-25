@@ -12,6 +12,7 @@ import numpy as np
 
 # Import several signals from Configuration.
 from amworkflow.config.settings import (
+    CLEAN_UP,
     ENABLE_CONCURRENT_MODE,
     ENABLE_OCC,
     ENABLE_SHELF,
@@ -36,9 +37,10 @@ if ENABLE_CONCURRENT_MODE:
 
 # Setting up the logging configuration.
 logging.basicConfig(
-    level=LOG_LEVEL, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("amworkflow.geometry.builtinCAD")
+logger.setLevel(LOG_LEVEL)
 
 # Import OCC if enabled.
 if ENABLE_OCC:
@@ -75,6 +77,9 @@ if ENABLE_SQL_DATABASE:
 
     db_name = "bcad_sql"
     db_path = os.path.join(STORAGE_PATH, f"{db_name}.db")
+    if os.path.exists(db_path) and CLEAN_UP:
+        # remove the existing database file
+        os.remove(db_path)
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     # Create the modified 'objects' table to store only Oid references
@@ -110,9 +115,12 @@ if ENABLE_SQL_DATABASE:
         :return: The id, gid of the object.
         :rtype: tuple
         """
-        oid, gid = get_last_id_from_db(table=obj_type, gid=True)
-        obj.id = oid + 1
-        obj.gid = gid + 1
+        # oid, gid = get_last_id_from_db(table=obj_type, gid=True)
+        # oid += 1
+        # gid += 1
+        # obj.id = oid
+        # obj.gid = gid
+        # obj.update_basic_property()
         if obj_type not in TYPE_INDEX.values():
             raise ValueError(f"Unrecognized object type: {obj_type}.")
         local_conn = sqlite3.connect(db_path)
@@ -120,17 +128,25 @@ if ENABLE_SQL_DATABASE:
 
         local_value = obj.value
         local_c.execute(
-            f"INSERT INTO {obj_type} (obj, value, id) VALUES (?,?,?)",
-            (pickle.dumps(obj), pickle.dumps(local_value), obj.id),
+            f"INSERT INTO {obj_type} (obj, value) VALUES (?,?)",
+            (pickle.dumps(obj), pickle.dumps(local_value)),
         )
+        local_conn.commit()
+        gid = local_c.lastrowid
         local_c.execute(
-            "INSERT INTO objects (object_type, gid, property) VALUES (?,?,?)",
+            """
+            INSERT INTO objects (object_type, gid, property)
+            VALUES (?, ?, ?)
+            """,
             (
                 obj_type,
                 gid,
                 pickle.dumps(obj_property),
             ),
         )
+        local_conn.commit()
+        oid = local_c.lastrowid
+        local_c.execute(f"UPDATE {obj_type} SET id = ? WHERE gid = ?", (oid, gid))
         local_conn.commit()
         local_conn.close()
         return oid, gid
@@ -168,23 +184,27 @@ if ENABLE_SQL_DATABASE:
         :rtype: any
         """
         local_conn = sqlite3.connect(db_path)
-        local_c = conn.cursor()
+        local_c = local_conn.cursor()
         if oid is not None:
             local_c.execute("SELECT object_type FROM objects WHERE id = ?", (oid,))
             obj_type = local_c.fetchone()[0]
             local_c.execute(
-                f"""SELECT {obj_type}.obj
+                f"""SELECT {obj_type}.obj, {obj_type}.gid
                         FROM objects
-                        INNER JOIN {obj_type} ON objects.gid = point.gid
-                        WHERE objects.id = ?)"""
+                        INNER JOIN {obj_type} ON objects.gid = {obj_type}.gid
+                        WHERE objects.id = ?""",
+                (oid,),
             )
             row = local_c.fetchone()
             if row:
                 obj = pickle.loads(row[0])
+                obj.id = oid
+                obj.gid = row[1]
+                obj.update_basic_property()
             local_conn.close()
         elif it_value is not None:
             local_c.execute(
-                f"""SELECT {obj_type}.obj
+                f"""SELECT {obj_type}.obj, {obj_type}.gid, {obj_type}.id
                         FROM {obj_type}
                         WHERE {obj_type}.value = ?)""",
                 (pickle.dumps(it_value),),
@@ -192,20 +212,32 @@ if ENABLE_SQL_DATABASE:
             row = local_c.fetchone()
             if row:
                 obj = pickle.loads(row[0])
+                obj.id = row[2]
+                obj.gid = row[1]
+                obj.update_basic_property()
             local_conn.close()
         else:
+            # local_c.execute(
+            #     f"""SELECT {obj_type}.obj
+            #             FROM {obj_type}
+            #             INNER JOIN objects ON {obj_type}.gid = objects.gid
+            #             """
+            # )
             local_c.execute(
-                f"""SELECT {obj_type}.obj
+                f"""SELECT obj, gid, id
                         FROM {obj_type}
-                        INNER JOIN objects ON {obj_type}.gid = objects.gid
                         """
             )
-            rows = local_c.fetchall()
-            local_conn.close()
-            for row in rows:
+            # rows = local_c.fetchall()
+            for row in local_c:
                 obj = pickle.loads(row[0])
+                obj.id = row[2]
+                obj.gid = row[1]
+                obj.update_basic_property()
                 yield obj
-        return obj
+            local_conn.close()
+            return None
+        yield obj
 
     def get_property_from_db(oid: int = None) -> dict:
         """
@@ -216,21 +248,19 @@ if ENABLE_SQL_DATABASE:
         :rtype: dict
         """
         local_conn = sqlite3.connect(db_path)
-        local_c = conn.cursor()
+        local_c = local_conn.cursor()
         if int is not None:
             local_c.execute("SELECT property FROM objects WHERE id = ?", (oid,))
             it_property = pickle.loads(local_c.fetchone()[0])
+            yield it_property
         else:
             local_c.execute("SELECT property FROM objects")
-            rows = local_c.fetchall()
-            it_property = {}
-            for row in rows:
-                it_property.update(pickle.loads(row[0]))
-        local_conn.close()
-        return it_property
+            for row in local_c:
+                it_property = pickle.loads(row[0])
+                yield it_property
 
     def update_obj_in_db(
-        obj: any, obj_property: dict, oid: int = None, obj_type: str = None
+        obj: any, obj_property: dict = None, oid: int = None, obj_type: str = None
     ):
         """
         Update an object in the database.
@@ -242,11 +272,13 @@ if ENABLE_SQL_DATABASE:
         :type obj_property: dict
         """
         local_conn = sqlite3.connect(db_path)
-        local_c = conn.cursor()
+        local_c = local_conn.cursor()
         if oid is None:
             oid = obj.id
         if obj_type is None:
             obj_type = TYPE_INDEX[obj.type]
+        if obj_property is None:
+            obj_property = obj.property
         local_c.execute(
             "UPDATE objects SET property = ? WHERE id = ?",
             (pickle.dumps(obj_property), oid),
@@ -266,6 +298,8 @@ if ENABLE_SQL_DATABASE:
         local_conn = sqlite3.connect(db_path)
         local_c = local_conn.cursor()
         local_c.execute("DELETE FROM objects WHERE id = ?", (oid,))
+        local_conn.commit()
+        local_conn.close()
 
     def delete_sql_db_file(db_name):
         # Construct the full filename including the extension
@@ -509,27 +543,14 @@ class DuplicationCheck:
                             return False, component_container[item["id"]]
             case "database":
                 obj_type = TYPE_INDEX[item_type]
-                local_conn = sqlite3.connect(db_path)
-                local_c = local_conn.cursor()
-                local_c.execute(
-                    f"""
-                        SELECT gid, value FROM {obj_type}"""
-                )
-                rows = local_c.fetchall()
                 components = {}
-                for row in rows:
-                    gid, value_blob = row
-                    obj = pickle.loads(value_blob)
-                    components.update({gid: obj})
-
+                for obj_item in get_from_source(obj_type=obj_type):
+                    obj_gid = obj_item.gid
+                    components.update({obj_gid: obj_item})
                 for gid, item in components.items():
-                    if self.check_value_repetition(item, item_value):
-                        local_c.execute(
-                            f"""SELECT obj FROM {obj_type} WHERE gid = ?""", (gid,)
-                        )
-                        exist_obj = pickle.loads(local_c.fetchone()[0])
+                    if self.check_value_repetition(item.value, item_value):
+                        exist_obj = item
                         return False, exist_obj  # BUG: Recursion Problem.
-                local_conn.close()
             case "shelf":
                 for it_value in get_entry(bcad_shelf):
                     if self.check_type_coincide(it_value["info"]["type"], item_type):
@@ -598,20 +619,6 @@ class TopoObj:
         doc = f"\033[1mType\033[0m: {TYPE_INDEX[self.type]}\n\033[1mID\033[0m: {self.id}\n\033[1mValue\033[0m: {local_value}\n\033[1mOwn\033[0m: {own}\n\033[1mBelong\033[0m: {belong}\n"
         return doc
 
-    # def __getstate__(self):
-    #     # Automatically handle most of the state
-    #     state = self.__dict__.copy()
-    #     # Maybe modify the state or add something extra
-    #     state["extra"] = "Extra data"
-
-    #     return state
-
-    # def __setstate__(self, state):
-    #     self._is_deserializing = True
-    #     # Restore the instance attributes
-    #     self.__dict__.update(state)
-    #     # Restore the class attributes
-
     def enrich_property(self, new_property: dict):
         """Enrich the property out of the basic property.
 
@@ -619,9 +626,11 @@ class TopoObj:
         :type new_property: dict
         :raises ValueError: New properties override existing properties.
         """
-        if new_property in self.property.items():
-            raise ValueError("New properties override existing properties.")
-        self.property.update(new_property)
+        for key, value in new_property.items():
+            if key in self.property:
+                self.property.update({key: value})
+            else:
+                self.property.update({key: value})
         self.property_enriched = True
 
     def update_basic_property(self):
@@ -676,10 +685,17 @@ class TopoObj:
                 component_lib.update({self.id: self.property})
                 self.update_component_container()
             case "database":
-                self.update_basic_property()
+
                 self.id, self.gid = store_obj_to_db(
                     TYPE_INDEX[self.type], self, self.property
                 )
+                logger.debug(
+                    "Stored %s %s: %s into Database",
+                    TYPE_INDEX[self.type],
+                    self.id,
+                    self.value,
+                )
+                self.update_basic_property()
             case "shelf":
                 self.id = get_next_id(bcad_shelf)
                 self.update_basic_property()
@@ -723,7 +739,9 @@ class TopoObj:
 def get_from_source(
     oid: int = None, it_value: list = None, obj_type: str = None, target: str = "object"
 ):
-    """A wrapper function to get the object from the source.
+    """A wrapper function to get the object from the source. if oid is not specified, it_value or obj_type will be used. If none of them is specified, all objects will be returned.
+
+    Notice: In case of stack overflow, when return all objects or all in one type, the function will return a generator.
 
     :param oid: The id of the object to be retrieved.
     :type oid: int
@@ -750,59 +768,71 @@ def get_from_source(
             match STATUS:
                 case "memory":
                     if target == "object":
-                        return component_container[oid]
+                        yield component_container[oid]
                     elif target == "property":
-                        return component_lib[oid]
+                        yield component_lib[oid]
                 case "database":
                     if target == "object":
-                        return get_obj_from_db(oid=oid)
+                        yield from get_obj_from_db(oid=oid)
                     elif target == "property":
-                        return get_property_from_db(oid=oid)
+                        yield from get_property_from_db(oid=oid)
                 case "shelf":
                     if target == "object":
-                        return bcad_shelf[str(oid)]["obj"]
+                        yield bcad_shelf[str(oid)]["obj"]
                     elif target == "property":
-                        return bcad_shelf[str(oid)]["info"]
+                        yield bcad_shelf[str(oid)]["info"]
         case "value":
             match STATUS:
                 case "memory":
-                    return [
-                        item
-                        for item in component_lib.values()
-                        if item["value"] == it_value
-                    ]
+                    if target == "object":
+                        for item in component_container.values():
+                            if TYPE_INDEX[item.type] == obj_type:
+                                yield item
+                    elif target == "property":
+                        for item in component_lib.values():
+                            if TYPE_INDEX[item["type"]] == obj_type:
+                                yield item
                 case "database":
-                    return get_obj_from_db(it_value=it_value)
+                    yield from get_obj_from_db(it_value=it_value)
                 case "shelf":
-                    return [
-                        item
-                        for item in get_entry(bcad_shelf)
-                        if item["info"]["value"] == it_value
-                    ]
+                    for item in get_entry(bcad_shelf):
+                        if item["info"]["value"] == it_value:
+                            if target == "object":
+                                yield item["obj"]
+                            elif target == "property":
+                                yield item["info"]
         case "type":
             match STATUS:
                 case "memory":
-                    return [
-                        item
-                        for item in component_lib.values()
-                        if item["type"] == TYPE_INDEX[obj_type]
-                    ]
+                    if target == "object":
+                        for item in component_container.values():
+                            if TYPE_INDEX[item.type] == obj_type:
+                                yield item
+                    elif target == "property":
+                        for item in component_lib.values():
+                            if TYPE_INDEX[item["type"]] == obj_type:
+                                yield item
                 case "database":
-                    return get_obj_from_db(obj_type=obj_type)
+                    # This is a generator
+                    yield from get_obj_from_db(obj_type=obj_type)
                 case "shelf":
-                    return [
-                        item
-                        for item in get_entry(bcad_shelf)
-                        if item["info"]["type"] == obj_type
-                    ]
+                    for item in get_entry(bcad_shelf):
+                        if item["info"]["type"] == obj_type:
+                            if target == "object":
+                                yield item["obj"]
+                            elif target == "property":
+                                yield item["info"]
         case "all":
             match STATUS:
                 case "memory":
-                    return component_lib
+                    # This is a dictionary
+                    yield component_lib
                 case "database":
-                    return get_obj_from_db()
+                    # This is a generator
+                    yield from get_obj_from_db()
                 case "shelf":
-                    return get_entry(bcad_shelf)
+                    # This is a generator
+                    yield get_entry(bcad_shelf)
 
 
 def send_to_source(obj: TopoObj, obj_property: dict):
@@ -823,7 +853,7 @@ def send_to_source(obj: TopoObj, obj_property: dict):
             add_entry(bcad_shelf, {"info": obj_property, "obj": obj})
 
 
-def update_source(obj: TopoObj, obj_property: dict):
+def update_source(obj: TopoObj, obj_property: dict = None):
     """A wrapper function to update the source of the object.
     :param obj: The object to be updated.
     :type obj: TopoObj
@@ -832,7 +862,8 @@ def update_source(obj: TopoObj, obj_property: dict):
     """
     match STATUS:
         case "memory":
-            obj.update_property(obj_property)
+            component_container.update({obj.id: obj})
+            component_lib.update({obj.id: obj.property})
         case "database":
             update_obj_in_db(obj, obj_property)
         case "shelf":
@@ -899,9 +930,9 @@ class Segment(TopoObj):
         if cls._is_deserializing:
             return super().__new__(cls)
         if isinstance(pnt1, int):
-            pnt1 = component_container[pnt1]
+            pnt1 = [i for i in get_from_source(oid=pnt1)][0]
         if isinstance(pnt2, int):
-            pnt2 = component_container[pnt2]
+            pnt2 = [i for i in get_from_source(oid=pnt2)][0]
         checker = DuplicationCheck(1, [pnt1.id, pnt2.id])
         if checker.new:
             instance = super().__new__(cls)
@@ -924,20 +955,24 @@ class Segment(TopoObj):
         else:
             super().__init__()
             if isinstance(pnt1, int):
-                get_from_source(oid=pnt1)
+                pnt1 = [i for i in get_from_source(oid=pnt1)][0]
             if isinstance(pnt2, int):
-                get_from_source(oid=pnt2)
+                pnt2 = [i for i in get_from_source(oid=pnt2)][0]
             self.raw_value = [pnt1.value, pnt2.value]
             self.re_init = False
-            pnt1, pnt2 = self.check_input(pnt1=pnt1, pnt2=pnt2)
+            valid = self.check_input(pnt1=pnt1, pnt2=pnt2)
             self.start_pnt = pnt1.id
             self.end_pnt = pnt2.id
             self.vector = pnt2.value - pnt1.value
             self.length = np.linalg.norm(self.vector)
-            self.normal = self.vector / self.length
+            if self.length != 0:
+                self.normal = self.vector / self.length
+            else:
+                self.normal = np.array([0, 0, 0])
             self.type = 1
             self.value = [self.start_pnt, self.end_pnt]
-            if ENABLE_OCC:
+            if ENABLE_OCC and valid:
+                logger.debug("Creating OCC edge by points: %s, %s", pnt1.id, pnt2.id)
                 self.occ_edge = occh.create_edge(pnt1.occ_pnt, pnt2.occ_pnt)
                 self.enrich_property({"occ_edge": self.occ_edge})
             self.enrich_property(
@@ -945,18 +980,24 @@ class Segment(TopoObj):
                     "vector": self.vector,
                     "length": self.length,
                     "normal": self.normal,
+                    "self_edge": False,
                 }
             )
+            if not valid:
+                self.enrich_property({"self_edge": True})
             self.register_item()
             self.update_dependency(pnt1, pnt2)
 
-    def check_input(self, pnt1: Pnt, pnt2: Pnt) -> tuple:
+    def check_input(self, pnt1: Pnt, pnt2: Pnt) -> bool:
         if not ENABLE_SQL_DATABASE and not ENABLE_SHELF:
             component_info = component_lib
             component_bucket = component_container
         elif not ENABLE_SHELF:
             component_info = {}
             component_bucket = {}
+            for i in get_from_source(obj_type="point"):
+                component_info.update({i.id: i.property})
+                component_bucket.update({i.id: i})
         else:
             component_info = {}
             component_bucket = {}
@@ -984,8 +1025,13 @@ class Segment(TopoObj):
         if not isinstance(pnt2, Pnt):
             raise ValueError(f"Wrong type of point: {type(pnt2)}.")
         if pnt1.id == pnt2.id:
-            raise ValueError(f"Start point and end point are the same: {pnt1.id}.")
-        return pnt1, pnt2
+            logger.warning(
+                "Two points are the same: %s, %s, skip this segment creation.",
+                pnt1.id,
+                pnt2.id,
+            )
+            return False
+        return True
 
     @classmethod
     def my_custom_reconstructor(cls, state_dict):
@@ -1572,7 +1618,9 @@ def p_rotate(
     return r_pts
 
 
-def get_random_pnt(xmin, xmax, ymin, ymax, zmin=0, zmax=0, numpy_array=True):
+def get_random_pnt(
+    xmin, xmax, ymin, ymax, zmin=0, zmax=0, numpy_array=True
+) -> Union[Pnt, np.ndarray]:
     random_x = np.random.randint(xmin, xmax)
     random_y = np.random.randint(ymin, ymax)
     if zmin == 0 and zmax == 0:
@@ -1583,6 +1631,7 @@ def get_random_pnt(xmin, xmax, ymin, ymax, zmin=0, zmax=0, numpy_array=True):
         result = np.array([random_x, random_y, random_z])
     else:
         result = Pnt([random_x, random_y, random_z])
+
     return result
 
 
@@ -1592,7 +1641,9 @@ def get_random_line(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
     return np.array([pt1, pt2])
 
 
-def find_intersect_node_on_edge(line1: Segment, line2: Segment) -> tuple:
+def find_intersect_node_on_edge(
+    line1: Segment, line2: Segment, update_property: dict = None
+) -> tuple:
     """Find possible intersect node on two lines
 
     :param line1: The first line
@@ -1608,17 +1659,71 @@ def find_intersect_node_on_edge(line1: Segment, line2: Segment) -> tuple:
                 for ind in index:
                     if ind in [0, 1]:
                         pnt_candidate = [line1.start_pnt, line1.end_pnt]
-                        return (line2.id, pnt_candidate[ind])
+                        return ((line2.id, pnt_candidate[ind]),)
                     else:
                         pnt_candidate = [line2.start_pnt, line2.end_pnt]
-                        return (line1.id, pnt_candidate[ind - 2])
+                        return ((line1.id, pnt_candidate[ind - 2]),)
 
     else:
         distance = shortest_distance_line_line(line1, line2)
         intersect = np.isclose(distance[0], 0)
         if intersect:
             intersect_pnt = Pnt(distance[1][0])
+            if update_property is not None:
+                intersect_pnt.enrich_property(update_property)
+                update_source(intersect_pnt)
             return ((line1.id, intersect_pnt.id), (line2.id, intersect_pnt.id))
+
+
+def read_from_csv(file_path: str, delimiter: str = ",") -> list:
+    """Read data from a csv file
+
+    :param file_path: The path of the csv file
+    :type file_path: str
+    :param delimiter: The delimiter of the csv file, defaults to ","
+    :type delimiter: str, optional
+    :return: The data read from the csv file
+    :rtype: list
+    """
+    return np.genfromtxt(file_path, delimiter=delimiter, skip_header=1, dtype=float)
+
+
+def _find_proper_loop(exam_loop: list):
+    """This is a private method to find the proper loop. It is seperated from the class CreateWallByPoints to
+    be able to use in multiprocessing.
+    """
+    logger.debug(f"processing loop:{exam_loop}")
+    # center_segments = []
+
+    # for i, pnt in enumerate(exam_loop):
+    #     if list(get_from_source(oid=pnt))[0].property["CWBP"]["in_wall"]:
+    #         return None
+    for i, pnt in enumerate(exam_loop):
+        ind_l = (
+            (i - 1) % len(exam_loop) if (i - 1) > 0 else -(-(i - 1) % len(exam_loop))
+        )
+        exam_segment = Segment(exam_loop[ind_l], pnt)
+        # if "CWBP" not in exam_segment.property:
+        #     exam_segment.enrich_property({"CWBP": {"active": True, "position": "side"}})
+        #     for seg in center_segments:
+        #         dist, intersect = shortest_distance_line_line(exam_segment, seg)
+        #         if np.isclose(dist, 0):
+        #             exam_segment.property["CWBP"].update(
+        #                 {"examine": True, "position": "imagine"}
+        #             )
+        #             return None
+        exam_segment.property["CWBP"].update({"examine": True})
+        if not exam_segment.property["CWBP"]["active"]:
+            return None
+        if exam_segment.property["CWBP"]["position"] == "imagine":
+            return None
+    #     if pnt in in_wall_points.items():
+    #         in_wall_point_count += 1
+    #     if exam_segment.id in imagine_segments.keys():
+    #         imagine_segment_count += 1
+    # if in_wall_point_count > 0 or imagine_segment_count > 0:
+    #     return None
+    return exam_loop
 
 
 class CreateWallByPoints:
@@ -1650,8 +1755,6 @@ class CreateWallByPoints:
         self.center_pnts = []
         # The side points of the wall
         self.side_pnts = []
-        # The center segments of the wall
-        self.center_segments = []
         # The side segments of the wall
         self.side_segments = []
         # The left points of the wall
@@ -1662,14 +1765,12 @@ class CreateWallByPoints:
         self.left_segments = []
         # The right segments of the wall
         self.right_segments = []
-        # The imaginary points of the wall. An imaginary point is a point that is inside the wall.
-        self.imaginary_pnt = {}
-        # The imaginary segments of the wall. An imaginary segment is a segment consisting of two imaginary points.
-        self.imaginary_segments = {}
         # The digraph of the points
         self.digraph_points = {}
         # The result loops of the wall. Result loops are loops that are valid and can be used to create faces.
         self.result_loops = []
+        # Imagine segments are segments that are not in the wall but are used to create the wall.
+        self.imagine_segments = {}
         # initialize the points.
         self.init_points(self.coords, {"position": "center", "active": True})
         # indices of the components which are involved in the wall.
@@ -1681,8 +1782,6 @@ class CreateWallByPoints:
         self.create_sides()
         self.find_overlap_node_on_edge()
         self.modify_edge()
-        self.G = nx.from_dict_of_lists(self.digraph_points, create_using=nx.DiGraph)
-        self.loop_generator = nx.simple_cycles(self.G)
         self.postprocessing()
 
     def init_points(self, points: list, prop: dict = None) -> None:
@@ -1703,13 +1802,27 @@ class CreateWallByPoints:
         """
         Update the index of the components
         """
-        for i in component_lib.values():
-            item_id = i["id"]
-            item_property = component_container[item_id].property
-            item_name = TYPE_INDEX[item_property["type"]]
-            if "CWBP" not in item_property:
+        self.index_components = {}
+        for i in get_from_source(obj_type="point"):
+            is_CWBP = "CWBP" in i.property
+            if not is_CWBP:
                 continue
-            if item_property["CWBP"]["active"]:
+            is_active = i.property["CWBP"]["active"]
+            if is_active:
+                item_id = i.id
+                item_name = TYPE_INDEX[i.property["type"]]
+                if item_name not in self.index_components:
+                    self.index_components.update({item_name: {item_id}})
+                else:
+                    self.index_components[item_name].add(item_id)
+        for i in get_from_source(obj_type="segment"):
+            is_CWBP = "CWBP" in i.property
+            if not is_CWBP:
+                continue
+            is_active = i.property["CWBP"]["active"]
+            if is_active:
+                item_id = i.id
+                item_name = TYPE_INDEX[i.property["type"]]
                 if item_name not in self.index_components:
                     self.index_components.update({item_name: {item_id}})
                 else:
@@ -1725,6 +1838,7 @@ class CreateWallByPoints:
         if not isinstance(component, TopoObj):
             raise ValueError("Component must be a TopoObj")
         component.enrich_property({"CWBP": prop})
+        update_source(component)
 
     def compute_index(self, ind, length) -> int:
         """
@@ -1770,29 +1884,43 @@ class CreateWallByPoints:
             index = self.compute_index(i, len(self.center_pnts))
             # The next index
             index_n = self.compute_index(i + 1, len(self.center_pnts))
-            # The segment from the current index to the next index
-            seg_current_next = Segment(
-                self.center_pnts[index], self.center_pnts[index_n]
-            )
-            self.enrich_component(
-                seg_current_next, {"position": "center", "active": True}
-            )
-            # The segment from the previous index to the current index
-            seg_previous_current = Segment(
-                self.center_pnts[index_l], self.center_pnts[index]
-            )
-            self.enrich_component(
-                seg_previous_current, {"position": "center", "active": True}
-            )
             # A None on the second segment means the wall is not closed. The support vector will be computed based on the first segment.
             if index == 0 and not self.is_close:
+                # The segment from the current index to the next index
+                seg_current_next = Segment(
+                    self.center_pnts[index], self.center_pnts[index_n]
+                )
+                self.enrich_component(
+                    seg_current_next, {"position": "center", "active": True}
+                )
                 seg1 = seg_current_next
                 seg2 = None
             elif index == len(self.center_pnts) - 1 and not self.is_close:
+                # The segment from the previous index to the current index
+                seg_previous_current = Segment(
+                    self.center_pnts[index_l], self.center_pnts[index]
+                )
+                self.enrich_component(
+                    seg_previous_current, {"position": "center", "active": True}
+                )
                 seg1 = seg_previous_current
                 seg2 = None
             # Compute the support vector based on the two segments
             else:
+                # The segment from the current index to the next index
+                seg_current_next = Segment(
+                    self.center_pnts[index], self.center_pnts[index_n]
+                )
+                self.enrich_component(
+                    seg_current_next, {"position": "center", "active": True}
+                )
+                # The segment from the previous index to the current index
+                seg_previous_current = Segment(
+                    self.center_pnts[index_l], self.center_pnts[index]
+                )
+                self.enrich_component(
+                    seg_previous_current, {"position": "center", "active": True}
+                )
                 seg1 = seg_current_next
                 seg2 = seg_previous_current
             su_vector, su_len = self.compute_support_vector(seg1, seg2)
@@ -1807,10 +1935,21 @@ class CreateWallByPoints:
         self.right_pnts = self.right_pnts[::-1]
         self.side_pnts = self.left_pnts + self.right_pnts
         # Create the segments of the sides
-        for i in range(len(self.side_pnts) - 1):
-            seg_side = Segment(self.side_pnts[i], self.side_pnts[i + 1])
-            self.enrich_component(seg_side, {"position": "side", "active": True})
+        for i, pnt in enumerate(self.side_pnts):
+            ind_n = self.compute_index(i + 1, len(self.side_pnts))
+            seg_side = Segment(pnt, self.side_pnts[ind_n])
+            if (
+                i == len(self.left_pnts) - 1 or i == len(self.side_pnts) - 1
+            ) and not self.is_close:
+                self.enrich_component(
+                    seg_side, {"position": "special boundary", "active": True}
+                )
+            else:
+                self.enrich_component(seg_side, {"position": "side", "active": True})
             self.side_segments.append(seg_side)
+            self.update_digraph(
+                self.side_pnts[i].id, self.side_pnts[ind_n].id, build_new_edge=False
+            )
         self.update_index_component()
 
     def update_digraph(
@@ -1832,6 +1971,10 @@ class CreateWallByPoints:
         :type: bool
         """
         self.update_index_component()
+        points = {
+            i: list(get_from_source(oid=i))[0] for i in self.index_components["point"]
+        }
+
         if start_node not in self.index_components["point"]:
             raise Exception(f"Unrecognized start node: {start_node}.")
         if end_node not in self.index_components["point"]:
@@ -1852,15 +1995,13 @@ class CreateWallByPoints:
                 self.digraph_points[start_node][end_node_list_index] = insert_node
                 if build_new_edge:
                     edge1 = Segment(
-                        component_container[start_node],
-                        component_container[insert_node],
+                        points[start_node],
+                        points[insert_node],
                     )
                     self.enrich_component(
                         edge1, {"position": "digraph", "active": True}
                     )
-                    edge2 = Segment(
-                        component_container[insert_node], component_container[end_node]
-                    )
+                    edge2 = Segment(points[insert_node], points[end_node])
                     self.enrich_component(
                         edge2, {"position": "digraph", "active": True}
                     )
@@ -1868,9 +2009,39 @@ class CreateWallByPoints:
         else:
             # If there is no edge for the start node, a new edge will be built.
             if insert_node is None:
+                if build_new_edge:
+                    edge = Segment(points[start_node], points[end_node])
+                    self.enrich_component(edge, {"position": "digraph", "active": True})
+                    self.digraph_points.update({start_node: [end_node]})
                 self.digraph_points.update({start_node: [end_node]})
             else:
                 raise Exception("No edge found for insertion option.")
+
+    def delete_digraph(self, start_node: int, end_node: int) -> None:
+        """
+        Delete the directed graph
+        :start_node: The start node
+        :type: int
+        :end_node: The end node
+        :type: int
+        """
+        if start_node in self.digraph_points:
+            if end_node in self.digraph_points[start_node]:
+                self.digraph_points[start_node].remove(end_node)
+        else:
+            raise Exception(f"No edge found for start node: {start_node}.")
+
+    def loop_generator(self, simple_cycles_generator) -> None:
+        """
+        Generate the loops of the wall
+        """
+
+        for loop in simple_cycles_generator:
+            if len(loop) < 3:
+                logger.debug(f"tossing loop:{loop}")
+                continue
+            else:
+                yield loop
 
     def find_overlap_node_on_edge(self) -> None:
         """
@@ -1878,6 +2049,7 @@ class CreateWallByPoints:
         """
         visited = []
         line_pairs = []
+        new_property = {"CWBP": {"position": "digraph", "active": True}}
         for line1 in self.side_segments:
             for line2 in self.side_segments:
                 if line1.id != line2.id:
@@ -1887,8 +2059,8 @@ class CreateWallByPoints:
                     ] not in visited:
                         visited.append([line1.id, line2.id])
                         visited.append([line2.id, line1.id])
-                        line_pairs.append((line1, line2))
-        if ENABLE_CONCURRENT_MODE and IN_CONCURRENT_MODE:
+                        line_pairs.append((line1, line2, new_property))
+        if ENABLE_CONCURRENT_MODE:
             logger.info("Using concurrent mode to find intersect nodes.")
             num_processes = multiprocessing.cpu_count()
             with multiprocessing.Pool(num_processes) as pool:
@@ -1900,21 +2072,35 @@ class CreateWallByPoints:
             results = [find_intersect_node_on_edge(*pair) for pair in line_pairs]
         for result in results:
             if result is not None:
+                logger.debug(f"result:{result}")
                 for pair in result:
-                    if "CWBP" not in component_container[pair[1]].property:
-                        component_container[pair[1]].enrich_property(
-                            {"CWBP": {"position": "digraph", "active": True}}
-                        )
+                    logger.debug(f"pair:{pair}")
+                    seg = list(get_from_source(oid=pair[0]))[0]
+                    pnt = list(get_from_source(oid=pair[1]))[0]
+                    if pnt.id in seg.value:
+                        continue
                     if pair[0] not in self.edges_to_be_modified:
                         self.edges_to_be_modified.update({pair[0]: [pair[1]]})
                     else:
                         self.edges_to_be_modified[pair[0]].append(pair[1])
 
     def modify_edge(self):
+        self.update_index_component()
+        edges = {}
+        for i in self.index_components["segment"]:
+            item = list(get_from_source(oid=i))[0]
+            if item.property["CWBP"]["position"] != "center":
+                edges.update({i: item})
+        points = {}
+        for i in self.index_components["point"]:
+            item = list(get_from_source(oid=i))[0]
+            if item.property["CWBP"]["position"] != "center":
+                points.update({i: item})
+
         for edge_id, nodes_id in self.edges_to_be_modified.items():
             # edge = component_lib[edge_id]["segment"]
-            edge = component_container[edge_id]
-            nodes = [component_container[i] for i in nodes_id]
+            edge = edges[edge_id]
+            nodes = [points[i] for i in nodes_id]
             edge_0_coords = edge.raw_value[0]
             nodes_coords = [node.value for node in nodes]
             distances = [np.linalg.norm(i - edge_0_coords) for i in nodes_coords]
@@ -1922,95 +2108,131 @@ class CreateWallByPoints:
             nodes = [nodes[i] for i in order]
             nodes_id_ordered = [i.id for i in nodes]
             # component_lib[edge_id]["segment"].property["CWBP"]["active"] = False
-            component_container[edge_id].property["CWBP"]["active"] = False
+            edges[edge_id].property["CWBP"]["active"] = False
+            self.delete_digraph(edge.value[0], edge.value[1])
+            update_source(edges[edge_id])
             pts_list = [edge.value[0]] + nodes_id_ordered + [edge.value[1]]
             for i, nd in enumerate(pts_list):
                 if i == 0:
                     continue
                 self.update_digraph(pts_list[i - 1], nd)
-                if (i != 1) and (i != len(pts_list) - 1):
-                    if (pts_list[i - 1] in self.imaginary_pnt) and (
-                        nd in self.imaginary_pnt
-                    ):
-                        seg = Segment(pts_list[i - 1], nd)
-                        self.imaginary_segments.update({seg.id: seg})
+                # self.enrich_component(seg, {"position": "side", "active": True})
+                # update_source(seg)
+                # self.imaginary_segments.update({seg.id: seg})
 
     def check_pnt_in_wall(self):
-        for point in self.index_components["point"]:
-            for seg in self.center_segments:
-                lmbda, dist = shortest_distance_point_line(
-                    component_container[seg], component_container[point]
+        self.update_index_component()
+        edges = {}
+        in_wall_points = []
+        digraph_copy = self.digraph_points.copy()
+        for i in self.index_components["segment"]:
+            item = list(get_from_source(oid=i))[0]
+            if item.property["CWBP"]["position"] == "center":
+                edges.update({i: item})
+        points = {}
+        for i in self.index_components["point"]:
+            item = list(get_from_source(oid=i))[0]
+            if item.property["CWBP"]["position"] != "center":
+                points.update({i: item})
+        for ind, point in points.items():
+            point.property["CWBP"].update({"in_wall": None})
+            update_source(point)
+            for ind2, edge in edges.items():
+                lmbda, dist = shortest_distance_point_line(edge, point)
+                if dist < 0.99 * 0.5 * self.th:
+                    logger.debug(
+                        "pnt:%s,dist:%s,lmbda:%s, vec:%s",
+                        point.id,
+                        dist,
+                        lmbda,
+                        edge.id,
+                    )
+                    # self.point_in_wall.update({point: dist})
+                    point.property["CWBP"].update({"in_wall": lmbda})
+                    in_wall_points.append(point.id)
+        for i, j in self.digraph_points.items():
+            if i in in_wall_points:
+                del digraph_copy[i]
+                logger.debug(f"delete node:{i}")
+                continue
+            for k in j:
+                if k in in_wall_points:
+                    j.remove(k)
+                    logger.debug(f"delete edge:{i}-{k}")
+        self.digraph_points = digraph_copy
+        logger.debug(f"digraph:{self.digraph_points}")
+
+    def check_segment_intersect_wall(self):
+        self.update_index_component()
+        edges = {}
+        for i, seg in self.digraph_points.items():
+            for j in seg:
+                edge = Segment(
+                    list(get_from_source(oid=i))[0], list(get_from_source(oid=j))[0]
                 )
-                if dist < 0.9 * self.th:
-                    logger.debug(f"pnt:{point},dist:{dist},lmbda:{lmbda}, vec:{seg}")
-                    self.point_in_wall.update({point: dist})
+                if "CWBP" not in edge.property:
+                    edge.enrich_property({"CWBP": {"active": True, "position": "side"}})
+                    update_source(edge)
+                # self.enrich_component(edge, {"position": "digraph", "active": True})
+                edges.update({edge.id: edge})
+        center_segments = []
+        for i in self.index_components["segment"]:
+            item = list(get_from_source(oid=i))[0]
+            if item.property["CWBP"]["position"] == "center":
+                center_segments.append(item)
+        for ind, edge in edges.items():
+            if edge.property["CWBP"]["position"] == "special boundary":
+                continue
+            for seg2 in center_segments:
+                dist, pnt = shortest_distance_line_line(edge, seg2)
+                intersect = np.isclose(dist, 0)
+                if intersect:
+                    logger.debug(
+                        "seg:%s,seg2:%s,dist:%s,pnt:%s",
+                        edge.value,
+                        seg2.value,
+                        dist,
+                        pnt,
+                    )
+                    edge.property["CWBP"].update({"position": "imagine"})
+                    update_source(edge)
+                    logger.debug(f"Find imagine edge {edge.id}: {edge.value}")
+                    self.delete_digraph(edge.value[0], edge.value[1])
+                    logger.debug(f"Delete digraph {edge.value[0]}-{edge.value[1]}")
                     break
 
     def postprocessing(self):
-        correct_loop_count = 0
-        points_in_loop_counter = {}
-        for lp in self.loop_generator:
-            # loop with less than 3 points is not a valid loop
-            real_loop = True
-            # loop with any point in wall is not a valid loop
-            visible_loop = True
-            in_wall_pt_count = 0
-            imagine_segment_count = 0
-            if len(lp) <= 2:
-                real_loop = False
-            else:
-                for i, pt in enumerate(lp):
-                    ind_l = self.compute_index(i - 1, len(lp))
-                    examine_seg = Segment(lp[ind_l], pt)
-                    if pt in self.point_in_wall.items():
-                        in_wall_pt_count += 1
-                    if examine_seg.id in self.imaginary_segments.items():
-                        imagine_segment_count += 1
-                    if (
-                        (in_wall_pt_count > 0)
-                        or (imagine_segment_count > 1)
-                        or ((in_wall_pt_count == 0) and (imagine_segment_count > 0))
-                    ):
-                        if in_wall_pt_count > 0:
-                            visible_loop = False
-                        break
-            if real_loop and visible_loop:
-                self.result_loops.append(lp)
-                for pt in lp:
-                    if pt not in self.point_in_wall.items():
-                        points_in_loop_counter.update({pt: [correct_loop_count]})
-                    else:
-                        points_in_loop_counter[pt].append(correct_loop_count)
-                correct_loop_count += 1
-        loop_counter = np.zeros(len(self.result_loops))
-        visited = []
-        counter = 0
-        for pt, lp in points_in_loop_counter.items():
-            if len(lp) > 1:
-                if counter == 0:
-                    visited.append(lp)
-                    for ind in lp:
-                        loop_counter[ind] += 1
-                else:
-                    if any(sorted(lp) == sorted(item) for item in visited):
-                        continue
-                    else:
-                        visited.append(lp)
-                        for ind in lp:
-                            loop_counter[ind] += 1
-                counter += 1
-        filtered_lp = np.where(loop_counter > 1)[0].tolist()
-        print("filtered:", filtered_lp)
-        print("vote:", loop_counter)
-        self.result_loops = [
-            v for i, v in enumerate(self.result_loops) if i not in filtered_lp
-        ]
-        print("result:", self.result_loops)
+        self.update_index_component()
+        self.check_pnt_in_wall()
+        self.check_segment_intersect_wall()
+        G = nx.from_dict_of_lists(self.digraph_points, create_using=nx.DiGraph)
+        simple_cycles = nx.simple_cycles(G)
+        if ENABLE_CONCURRENT_MODE:
+            logger.info("Using concurrent mode to count points in loops.")
+            num_processes = multiprocessing.cpu_count()
+            with multiprocessing.Pool(num_processes) as pool:
+                for result in pool.imap(
+                    _find_proper_loop, self.loop_generator(simple_cycles)
+                ):
+                    if result is not None:
+                        self.result_loops.append(result)
+        else:
+            logger.info(
+                "Concurrent model is not enabled. Fall back to use serial mode to find proper loops."
+            )
+            for loop in self.loop_generator(simple_cycles):
+                result = _find_proper_loop(loop)
+                if result is not None:
+                    self.result_loops.append(result)
+        logger.debug(f"result loops:{self.result_loops}")
 
     def rank_result_loops(self):
+        points = {}
+        for i in get_from_source(obj_type="point"):
+            points.update({i.id: i})
         areas = np.zeros(len(self.result_loops))
         for i, lp in enumerate(self.result_loops):
-            lp_coord = [component_container[i].value for i in lp]
+            lp_coord = [points[i].value for i in lp]
             area = get_face_area(lp_coord)
             areas[i] = area
         rank = np.argsort(areas).tolist()
@@ -2020,20 +2242,25 @@ class CreateWallByPoints:
             key=lambda x: rank.index(self.result_loops.index(x)),
             reverse=True,
         )
+
         return self.result_loops
 
     def Shape(self):
+        loop_r = self.rank_result_loops()
         if not ENABLE_OCC:
             raise Exception("OpenCASCADE is not enabled.")
-        loop_r = self.rank_result_loops()
+        logger.debug(f"result loops:{loop_r}")
+        points = {}
+        for i in get_from_source(obj_type="point"):
+            points.update({i.id: i})
         print(loop_r)
-        boundary = [component_container[i].occ_pnt for i in loop_r[0]]
+        boundary = [points[i].occ_pnt for i in loop_r[0]]
         poly0 = occh.create_polygon(boundary)
         poly_r = poly0
         for i, h in enumerate(loop_r):
             if i == 0:
                 continue
-            h = [component_container[i].occ_pnt for i in h]
+            h = [points[i].occ_pnt for i in h]
             poly_c = occh.create_polygon(h)
             poly_r = occh.cut(poly_r, poly_c)
         poly = poly_r
@@ -2068,7 +2295,11 @@ class CreateWallByPoints:
     ):
         # Extract the x and y coordinates and IDs
         a = self.index_components["point"]
-        points = [component_container[i] for i in a]
+        components = {}
+        for i in get_from_source(obj_type="point"):
+            if i.id in a:
+                components.update({i.id: i})
+        points = [components[i] for i in a]
         x = [point.value[0] for point in points]
         y = [point.value[1] for point in points]
         ids = list(a)  # Get the point IDs
@@ -2087,13 +2318,16 @@ class CreateWallByPoints:
             else:
                 display_loops = self.result_loops
             for lp in display_loops:
-                coords = [component_container[i].value for i in lp]
+                coords = [components[i].value for i in lp]
                 x = [point[0] for point in coords]
                 y = [point[1] for point in coords]
                 plt.plot(x + [x[0]], y + [y[0]], linestyle="-", marker="o")
         if display_central_path:
             center_path_coords = np.array([i.value for i in self.center_pnts])
-            center_path_coords = np.vstack((center_path_coords, center_path_coords[0]))
+            if self.is_close:
+                center_path_coords = np.vstack(
+                    (center_path_coords, center_path_coords[0])
+                )
             talist = center_path_coords.T
             x1 = talist[0]
             y1 = talist[1]
@@ -2114,10 +2348,11 @@ class CreateWallByPoints:
 
         plt.subplot(1, 2, 2)
         # layout = nx.spring_layout(self.G)
-        layout = nx.circular_layout(self.G)
+        G = nx.from_dict_of_lists(self.digraph_points, create_using=nx.DiGraph)
+        layout = nx.circular_layout(G)
         # Draw the nodes and edges
         nx.draw(
-            self.G,
+            G,
             pos=layout,
             with_labels=True,
             node_color="skyblue",
@@ -2130,20 +2365,20 @@ class CreateWallByPoints:
         plt.show()
 
 
-IN_CONCURRENT_MODE = False
+# IN_CONCURRENT_MODE = False
 
-if ENABLE_CONCURRENT_MODE:
-    try:
-        manager1 = multiprocessing.Manager()
-        # manager2 = multiprocessing.Manager()
-        count_gid = manager1.list(count_gid)
-        count_id = manager1.Value("i", count_id)
-        TYPE_INDEX = manager1.dict(TYPE_INDEX)
-        component_lib = manager1.dict(component_lib)
-        component_container = manager1.dict(component_container)
-        IN_CONCURRENT_MODE = True
-    except RecursionError as err:
-        logging.warning(
-            f"Concurrent mode is disabled due to {err}, fallback to single process mode."
-        )
-        IN_CONCURRENT_MODE = False
+# if ENABLE_CONCURRENT_MODE:
+#     try:
+#         manager1 = multiprocessing.Manager()
+#         # manager2 = multiprocessing.Manager()
+#         count_gid = manager1.list(count_gid)
+#         count_id = manager1.Value("i", count_id)
+#         TYPE_INDEX = manager1.dict(TYPE_INDEX)
+#         component_lib = manager1.dict(component_lib)
+#         component_container = manager1.dict(component_container)
+#         IN_CONCURRENT_MODE = True
+#     except RecursionError as err:
+#         logging.warning(
+#             f"Concurrent mode is disabled due to {err}, fallback to single process mode."
+#         )
+#         IN_CONCURRENT_MODE = False
