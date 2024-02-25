@@ -1,7 +1,7 @@
 from OCC.Core.TopoDS import TopoDS_Solid
-from amworkflow.geometry import simple_geometries
+from amworkflow. import occ_helpers as occh
 
 
 def test_create_box():
-    box = simple_geometries.create_box(1.0, 2.0, 3.0)
+    box = occh.create_box(1.0, 2.0, 3.0)
     assert isinstance(box, TopoDS_Solid)
