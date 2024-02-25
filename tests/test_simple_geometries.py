@@ -1,5 +1,6 @@
 from OCC.Core.TopoDS import TopoDS_Solid
-from amworkflow. import occ_helpers as occh
+
+from amworkflow import occ_helpers as occh
 
 
 def test_create_box():
