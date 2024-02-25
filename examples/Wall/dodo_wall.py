@@ -10,8 +10,8 @@ from doit.tools import config_changed
 
 from amworkflow.geometry import GeometryParamWall
 from amworkflow.meshing import MeshingGmsh
-from fenicsxconcrete.util import ureg
 from amworkflow.simulation import SimulationFenicsXConcrete
+from fenicsxconcrete.util import ureg
 
 # > doit -f <filename>   # for execution of all task
 # > doit -f <filename> s <taskname> # for specific task
@@ -44,18 +44,58 @@ params_sim_structure = {
     * ureg(
         ""
     ),  # which unit is used in mesh file important since fenicsxconcrete converts all in base units!
-    "dim": 3 * ureg(""), # dimension of the simulation
-    "degree": 2 * ureg(""), # degree of the finite element
-    "q_degree": 2 * ureg(""), # degree of the quadrature
-    "g": 9.81 * ureg("m/s^2"), # gravity
-    "rho": 0 * ureg("kg/m^3"), # density of the material -> no body force in the moment!
-    "E": 30000 * ureg("MPa"), # Young's modulus (usually concrete: 33000)
-    "nu": 0.2 * ureg(""), # Poisson's ratio
-    #"bc_setting": "compr_disp_y" * ureg(""), # bc setting for structure simulation -> defined in task_structure_simulation_...
-    "top_displacement": -1.5 * ureg("mm"), # max displacement of top surface
-    "number_steps": 3 * ureg(""), # number of steps for simulation
-    "material_type": "linear" * ureg(""), # material type
-    "experiment_type": "structure" * ureg(""), # type of the experiment
+    "dim": 3 * ureg(""),
+    "degree": 2 * ureg(""),
+    "q_degree": 2 * ureg(""),
+    "bc_setting": "fixed_y_bottom" * ureg(""),
+    "rho": 2400 * ureg("kg/m^3"),
+    "g": 9.81 * ureg("m/s^2"),
+    "E": 33000 * ureg("MPa"),
+    "nu": 0.2 * ureg(""),
+    "top_displacement": -20.0 * ureg("mm"),
+    "material_type": "linear" * ureg(""),
+}
+params_sim_process = {
+    "mesh_unit": "mm"
+    * ureg(
+        ""
+    ),  # which unit is used in mesh file important since fenicsxconcrete converts all in base units!
+    "dim": 3 * ureg(""),
+    "degree": 2 * ureg(""),
+    "q_degree": 2 * ureg(""),
+    "material_type": "thixo" * ureg(""),
+    "rho": 2070 * ureg("kg/m^3"),  # density of fresh concrete
+    "nu": 0.3 * ureg(""),  # Poissons Ratio
+    "E_0": 0.0779 * ureg("MPa"),  # Youngs Modulus at age=0
+    "R_E": 0 * ureg("Pa/s"),  # Reflocculation (first) rate
+    "A_E": 0.00002 * ureg("MPa/s"),  # Structuration (second) rate
+    "tf_E": 0 * ureg("s"),  # Reflocculation time (switch point)
+    "age_0": 0 * ureg("s"),  # start age of concrete
+    # layer parameter
+    "layer_height": params["layer_height"] * ureg("mm"),  # to activate layer by layer
+    "num_layers": params["height"] / params["layer_height"] * ureg(""),
+    "time_per_layer": 6 * ureg("s"),  # or velocity and layer thickness
+    "num_time_steps_per_layer": 2 * ureg(""),
+}
+# simulation parameters needs to be in pint units!!
+params_sim_structure = {
+    "mesh_unit": "mm"
+    * ureg(
+        ""
+    ),  # which unit is used in mesh file important since fenicsxconcrete converts all in base units!
+    "dim": 3 * ureg(""),  # dimension of the simulation
+    "degree": 2 * ureg(""),  # degree of the finite element
+    "q_degree": 2 * ureg(""),  # degree of the quadrature
+    "g": 9.81 * ureg("m/s^2"),  # gravity
+    "rho": 0
+    * ureg("kg/m^3"),  # density of the material -> no body force in the moment!
+    "E": 30000 * ureg("MPa"),  # Young's modulus (usually concrete: 33000)
+    "nu": 0.2 * ureg(""),  # Poisson's ratio
+    # "bc_setting": "compr_disp_y" * ureg(""), # bc setting for structure simulation -> defined in task_structure_simulation_...
+    "top_displacement": -1.5 * ureg("mm"),  # max displacement of top surface
+    "number_steps": 3 * ureg(""),  # number of steps for simulation
+    "material_type": "linear" * ureg(""),  # material type
+    "experiment_type": "structure" * ureg(""),  # type of the experiment
 }
 
 # TODO datastore stuff??
@@ -110,14 +150,19 @@ def task_meshing():
 
 
 @create_after(executed="meshing")
-def task_structure_simulation():
+def task_structure_simulation_disp_y():
     """Simulating the final structure loaded parallel to layers in y-direction with displacement."""
 
+    OUTPUT.mkdir(parents=True, exist_ok=True)
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
     in_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
     out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_structure.xdmf"
+    in_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
+    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_disp_y.xdmf"
 
+    params_sim_structure["experiment_type"] = "structure" * ureg("")
+    simulation = SimulationFenicsXConcrete(params_sim_structure)
     params_sim_structure["experiment_type"] = "structure" * ureg("")
     simulation = SimulationFenicsXConcrete(params_sim_structure)
 
@@ -135,16 +180,18 @@ def task_structure_simulation():
 
 
 @create_after(executed="meshing")
-def task_process_simulation():
-    """Simulating the final structure loaded parallel to layers."""
+def task_structure_simulation_disp_x():
+    """Simulating the final structure loaded parallel to layers in x-direction with displacement."""
 
+    OUTPUT.mkdir(parents=True, exist_ok=True)
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
     in_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
     out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_process.xdmf"
 
-    params_sim_process["experiment_type"] = "process" * ureg("")
-    simulation = SimulationFenicsXConcrete(params_sim_process)
+    # displacment load in y direction
+    params_sim_structure["bc_setting"] = "compr_disp_x" * ureg("")
+    simulation = SimulationFenicsXConcrete(params_sim_structure)
 
     return {
         "file_dep": [in_file_xdmf],
