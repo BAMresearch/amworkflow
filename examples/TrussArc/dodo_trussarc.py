@@ -25,6 +25,7 @@ params = {  # geometry parameters
     # mesh parameters (meshing by layer height)
     "mesh_size_factor": 10,
     "number_of_layers": 10,
+    "is_close": False,
 }
 
 # TODO datastore stuff??

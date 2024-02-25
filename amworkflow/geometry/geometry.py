@@ -465,6 +465,7 @@ class GeometryCenterline(GeometryOCC):
         points: np.ndarray | None = None,
         layer_thickness: float | None = None,
         height: float | None = None,
+        is_close: bool = True,
         **kwargs,
     ) -> None:
         """OCC geometry class for creating a layer by layer geometry from a given array of centerline points (x,y,z)
@@ -480,6 +481,7 @@ class GeometryCenterline(GeometryOCC):
         self.points = points
         self.layer_thickness = layer_thickness
         self.height = height
+        self.is_close = is_close
 
         super().__init__(**kwargs)
 
@@ -493,7 +495,10 @@ class GeometryCenterline(GeometryOCC):
         assert self.height is not None
 
         creator = bcad.CreateWallByPoints(
-            self.points, th=self.layer_thickness, height=self.height
+            self.points,
+            th=self.layer_thickness,
+            height=self.height,
+            is_close=self.is_close,
         )
         shape = creator.Shape()
         return shape, self.points
