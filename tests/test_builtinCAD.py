@@ -11,7 +11,7 @@ def test_duplication_check():
     pnt31 = Pnt([2, 3, 5])
     seg1 = Segment(pnt1, pnt2)
     seg11 = Segment(pnt1, pnt2)
-    assert seg1 is not seg11
+    assert seg1 is seg11
     assert pnt3.id == pnt31.id
     assert pnt1 is not pnt2
 
