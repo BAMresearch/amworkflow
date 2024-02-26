@@ -42,6 +42,28 @@ class PrintState(Enum):
     BedOFF = auto()
     SetBedTemperature = auto()
     SetExtruderTemperature = auto()
+    
+class CommentInfo(Enum):
+    TIMESTAMP = "Timestamp"
+    LENGTH = "Length"
+    WIDTH = "Width"
+    HEIGHT = "Height"
+    LAYER_HEIGHT = "Layer Height"
+    LAYER_NUMBER = "Layer Number"
+    LINE_WIDTH = "Line Width"
+    DIFFERENT_GEOMETRY_PER_LAYER = "Different Geometry Per Layer"
+    TOOL_NUMBER = "Tool Number"
+    FEED_RATE = "Feed Rate"
+    KAPPA = "Kappa"
+    GAMMA = "Gamma"
+    DELTA = "Delta"
+    STANDARD = "Standard"
+    COORDINATE_SYSTEM = "Coordinate System"
+    NOZZLE_DIAMETER = "Nozzle Diameter"
+    UNIT = "Unit"
+    MATERIAL_CONSUMPTION = "Material Consumption"
+    ESTIMATED_TIME_CONSUMPTION = "Estimated Time consumption"
+    ORIGINAL_POINT = "Original Point"
 
 
 def create_new_config(config_name):

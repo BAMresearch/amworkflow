@@ -10,8 +10,8 @@ from doit.tools import config_changed
 
 from amworkflow.geometry import GeometryParamWall
 from amworkflow.meshing import MeshingGmsh
-from amworkflow.simulation import SimulationFenicsXConcrete
 from fenicsxconcrete.util import ureg
+from amworkflow.simulation import SimulationFenicsXConcrete
 
 # > doit -f <filename>   # for execution of all task
 # > doit -f <filename> s <taskname> # for specific task
@@ -30,8 +30,8 @@ params = {  # geometry parameters
         "infill", "zigzag"
     ),  # default infill changable via command line doit -f dodo_wall.py infill=zigzag or solid or honeycomb
     # mesh parameters (meshing by layer height)
-    "line_width": 10,  # mm
-    "mesh_size_factor": 10,
+    "line_width": float(get_var('line_width', 11)),  # mm # 11 for zigzag 10 for honeycomb to get same volume reduction
+    "mesh_size_factor": float(get_var('mesh_size',4)), # default mesh size factor changeable via command line doit -f dodo_wall.py mesh_size=4
     "layer_height": 10,  # mm
 }
 # simulation parameters needs to be in pint units!!
@@ -75,7 +75,7 @@ params_sim_process = {
 }
 
 # TODO datastore stuff??
-OUTPUT_NAME = Path(__file__).parent.name
+OUTPUT_NAME = f"{Path(__file__).parent.name}_{params['infill']}_mesh_{params['mesh_size_factor']}"
 OUTPUT = (
     Path(__file__).parent / "output"
 )  # / f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
@@ -144,6 +144,8 @@ def task_structure_simulation():
         "verbosity": 2,
     }
 
+    in_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
+    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_disp_x.xdmf"
 
 @create_after(executed="meshing")
 def task_process_simulation():

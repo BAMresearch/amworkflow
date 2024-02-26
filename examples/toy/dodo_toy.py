@@ -53,12 +53,13 @@ params_sim_structure = {
     "dim": 3 * ureg(""),
     "degree": 2 * ureg(""),
     "q_degree": 2 * ureg(""),
-    "bc_setting": "fixed_y_bottom" * ureg(""),
+    "bc_setting": "fixed_y" * ureg(""),
     "rho": 2400 * ureg("kg/m^3"),
     "g": 9.81 * ureg("m/s^2"),
     "E": 33000 * ureg("MPa"),
     "nu": 0.2 * ureg(""),
     "top_displacement": -5.0 * ureg("mm"),
+    "number_steps": 1 * ureg(""),
     "material_type": "linear" * ureg(""),
 }
 
