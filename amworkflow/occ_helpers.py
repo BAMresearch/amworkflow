@@ -53,8 +53,6 @@ from OCC.Core.TopTools import TopTools_ListOfShape
 from OCCUtils.Construct import make_face, vec_to_dir
 from OCCUtils.Topology import Topo
 
-from amworkflow import occ_helpers
-
 
 def create_box(
     length: float,
@@ -79,7 +77,7 @@ def create_box(
             box = BRepPrimAPI_MakeBox(length, width, height).Shape()
             faces = list(Topo(TopoDS_Solid).faces_from_solids(box))
             print(isinstance(faces[0], TopoDS_Shape))
-            sewed_face = occ_helpers.sew_face(faces)
+            sewed_face = sew_face(faces)
             # make_shell = BRepBuilderAPI_MakeShell(sewed_face, False).Shell()
 
             return sewed_face
@@ -104,11 +102,11 @@ def create_box(
         edge2 = BRepBuilderAPI_MakeEdge(p2, p3).Edge()
         edge4 = BRepBuilderAPI_MakeEdge(p4, p1).Edge()
         wire = BRepBuilderAPI_MakeWire(arch_edge1_2, edge2, arch_edge3_4, edge4).Wire()
-        wire_top = occ_helpers.geom_copy(wire)
-        occ_helpers.translate(wire_top, [0, 0, height])
+        wire_top = geom_copy(wire)
+        translate(wire_top, [0, 0, height])
         prism = create_prism(wire, [0, 0, height], True)
         bottom_face = create_face(wire)
-        top_face = occ_helpers.reverse(create_face(wire_top))
+        top_face = reverse(create_face(wire_top))
         component = [prism, top_face, bottom_face]
         sewing = BRepBuilderAPI_Sewing()
         # Add all components to the sewing.
@@ -119,7 +117,7 @@ def create_box(
         # shell = BRepBuilderAPI_MakeShell(sewed_shape)
         solid = BRepBuilderAPI_MakeSolid(sewed_shape).Shape()
         print(solid)
-        curve_box = occ_helpers.create_compound(component)
+        curve_box = create_compound(component)
 
         # Returns the shape of the shell.
         if shell:

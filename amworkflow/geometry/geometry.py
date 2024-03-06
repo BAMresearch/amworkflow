@@ -10,8 +10,8 @@ from OCC.Core.TopoDS import TopoDS_Shape
 from OCC.Extend.DataExchange import write_step_file, write_stl_file
 from scipy.optimize import fsolve
 
-import amworkflow.geometry.builtinCAD as bcad
-import amworkflow.occ_helpers as occh
+import amworkflow.geometry.builtinCAD as builtincad
+import amworkflow.occ_helpers as occ_helpers
 
 typing.override = lambda x: x
 
@@ -52,13 +52,6 @@ class GeometryOCC(Geometry):
         stl_angular_deflection: float = 0.1,
         **kwargs,
     ) -> None:
-        """Geometry case class for OCC geometry creation.
-
-        Args:
-            stl_linear_deflection: Linear deflection parameter of OCC stl export (Lower, more accurate mesh; OCC default is 0.001)
-            stl_angular_deflection: Angular deflection parameter of OCC stl export (Lower, more accurate_mesh: OCC default is 0.5).
-        """
-
         """Geometry case class for OCC geometry creation.
 
         Args:
@@ -176,7 +169,7 @@ class GeometryParamWall(GeometryOCC):
         # assert self.layer_thickness is not None
 
         if self.infill == "solid":
-            shape = occh.create_box(
+            shape = occ_helpers.create_box(
                 length=self.length,
                 width=self.width,
                 height=self.height,
@@ -187,27 +180,29 @@ class GeometryParamWall(GeometryOCC):
         elif self.infill == "no":
             W = self.width
             L = self.length
-            t= self.line_width
-            points = [[0., 0., 0.],
-                      [0., (W - t) / 2, 0.],
-                      [(L - t), (W - t) / 2, 0.],
-                      [(L - t), -(W - t) / 2, 0.],
-                      [0., -(W - t) / 2, 0.]]
+            t = self.line_width
+            points = [
+                [0.0, 0.0, 0.0],
+                [0.0, (W - t) / 2, 0.0],
+                [(L - t), (W - t) / 2, 0.0],
+                [(L - t), -(W - t) / 2, 0.0],
+                [0.0, -(W - t) / 2, 0.0],
+            ]
 
-            creator = composite_geometries.CreateWallByPoints(
+            creator = builtincad.CreateWallByPoints(
                 points, th=self.line_width, height=self.height
             )
             shape = creator.Shape()
 
         elif self.infill == "honeycomb":
             points = self.honeycomb_infill(self.length, self.width, self.line_width)
-            creator = bcad.CreateWallByPoints(
+            creator = builtincad.CreateWallByPoints(
                 points, th=self.line_width, height=self.height
             )
             shape = creator.Shape()
         elif self.infill == "zigzag":
             points = self.zigzag_infill(self.length, self.width, self.line_width)
-            creator = bcad.CreateWallByPoints(
+            creator = builtincad.CreateWallByPoints(
                 points, th=self.line_width, height=self.height
             )
             shape = creator.Shape()
@@ -509,7 +504,7 @@ class GeometryCenterline(GeometryOCC):
         assert self.layer_thickness is not None
         assert self.height is not None
 
-        creator = bcad.CreateWallByPoints(
+        creator = builtincad.CreateWallByPoints(
             self.points,
             th=self.layer_thickness,
             height=self.height,
