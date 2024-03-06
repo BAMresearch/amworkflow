@@ -44,19 +44,18 @@ params_sim_structure = {
     * ureg(
         ""
     ),  # which unit is used in mesh file important since fenicsxconcrete converts all in base units!
-    "dim": 3 * ureg(""),  # dimension of the simulation
-    "degree": 2 * ureg(""),  # degree of the finite element
-    "q_degree": 2 * ureg(""),  # degree of the quadrature
-    "g": 9.81 * ureg("m/s^2"),  # gravity
-    "rho": 0
-    * ureg("kg/m^3"),  # density of the material -> no body force in the moment!
-    "E": 30000 * ureg("MPa"),  # Young's modulus (usually concrete: 33000)
-    "nu": 0.2 * ureg(""),  # Poisson's ratio
-    # "bc_setting": "compr_disp_y" * ureg(""), # bc setting for structure simulation -> defined in task_structure_simulation_...
-    "top_displacement": -1.5 * ureg("mm"),  # max displacement of top surface
-    "number_steps": 3 * ureg(""),  # number of steps for simulation
-    "material_type": "linear" * ureg(""),  # material type
-    "experiment_type": "structure" * ureg(""),  # type of the experiment
+    "dim": 3 * ureg(""), # dimension of the simulation
+    "degree": 2 * ureg(""), # degree of the finite element
+    "q_degree": 2 * ureg(""), # degree of the quadrature
+    "g": 9.81 * ureg("m/s^2"), # gravity
+    "rho": 0 * ureg("kg/m^3"), # density of the material -> no body force in the moment!
+    "E": 30000 * ureg("MPa"), # Young's modulus (usually concrete: 33000)
+    "nu": 0.2 * ureg(""), # Poisson's ratio
+    #"bc_setting": "compr_disp_y" * ureg(""), # bc setting for structure simulation -> defined in task_structure_simulation_...
+    "top_displacement": -1.5 * ureg("mm"), # max displacement of top surface
+    "number_steps": 3 * ureg(""), # number of steps for simulation
+    "material_type": "linear" * ureg(""), # material type
+    "experiment_type": "structure" * ureg(""), # type of the experiment
 }
 # simulation parameters needs to be in pint units!!
 params_sim_structure = {
