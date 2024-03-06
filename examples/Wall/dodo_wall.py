@@ -43,7 +43,7 @@ params_sim_structure = {
     "q_degree": 2 * ureg(""), # degree of the quadrature
     "g": 9.81 * ureg("m/s^2"), # gravity
     "rho": 0 * ureg("kg/m^3"), # density of the material -> no body force in the moment!
-    "E": 2600 * ureg("MPa"), # Young's modulus (33000)
+    "E": 30000 * ureg("MPa"), # Young's modulus (usually concrete: 33000)
     "nu": 0.2 * ureg(""), # Poisson's ratio
     #"bc_setting": "compr_disp_y" * ureg(""), # bc setting for structure simulation -> defined in task_structure_simulation_...
     "top_displacement": -1.5 * ureg("mm"), # max displacement of top surface
