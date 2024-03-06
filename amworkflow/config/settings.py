@@ -3,7 +3,7 @@ import os
 import subprocess
 
 ENABLE_OCC = True
-ENABLE_CONCURRENT_MODE = True
+ENABLE_CONCURRENT_MODE = False
 ENABLE_SQL_DATABASE = False
 ENABLE_SHELF = False
 STORAGE_PATH = ""
