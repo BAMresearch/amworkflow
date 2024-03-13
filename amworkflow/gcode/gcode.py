@@ -51,7 +51,7 @@ class GcodeFromPoints(Gcode):
         nozzle_diameter: float = 0.4,
         kappa: float = 1,
         gamma: float = -1,
-        delta: float = 0,
+        delta: float = 1,
         tool_number: int = 0,
         feedrate: int = 1800,
         fixed_feedrate: bool = False,
@@ -586,11 +586,11 @@ class GcodeMultiplier(object):
         if auto_balance:
             for i in range(0, self.num_vertic):
                 for j in range(0, self.num_horizant):
-                    self.gcodelist[
-                        i * self.num_horizant + j
-                    ].points = self.auto_balance(
-                        self.grid[i * self.num_horizant + j],
-                        self.gcodelist[i * self.num_horizant + j].points,
+                    self.gcodelist[i * self.num_horizant + j].points = (
+                        self.auto_balance(
+                            self.grid[i * self.num_horizant + j],
+                            self.gcodelist[i * self.num_horizant + j].points,
+                        )
                     )
                     self.visualize_cache.append(
                         bcad.bounding_box(
@@ -745,11 +745,11 @@ class GcodeMultiplier(object):
         if auto_balance:
             for i in range(0, self.num_vertic):
                 for j in range(0, self.num_horizant):
-                    self.gcodelist[
-                        i * self.num_horizant + j
-                    ].points = self.auto_balance(
-                        self.grid[i * self.num_horizant + j],
-                        self.gcodelist[i * self.num_horizant + j].points,
+                    self.gcodelist[i * self.num_horizant + j].points = (
+                        self.auto_balance(
+                            self.grid[i * self.num_horizant + j],
+                            self.gcodelist[i * self.num_horizant + j].points,
+                        )
                     )
                     self.visualize_cache.append(
                         bcad.bounding_box(

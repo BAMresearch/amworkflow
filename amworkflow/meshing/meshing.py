@@ -13,6 +13,13 @@ from OCC.Extend.DataExchange import read_step_file
 from amworkflow import occ_helpers
 
 typing.override = lambda x: x
+from amworkflow.config.settings import LOG_LEVEL
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger("amworkflow.meshing.meshing")
+logger.setLevel(LOG_LEVEL)
 
 
 class Meshing:
@@ -72,7 +79,15 @@ class MeshingGmsh(Meshing):
         Returns:
 
         """
-        assert [self.number_of_layers, self.layer_height].count(None) == 1
+        if self.layer_height is None and self.number_of_layers is None:
+            raise ValueError("Both layer_height and number_of_layers are None.")
+        if [self.number_of_layers, self.layer_height].count(None) != 1:
+            logger.error(
+                "Exactly one of layer_height or number_of_layers must be None. Got %s and %s. By Default Layer height wil be set to None",
+                self.number_of_layers,
+                self.layer_height,
+            )
+            self.layer_height = None
         assert step_file.is_file(), f"Step file {step_file} does not exist."
 
         shape = read_step_file(filename=str(step_file))
