@@ -1,3 +1,4 @@
+import logging
 import math as m
 
 import numpy as np
@@ -52,6 +53,14 @@ from OCC.Core.TopoDS import (
 from OCC.Core.TopTools import TopTools_ListOfShape
 from OCCUtils.Construct import make_face, vec_to_dir
 from OCCUtils.Topology import Topo
+
+from amworkflow.config.settings import LOG_LEVEL
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger("amworkflow.occ_helpers")
+logger.setLevel(LOG_LEVEL)
 
 
 def create_box(
@@ -255,14 +264,23 @@ def split_by_plane(
     @param ny Number of sub - shapes in the y - direction.
     @return a compound of sub-shapes
     """
-    assert [nz, layer_height].count(None) == 1
 
     xmin, ymin, zmin, xmax, ymax, zmax = get_occ_bounding_box(item)
     plan_len = 1.2 * max(abs(xmin - xmax), abs(ymin - ymax))
     z = zmax - zmin
+    if nz is not None and layer_height is not None:
+        if not np.isclose(z, nz * layer_height, atol=1e-3):
+            raise ValueError(
+                f"Only one of nz or layer_height can be specified. If both are specified, the product of nz: {nz} and layer_height: {layer_height} must be equal to the height of the shape: {z}."
+            )
+        else:
+            logger.error(
+                "Only one of nz or layer_height can be specified. You have specified both but the product of nz: %s and layer_height: %s is equal to the height of the shape: %s. I am just going to use nz."
+                % (nz, layer_height, z)
+            )
     if nz is not None:
         z_list = np.linspace(zmin, z, nz + 1)
-    if layer_height is not None:
+    elif layer_height is not None:
         z_list = np.arange(zmin, z, layer_height)
         z_list = np.concatenate((z_list, np.array([z])))
     # bo = BOPAlgo_Builder()

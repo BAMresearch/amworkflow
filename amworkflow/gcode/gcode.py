@@ -133,7 +133,7 @@ class GcodeFromPoints(Gcode):
         self.read_points(self.in_file_path)
         super().__init__(**kwargs)
 
-    def create(self, in_file: Path, out_gcode: str, out_gcode_dir: Path = None) -> None:
+    def create(self, in_file: Path, out_gcode_dir: Path = None) -> None:
         """Create gcode file by given path point file
 
         Args:
@@ -173,10 +173,10 @@ class GcodeFromPoints(Gcode):
                     )
                 E += extrusion_length
                 self.move(coord, np.round(E, 5), self.feedrate)
-        gcode_file_path = out_gcode_dir / out_gcode
+        gcode_file_path = Path(out_gcode_dir)
         self.write_gcode(gcode_file_path, self.gcode)
-        out_log = f"log_{out_gcode}.csv"
-        log_file_path = out_gcode_dir / out_log
+        out_log = f"log_{gcode_file_path.stem}.csv"
+        log_file_path = gcode_file_path.parent / out_log
         self.write_log(log_file_path)
 
     def compute_extrusion(self, p0: list, p1: list):
