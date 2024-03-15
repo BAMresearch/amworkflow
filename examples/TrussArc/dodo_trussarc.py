@@ -30,6 +30,7 @@ params = {  # geometry parameters
     "is_close": False,
 }
 
+#parameters for the simulation of process
 params_sim_process = {
     "mesh_unit": "mm"
     * ureg(
