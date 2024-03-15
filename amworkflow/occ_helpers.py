@@ -274,8 +274,8 @@ def split_by_plane(
                 f"Only one of nz or layer_height can be specified. If both are specified, the product of nz: {nz} and layer_height: {layer_height} must be equal to the height of the shape: {z}."
             )
         else:
-            logger.error(
-                "Only one of nz or layer_height can be specified. You have specified both but the product of nz: %s and layer_height: %s is equal to the height of the shape: %s. I am just going to use nz."
+            logger.warning(
+                "Only one of nz or layer_height can be specified. You have specified both but the product of nz: %s and layer_height: %s is equal to the height of the shape: %s. I am just going to use nz for splitting the mesh."
                 % (nz, layer_height, z)
             )
     if nz is not None:
