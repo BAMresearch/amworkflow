@@ -425,6 +425,46 @@ class ExperimentStructure(Experiment):
                 # define displacement sensor position for this set-up
                 self.sensor_location_corner_top = [self.max_x, self.min_y, self.min_z] # corner point
                 self.sensor_location_middle_endge = [(self.max_x-self.min_x)/2, self.min_y, self.min_z]  # point in the middle of the one edge
+
+        elif self.p["bc_setting"] == 'fixed_truss':
+            # truss structure with right and left support part
+            if self.p["dim"] == 3:
+                # get mesh_points to define boundaries
+                mesh_points = self.mesh.geometry.x
+                min_y = mesh_points[:, 1].min()
+                print('fix at y=', min_y)
+                print('check points at y_min', mesh_points[mesh_points[:, 1] == min_y])
+                # dofs at bottom y_min fixed in x, y and z direction
+                bc_generator.add_dirichlet_bc(
+                    np.array([0.0, 0.0, 0.0], dtype=ScalarType),
+                    boundary=plane_at(min_y, 1),
+                    method="geometrical",
+                    entity_dim=self.mesh.topology.dim - 1,  # surface
+                )
+                # dofs at left side (x_min) fixed in x
+                min_x = mesh_points[:, 0].min()
+                print('fix at x=', min_x)
+                # print('check points at x_min', mesh_points[mesh_points[:, 0] == min_x])
+                bc_generator.add_dirichlet_bc(np.float64(0.0), boundary=plane_at(min_x, 0), sub=0,
+                                              method="geometrical", entity_dim=self.mesh.topology.dim - 1)
+
+                # dofs at right side max x values fixed in y
+                # look for max x values in mesh
+                max_x = mesh_points[:, 0].max()
+                print('fix at x=', max_x)
+                print('check points at max_x', mesh_points[mesh_points[:, 0] == max_x])
+                bc_generator.add_dirichlet_bc(np.float64(0.0), boundary=plane_at(max_x, 0), sub=0,
+                                              method="geometrical", entity_dim=self.mesh.topology.dim - 1)
+
+                # # displacement not working here
+                # # top displacement at top (==max_y) in y direction
+                # # look for max y values in mesh
+                # max_y = mesh_points[:, 1].max()
+                # print('apply disp where', max_y)
+                # print('check points at may_y', mesh_points[mesh_points[:, 1] == max_y])
+                # bc_generator.add_dirichlet_bc(self.top_displacement, boundary=plane_at(max_y, 1), sub=1,
+                #                               method="geometrical", entity_dim=self.mesh.topology.dim - 1)
+
         else:
             raise ValueError(f"Wrong boundary setting: {self.p['bc_setting']}")
 
@@ -446,7 +486,7 @@ class ExperimentStructure(Experiment):
         Returns: fct defining if dof is at boundary
 
         """
-        if self.p["bc_setting"] == "compr_disp_y" or self.p["bc_setting"] == "fixed_y":
+        if self.p["bc_setting"] == "compr_disp_y" or self.p["bc_setting"] == "fixed_y" or self.p["bc_setting"] == "fixed_truss":
             if self.p["dim"] == 3:
                 return plane_at(self.min_y, "y")
 
@@ -470,23 +510,23 @@ class ExperimentStructure(Experiment):
         return volume
 
 
-    # def create_body_force(self, v: ufl.argument.Argument) -> ufl.form.Form:
-    #     """defines body force
-    #
-    #     Args:
-    #         v: test_files function
-    #
-    #     Returns:
-    #         form for body force
-    #
-    #     """
-    #
-    #     force_vector = np.zeros(self.p["dim"])
-    #     force_vector[1] = (
-    #         -self.p["rho"] * self.p["g"]
-    #     )  # for 3D case where y is the height direction!!
-    #
-    #     f = df.fem.Constant(self.mesh, ScalarType(force_vector))
-    #     L = ufl.dot(f, v) * ufl.dx
-    #
-    #     return L
+    def create_body_force(self, v: ufl.argument.Argument) -> ufl.form.Form:
+        """defines body force
+
+        Args:
+            v: test_files function
+
+        Returns:
+            form for body force
+
+        """
+
+        force_vector = np.zeros(self.p["dim"])
+        force_vector[1] = (
+            -self.p["rho"] * self.p["g"]
+        )  # for 3D case where y is the height direction!!
+
+        f = df.fem.Constant(self.mesh, ScalarType(force_vector))
+        L = ufl.dot(f, v) * ufl.dx
+
+        return L

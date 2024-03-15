@@ -60,6 +60,28 @@ params_sim_process = {
 
 }
 
+params_sim_structure = {
+    "mesh_unit": "mm"
+    * ureg(
+        ""
+    ),  # which unit is used in mesh file important since fenicsxconcrete converts all in base units!
+    "dim": 3 * ureg(""), # dimension of the simulation
+    "degree": 2 * ureg(""), # degree of the finite element
+    "q_degree": 2 * ureg(""), # degree of the quadrature
+    #
+    "material_type": "linear" * ureg(""),  # material type
+    "experiment_type": "structure" * ureg(""),  # type of the experiment
+
+    'bc_setting': 'fixed_truss' * ureg(""),
+    'rho': 2400 * ureg("kg/m^3"),
+    'g': 9.81 * ureg("m/s^2"),
+    'E': 33000 * ureg("MPa"),
+    'nu': 0.2 * ureg(""),
+    'top_displacement': 0.0 * ureg("mm"), # max displacement of top surface
+     "number_steps": 1 * ureg(""), # number of steps for simulation
+
+}
+
 # TODO datastore stuff??
 OUTPUT_NAME = Path(__file__).parent.name
 OUTPUT = (
@@ -114,13 +136,13 @@ def task_meshing():
     }
 
 @create_after(executed="meshing")
-def task_structure_simulation():
+def task_process_simulation():
     """Simulating of the process."""
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
     in_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
-    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim.xdmf"
+    out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_process.xdmf"
 
     # displacment load in y direction
     simulation = SimulationFenicsXConcrete(params_sim_process)
@@ -133,6 +155,25 @@ def task_structure_simulation():
         "verbosity": 2,
     }
 
+# @create_after(executed="meshing")
+# def task_structure_simulation():
+#     """Simulating the final structure under dead load."""
+#
+#     OUTPUT.mkdir(parents=True, exist_ok=True)
+#
+#     in_file_xdmf = OUTPUT / f"{OUTPUT_NAME}.xdmf"
+#     out_file_xdmf = OUTPUT / f"{OUTPUT_NAME}_sim_structure.xdmf"
+#
+#     simulation = SimulationFenicsXConcrete(params_sim_structure)
+#
+#     return {
+#         "file_dep": [in_file_xdmf],
+#         "actions": [(simulation.run, [in_file_xdmf, out_file_xdmf])],
+#         "targets": [out_file_xdmf],
+#         "clean": [clean_targets],
+#         # "uptodate": [config_changed(params_sim)], # param_sim not possible for doit
+#         "verbosity": 2,
+#     }
 
 if __name__ == "__main__":
     import doit
