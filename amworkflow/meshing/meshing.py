@@ -13,6 +13,13 @@ from OCC.Extend.DataExchange import read_step_file
 from amworkflow import occ_helpers
 
 typing.override = lambda x: x
+from amworkflow.config.settings import LOG_LEVEL
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger("amworkflow.meshing.meshing")
+logger.setLevel(LOG_LEVEL)
 
 
 class Meshing:
@@ -72,7 +79,8 @@ class MeshingGmsh(Meshing):
         Returns:
 
         """
-        assert [self.number_of_layers, self.layer_height].count(None) == 1
+        if self.layer_height is None and self.number_of_layers is None:
+            raise ValueError("Both layer_height and number_of_layers are None.")
         assert step_file.is_file(), f"Step file {step_file} does not exist."
 
         shape = read_step_file(filename=str(step_file))
@@ -93,6 +101,7 @@ class MeshingGmsh(Meshing):
         )
 
         model = gmsh.model()
+        gmsh.option.setNumber("General.Verbosity", 0)
         threads_count = multiprocessing.cpu_count()
         # gmsh.option.setNumber("General.NumThreads", threads_count) # FIX: Conflict with doit. Will looking for solutions.
         # model.add("model name") # TODO: required? Not necessarily but perhaps for output .msh
@@ -128,8 +137,6 @@ class MeshingGmsh(Meshing):
 
         if out_vtk:
             gmsh.write(str(out_vtk))
-
-        return
 
     def create_mesh(self, mesh, cell_type: str, prune_z: bool = False) -> meshio.Mesh:
         """Convert meshio mesh to fenics compatible mesh.

@@ -10,8 +10,8 @@ from doit.tools import config_changed
 
 from amworkflow.geometry import GeometryParamWall
 from amworkflow.meshing import MeshingGmsh
-from fenicsxconcrete.util import ureg
 from amworkflow.simulation import SimulationFenicsXConcrete
+from fenicsxconcrete.util import ureg
 
 # > doit -f <filename>   # for execution of all task
 # > doit -f <filename> s <taskname> # for specific task
@@ -26,10 +26,16 @@ params = {  # geometry parameters
     "height": 150,  # mm
     "width": 150,  # mm
     "radius": None,  # mm
-    "infill": get_var('infill',"zigzag"), # default infill changeable via command line doit -f dodo_wall.py infill=zigzag or solid or honeycomb
+    "infill": get_var(
+        "infill", "honeycomb"
+    ),  # default infill changeable via command line doit -f dodo_wall.py infill=zigzag or solid or honeycomb
     # mesh parameters (meshing by layer height)
-    "line_width": float(get_var('line_width', 11)),  # mm # 11 for zigzag 10 for honeycomb to get same volume reduction
-    "mesh_size_factor": float(get_var('mesh_size',4)), # default mesh size factor changeable via command line doit -f dodo_wall.py mesh_size=4
+    "line_width": float(
+        get_var("line_width", 11.3)
+    ),  # mm # 11 for zigzag 10 for honeycomb to get same volume reduction
+    "mesh_size_factor": float(
+        get_var("mesh_size", 4)
+    ),  # default mesh size factor changeable via command line doit -f dodo_wall.py mesh_size=4
     "layer_height": 10,  # mm
 }
 # simulation parameters needs to be in pint units!!
@@ -53,7 +59,9 @@ params_sim_structure = {
 }
 
 # TODO datastore stuff??
-OUTPUT_NAME = f"{Path(__file__).parent.name}_{params['infill']}_mesh_{params['mesh_size_factor']}"
+OUTPUT_NAME = (
+    f"{Path(__file__).parent.name}_{params['infill']}_mesh_{params['mesh_size_factor']}"
+)
 OUTPUT = (
     Path(__file__).parent / "output"
 )  # / f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
@@ -123,6 +131,7 @@ def task_structure_simulation_disp_y():
         "verbosity": 2,
     }
 
+
 @create_after(executed="meshing")
 def task_structure_simulation_disp_x():
     """Simulating the final structure loaded parallel to layers in x-direction with displacement."""
@@ -144,6 +153,3 @@ def task_structure_simulation_disp_x():
         # "uptodate": [config_changed(params_sim)], # param_sim not possible for doit
         "verbosity": 2,
     }
-
-
-
