@@ -1,6 +1,7 @@
-from amworkflow.geometry.builtinCAD import Pnt, Segment, DuplicationCheck, pnt
-from OCC.Core.gp import gp_Pnt
 import numpy as np
+from OCC.Core.gp import gp_Pnt
+
+from amworkflow.geometry.builtinCAD import DuplicationCheck, Pnt, Segment, pnt
 
 
 def test_duplication_check():
@@ -10,12 +11,13 @@ def test_duplication_check():
     pnt31 = Pnt([2, 3, 5])
     seg1 = Segment(pnt1, pnt2)
     seg11 = Segment(pnt1, pnt2)
-    assert(seg1 is seg11)
-    assert(pnt3 is pnt31)
-    assert(pnt1 is not pnt2)
-    
+    assert seg1 is seg11
+    assert pnt3.id == pnt31.id
+    assert pnt1 is not pnt2
+
+
 def test_pnt_coord_auto_completion():
-    point1 = pnt([2,3])
+    point1 = pnt([2, 3])
     point2 = pnt([])
     point3 = pnt([2])
     assert np.array_equal(point1, np.array([2, 3, 0]))

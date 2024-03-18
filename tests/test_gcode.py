@@ -41,6 +41,6 @@ def test_gcode(tmp_path):
     file_point = caller_path / "RandomPoints.csv"
     params["in_file_path"] = file_point
     gcd = GcodeFromPoints(**params)
-    file_gcode = tmp_path
-    gcd.create(file_point, "test.gcode", file_gcode)
+    file_gcode = Path(tmp_path) / "test.gcode"
+    gcd.create(file_point, file_gcode)
     assert file_gcode.exists()
