@@ -10,6 +10,7 @@ from doit.tools import config_changed
 
 from amworkflow.geometry import GeometryParamWall
 from amworkflow.meshing import MeshingGmsh
+from amworkflow.gcode import GcodeFromPoints
 from amworkflow.simulation import SimulationFenicsXConcrete
 from fenicsxconcrete.util import ureg
 
@@ -37,6 +38,19 @@ params = {  # geometry parameters
         get_var("mesh_size", 4)
     ),  # default mesh size factor changeable via command line doit -f dodo_wall.py mesh_size=4
     "layer_height": 10,  # mm
+}
+params_gcode = {  # gcode parameters
+    "layer_num": int(params["height"]/params["layer_height"]),
+    "layer_height": params["layer_height"], #mm
+    "layer_width":  params["line_width"],
+    "offset_from_origin": [0, 0], # Offset from origin in mm
+    "unit": "mm",    # Unit of geometry
+    "standard": "ConcretePrinter",   # Standard of the printer firmware
+    "coordinate_system": "absolute", # Coordinate system of the printer firmware
+    "nozzle_diameter": 0.4, # Diameter of the nozzle in mm
+    "kappa": 1, # Parameter for the calculation of the extrusion width
+    "tool_number": 0, # Tool number of the extruder. Expected to be an integer
+    "feedrate": 1800,
 }
 # simulation parameters needs to be in pint units!!
 params_sim_structure = {
@@ -86,6 +100,24 @@ def task_create_design():
         "verbosity": 2,
     }
 
+@create_after(executed="create_design")
+def task_gcode():
+    """Generate machine code (gcode) for design from a point csv file."""
+
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+
+    in_file_points = OUTPUT / f"{OUTPUT_NAME}.csv"
+    out_file_gcode = OUTPUT / f"{OUTPUT_NAME}.gcode"
+
+    gcd = GcodeFromPoints(**params_gcode)
+
+    return {
+        "file_dep": [in_file_points],
+        "actions": [(gcd.create, [in_file_points, out_file_gcode])],
+        "targets": [out_file_gcode],
+        "clean": [clean_targets],
+        "uptodate": [config_changed(params_gcode)],
+    }
 
 @create_after(executed="create_design")
 def task_meshing():

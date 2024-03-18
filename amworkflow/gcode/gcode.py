@@ -126,31 +126,28 @@ class GcodeFromPoints(Gcode):
         # rotate the model in 90 degree
         self.extrusion_tracker = []
         # Container of extrusion logs
-        self.in_file_path = in_file_path
-        # Path to the input file
         self.diff_geo_per_layer = False
         # switch of different geometry per layer
-        self.read_points(self.in_file_path)
+
         super().__init__(**kwargs)
 
-    def create(self, in_file: Path, out_gcode_dir: Path = None) -> None:
+    def create(self, in_file: Path, out_gcode: Path = None) -> None:
         """Create gcode file by given path point file
 
         Args:
             in_file: File path to path point file
-            out_gcode: Name of output gcode file.
-            out_gcode_dir: Directory of output gcode file. If not given, One output folder will be created in the root directory of the project.
+            out_gcode: File path to gcode file.
 
         Returns:
 
         """
-        if out_gcode_dir is None:
-            current_directory = os.getcwd()
-            root_directory = os.path.dirname(current_directory)
-            out_gcode_dir = os.path.join(root_directory, "output_gcode")
-            if not os.path.exists(out_gcode_dir):
-                os.makedirs(out_gcode_dir)
-        out_gcode_dir = Path(out_gcode_dir)
+        assert in_file.is_file(), f"Step file {in_file} does not exist."
+
+        if out_gcode is None:
+            assert ValueError("Output gcode file is not defined.")
+
+        self.read_points(in_file)
+
         self.init_gcode()
         z = 0
         for i in range(self.layer_num):
@@ -173,10 +170,10 @@ class GcodeFromPoints(Gcode):
                     )
                 E += extrusion_length
                 self.move(coord, np.round(E, 5), self.feedrate)
-        gcode_file_path = Path(out_gcode_dir)
-        self.write_gcode(gcode_file_path, self.gcode)
-        out_log = f"log_{gcode_file_path.stem}.csv"
-        log_file_path = gcode_file_path.parent / out_log
+
+        self.write_gcode(out_gcode, self.gcode)
+        out_log = f"log_{out_gcode.stem}.csv"
+        log_file_path = out_gcode.parent / out_log
         self.write_log(log_file_path)
 
     def compute_extrusion(self, p0: list, p1: list):

@@ -106,14 +106,14 @@ def task_gcode():
     in_file_points = OUTPUT / f"{OUTPUT_NAME}.csv"
     out_file_gcode = OUTPUT / f"{OUTPUT_NAME}.gcode"
 
-    gcd = GcodeFromPoints(**params)
+    gcd = GcodeFromPoints(**params_gcode)
 
     return {
         "file_dep": [in_file_points],
         "actions": [(gcd.create, [in_file_points, out_file_gcode])],
         "targets": [out_file_gcode],
         "clean": [clean_targets],
-        "uptodate": [config_changed(params)],
+        "uptodate": [config_changed(params_gcode)],
     }
 
 @create_after(executed="create_design")
