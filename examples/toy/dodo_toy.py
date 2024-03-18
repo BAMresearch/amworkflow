@@ -117,6 +117,18 @@ def task_gcode():
     }
 
 @create_after(executed="create_design")
+def task_powderbed_code():
+    """Generate print instructions for BAM powder bed printer"""
+
+    return {
+        "file_dep": [in_file_points],
+        "actions": [(gcd.create, [in_file_points, out_file_gcode])],
+        "targets": [out_file_gcode],
+        "clean": [clean_targets],
+        "uptodate": [config_changed(params)],
+    }
+
+@create_after(executed="create_design")
 def task_meshing():
     """Meshing a given design from a step file."""
 

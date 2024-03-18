@@ -34,7 +34,138 @@ class Gcode:
 
         """
         raise NotImplementedError
+class PowderbedCodeFromSTL(Gcode):
+    """Print instructions writer from stl file"""
 
+    def __init__(
+        self,
+        stl_unit = 1000,
+        add_zeros = 0,
+        recipe_name = "DSMR-from amworkflow: "  + stl_in,
+        printer_name = "DESA1 - BAM",
+        nozzle_num = 180,                            # [-] number of nozzles over x, determine maximum resolution
+        nozzle_open = 5,                            # [ms] nozzle opening time
+        printer_x = 1.0032,                          # [m], changed at the bottom !!!
+        printer_y = 1.026,                           # [m] fixed Width, on which individual nozzles are placed 
+        printer_z = 2.0007,                          # [m]
+        voxel_dim_y = self.printer_y / nozzle_num,        # [m] cubic voxels only!, for 1026mm and 180 nozzles -> 5.7mm
+        voxel_dim_x = voxel_dim_y,                   # [m]
+        voxel_dim_z = voxel_dim_y,                   # [m]
+        print_speed_x = 50,                          # [mm/s]
+        print_speed_y = 0,                          # [mm/s]
+        print_speed_z = 4,                           # [mm/s]
+        laying_speed_x = 50,                         # [mm/s]
+        manual_speed_x = 50,                         # [mm/s]
+        manual_speed_y = 0,                          # [mm/s]
+        manual_speed_z = 10,                         # [mm/s]
+        lines_num = 176,                            # [-] should be 176
+        layer_num_max = 351,                         # [-]
+        delta_extra_plane_end = 10,                 # [mm] ?
+        delta_extra_plane_start = 290,                 # [mm] ?
+        voxel_raise_before_laying = 40,              # [%] ?
+        voxel_raise_before_printing = 60,            # [%] ?
+        recoater_opening_position_laying = 1,        # [mm]
+        recoater_closing_position_laying = np.floor(printer_x*1000) + 100,      # [mm], experimented with Petr
+        recoater_opening_position_printing = 100,    # [mm]
+        recoater_closing_position_printing = np.floor(printer_x*1000) + 200,   # [mm], experimented with Petr
+        recoater_open_close_speed = 3,               # [mm/s]
+        recoater_hole_opening = 59,                  # [mm]
+        lump_breaker_powder = 0,                     # [-] 0 = off, 1 = on
+        min_liquid_1_level_range_1_7 = 2,            # [-]
+        max_liquid_1_level_range_1_7 = 3,            # [-]
+        min_liquid_2_level_range_1_7 = 2,            # [-]
+        max_liquid_2_level_range_1_7 = 3,            # [-]
+        layer_num: float = 1,
+        layer_height: float = 1,
+        line_width: float = 1,
+        offset_from_origin: np.ndarray = np.array([0, 0]),
+        unit: str = "mm",
+        standard: str = "ConcretePrinter",
+        coordinate_system: str = "absolute",
+        nozzle_diameter: float = 0.4,
+        kappa: float = 1,
+        gamma: float = -1,
+        delta: float = 0,
+        tool_number: int = 0,
+        feedrate: int = 1800,
+        fixed_feedrate: bool = False,
+        rotate: bool = False,
+        density: float = 1,
+        in_file_path: str = None,
+        **kwargs,
+    ) -> None:
+        self.line_width = line_width
+        # Width of the line
+        self.layer_num = layer_num
+        # Number of layers
+        self.layer_height = layer_height
+        # Layer height
+        self.unit = unit
+        # Unit of the geometry
+        self.standard = standard
+        # Standard of the printer firmware
+        self.load_standard()
+        self.coordinate_system = coordinate_system
+        # Coordinate system of the printer firmware
+        self.nozzle_diameter = nozzle_diameter
+        # Diameter of the nozzle
+        self.nozzle_area = 0.25 * np.pi * self.nozzle_diameter**2
+        # Area of the nozzle
+        self.kappa = kappa
+        # Coefficient of rectifying the extrusion length
+        self.gamma = gamma
+        # Coefficient of rectifying the feedrate, as well as the line width
+        self.delta = delta
+        # Coefficient of rectifying the feedrate, as well as the line width
+        self.tool_number = tool_number
+        # Tool number
+        self.feedrate = feedrate
+        # Feed rate
+        self.density = density
+        # Density of the material
+        self.fixed_feedrate = fixed_feedrate
+        # switch of fixed feedrate
+        self.offset_from_origin = offset_from_origin
+        # Offset of the points
+        self.print_length = 0
+        # Length of the print
+        self.material_consumption = 0
+        # Material consumption
+        self.time_consumption = 0
+        # Time consumption
+        self.timedelta = 0
+        # Time delta
+        self.points_t = []
+        # Transposed points
+        self.bbox = []
+        # Bounding box of the points
+        self.bbox_length = 0
+        # Length of the bounding box
+        self.bbox_width = 0
+        # Width of the bounding box
+        self.gcode = []
+        # Container of gcode
+        self.points = []
+        # Container of points
+        self.header = [
+            self.Absolute,
+            self.ExtruderAbsolute,
+            self.set_fanspeed(0),
+            self.set_tool(0),
+        ]
+        # Container of header of gcode
+        self.tail = [self.ExtruderOFF, self.FanOFF, self.MotorOFF]
+        # Container of tail of gcode
+        self.rotate = rotate
+        # rotate the model in 90 degree
+        self.extrusion_tracker = []
+        # Container of extrusion logs
+        self.in_file_path = in_file_path
+        # Path to the input file
+        self.diff_geo_per_layer = False
+        # switch of different geometry per layer
+        self.read_points(self.in_file_path)
+        super().__init__(**kwargs)
 
 class GcodeFromPoints(Gcode):
     """Gcode writer from path points."""
