@@ -48,5 +48,7 @@ jobs:
       - name: run dodo_wall
         shell: bash -l {0} #new shell
         run: |
+          doit -f examples/Wall/dodo_wall.py infill=solid
+          doit -f examples/Wall/dodo_wall.py infill=zigzag
           doit -f examples/Wall/dodo_wall.py infill=honeycomb
 
