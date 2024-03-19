@@ -11,6 +11,7 @@ import numpy as np
 from matplotlib.patches import Rectangle
 
 import amworkflow.gcode.printer_config as printer_config
+from amworkflow.config.settings import ROOT_PATH
 from amworkflow.geometry import builtinCAD as bcad
 
 typing.override = lambda x: x
@@ -174,6 +175,7 @@ class GcodeFromPoints(Gcode):
         self.write_gcode(out_gcode, self.gcode)
         out_log = f"log_{out_gcode.stem}.csv"
         log_file_path = out_gcode.parent / out_log
+        print('check', log_file_path)
         self.write_log(log_file_path)
 
     def compute_extrusion(self, p0: list, p1: list):
@@ -266,9 +268,13 @@ class GcodeFromPoints(Gcode):
         :raises ValueError:
         """
         directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
+
+        directory = os.path.join(ROOT_PATH, "amworkflow/gcode/config")
+        print('check', directory)
         config_list_no_ext = [
             os.path.splitext(file)[0] for file in os.listdir(directory)
         ]
+        print('check', config_list_no_ext)
         if std is not None:
             self.standard = std
         if self.standard not in config_list_no_ext:
