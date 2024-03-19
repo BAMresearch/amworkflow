@@ -32,7 +32,7 @@ params = {  # geometry parameters
     ),  # default infill changeable via command line doit -f dodo_wall.py infill=zigzag or solid or honeycomb
     # mesh parameters (meshing by layer height)
     "line_width": float(
-        get_var("line_width", 11.3)
+        get_var("line_width", 10)
     ),  # mm # 11 for zigzag 10 for honeycomb to get same volume reduction
     "mesh_size_factor": float(
         get_var("mesh_size", 4)
