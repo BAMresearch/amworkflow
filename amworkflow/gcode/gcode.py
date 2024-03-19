@@ -267,8 +267,6 @@ class GcodeFromPoints(Gcode):
         :type std: str, optional
         :raises ValueError:
         """
-        directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
-
         directory = os.path.join(ROOT_PATH, "amworkflow/gcode/config")
         print('check', directory)
         config_list_no_ext = [
@@ -279,7 +277,7 @@ class GcodeFromPoints(Gcode):
             self.standard = std
         if self.standard not in config_list_no_ext:
             raise ValueError(f"{self.standard} does not exist.")
-        config = printer_config.read_config(self.standard + ".yaml")
+        config = printer_config.read_config(directory+"/"+self.standard + ".yaml")
         logging.info(f"Load config {self.standard}")
         for state in printer_config.PrintState:
             if state.name in config:

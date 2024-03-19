@@ -66,38 +66,36 @@ class CommentInfo(Enum):
     ORIGINAL_POINT = "Original Point"
 
 
-def create_new_config(config_name):
+def create_new_config(path_config_file):
     """Create new config file
 
-    :param config_name: config file name
+    :param path_config_file: file path of config file
     :type config_name: str
     :raises FileExistsError: File already exists
     """
-    directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
-    print(directory)
-    file_path = os.path.join(directory, config_name)
-    if os.path.exists(file_path):
-        raise FileExistsError(f"{config_name} already exists.")
+
+    if os.path.exists(path_config_file):
+        raise FileExistsError(f"{path_config_file} already exists.")
     enum_members_list = [state.name for state in PrintState]
     # Write data to the YAML file
-    with open(file_path, "w", encoding="utf-8") as yaml_file:
+    with open(path_config_file, "w", encoding="utf-8") as yaml_file:
         yaml.dump(enum_members_list, yaml_file, default_flow_style=False)
 
 
-def read_config(config_name):
+def read_config(path_config_file):
     """Read config file
 
-    :param config_name: config file name
+    :param path_config_file: file path of config file
     :type config_name: str
     :raises FileNotFoundError: File not found
     :return: config data
     :rtype: dict
     """
-    directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
-    file_path = os.path.join(directory, config_name)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"{config_name} does not exist.")
-    with open(file_path, "r", encoding="utf-8") as yaml_file:
+    # directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
+    # file_path = os.path.join(directory, config_name)
+    if not os.path.exists(path_config_file):
+        raise FileNotFoundError(f"{path_config_file} does not exist.")
+    with open(path_config_file, "r", encoding="utf-8") as yaml_file:
         loaded_data = yaml.safe_load(yaml_file)
         flattened_data = {k: v for d in loaded_data for k, v in d.items()}
         return flattened_data
