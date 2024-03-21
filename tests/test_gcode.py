@@ -31,15 +31,12 @@ params = {  # geometry parameters
     # Tool number of the extruder. Expected to be an integer
     "feedrate": 1800,
     # Feedrate of the extruder in mm/min. Expected to be an integer
-    "in_file_path": "",
-    # Path to the input file
 }
 
 
 def test_gcode(tmp_path):
     caller_path = Path(os.path.dirname(__file__))
     file_point = caller_path / "RandomPoints.csv"
-    params["in_file_path"] = file_point
     gcd = GcodeFromPoints(**params)
     file_gcode = Path(tmp_path) / "test.gcode"
     gcd.create(file_point, file_gcode)
