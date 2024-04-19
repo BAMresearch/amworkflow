@@ -25,7 +25,7 @@ params = {  # geometry parameters
     "layer_thickness": 50,  # mm
     "height": 100,  # mm
     # mesh parameters (meshing by layer height)
-    "mesh_size_factor": 10,
+    "mesh_size_factor": 100, # coarse mesh
     "number_of_layers": 10,
     "is_close": False,
 }
