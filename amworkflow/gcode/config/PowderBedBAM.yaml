@@ -1,0 +1,38 @@
+# Printer config for BAM powder bed printer
+# note: PrinterX and LinesNum are recalculated during run, same applies for recoater closing positions
+- STLUnit: 1000
+- DebugMode: False
+- AddZeros: 0
+- PrinterName: DESA1 - BAM
+- NozzleNum: 180                        # [-]
+- NozzleOpen: 5                         # [-]
+- PrinterX: 1.0032                      # [m]
+- PrinterY: 1.026                       # [m]
+- PrinterZ: 2.0007                      # [m]
+- VoxelDimX: 0.0057                     # [m] derived from printer_y and nozzle_num
+- VoxelDimY: 0.0057                     # [m] only cubic voxels!
+- VoxelDimZ: 0.0057                     # [m] only cubic voxels!
+- PrintSpeedX: 50                       # [mm/s]
+- PrintSpeedY: 0                        # [mm/s]
+- PrintSpeedZ: 4                        # [mm/s]
+- LayingSpeedX: 50                      # [mm/s]
+- ManualSpeedX: 50                      # [mm/s]
+- ManualSpeedY: 0                       # [mm/s]
+- ManualSpeedZ: 10                      # [mm/s]
+- LinesNum: 176                         # [-] - recalculated
+- LayerNumMax: 351                      # [-] - recalculated
+- DeltaExtraPlaneEnd: 10                # [mm]
+- DeltaExtraPlaneStart: 290             # [mm]
+- VoxelRaiseBeforeLaying: 40            # [mm]
+- VoxelRaiseBeforePrinting: 60          # [mm]
+- RecoaterOpeningPositionLaying: 1      # [mm]
+- RecoaterClosingPositionLaying: 1      # [mm] - recalculated
+- RecoaterOpeningPositionPrinting: 100  # [mm]
+- RecoaterClosingPositionPrinting: 1    # [mm] - recalculated
+- RecoaterOpenCloseSpeed: 3             # [mm/s]
+- RecoaterHoleOpening: 59               # [mm]
+- LumpBreakerPowder: 0                  # [-]
+- MinLiquid1LevelRange1To7: 2           # [-]
+- MaxLiquid1LevelRange1To7: 3           # [-]
+- MinLiquid2LevelRange1To7: 2           # [-]
+- MaxLiquid2LevelRange1To7: 3           # [-]

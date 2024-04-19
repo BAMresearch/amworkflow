@@ -106,27 +106,27 @@ def task_gcode():
     in_file_points = OUTPUT / f"{OUTPUT_NAME}.csv"
     out_file_gcode = OUTPUT / f"{OUTPUT_NAME}.gcode"
 
-    gcd = GcodeFromPoints(**params)
+    gcd = GcodeFromPoints(**params_gcode)
 
     return {
         "file_dep": [in_file_points],
         "actions": [(gcd.create, [in_file_points, out_file_gcode])],
         "targets": [out_file_gcode],
         "clean": [clean_targets],
-        "uptodate": [config_changed(params)],
+        "uptodate": [config_changed(params_gcode)],
     }
 
-@create_after(executed="create_design")
-def task_powderbed_code():
-    """Generate print instructions for BAM powder bed printer"""
+# @create_after(executed="create_design")
+# def task_powderbed_code():
+#     """Generate print instructions for BAM powder bed printer"""
 
-    return {
-        "file_dep": [in_file_points],
-        "actions": [(gcd.create, [in_file_points, out_file_gcode])],
-        "targets": [out_file_gcode],
-        "clean": [clean_targets],
-        "uptodate": [config_changed(params)],
-    }
+#     return {
+#         "file_dep": [in_file_points],
+#         "actions": [(gcd.create, [in_file_points, out_file_gcode])],
+#         "targets": [out_file_gcode],
+#         "clean": [clean_targets],
+#         "uptodate": [config_changed(params)],
+#     }
 
 @create_after(executed="create_design")
 def task_meshing():
@@ -168,3 +168,30 @@ def task_structure_simulation():
         # "uptodate": [config_changed(params_sim)], # param_sim not possible for doit
         "verbosity": 2,
     }
+
+if __name__ == "__main__":
+
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+
+    out_file_step = OUTPUT / f"{OUTPUT_NAME}.stp"
+    out_file_stl = OUTPUT / f"{OUTPUT_NAME}.stl"
+    out_file_points = OUTPUT / f"{OUTPUT_NAME}.csv"
+
+    # define center line points here for this example:
+    points = [[0., 0., 0.],
+              [0., 150., 0.],
+              [10., 150., 0],
+              [75., 75., 0.],
+              [140., 150., 0.],
+              [150., 150., 0.],
+              [150., 0., 0.]]
+    params["points"] = points
+    geometry = GeometryCenterline(**params)
+
+    in_file_points = OUTPUT / f"{OUTPUT_NAME}.csv"
+    out_file_gcode = OUTPUT / f"{OUTPUT_NAME}.gcode"
+
+    gcd = GcodeFromPoints(**params_gcode, in_file_path=in_file_points)
+
+    AAA = GcodeFromPoints.create(gcd, in_file=in_file_points, out_gcode=out_file_gcode)
+    BBB = 1

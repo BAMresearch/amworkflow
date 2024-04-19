@@ -1,1 +1,1 @@
-from .gcode import Gcode, GcodeFromPoints
+from .gcode import *

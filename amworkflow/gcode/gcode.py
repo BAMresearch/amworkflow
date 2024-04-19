@@ -1,5 +1,6 @@
 import csv
 import logging
+import sys
 import os
 import re
 import typing
@@ -12,6 +13,9 @@ from matplotlib.patches import Rectangle
 
 import amworkflow.gcode.printer_config as printer_config
 from amworkflow.geometry import builtinCAD as bcad
+
+import stltovoxel
+#import pyvista as pv
 
 typing.override = lambda x: x
 
@@ -34,138 +38,263 @@ class Gcode:
 
         """
         raise NotImplementedError
+    
 class PowderbedCodeFromSTL(Gcode):
     """Print instructions writer from stl file"""
 
     def __init__(
         self,
-        stl_unit = 1000,
-        add_zeros = 0,
-        recipe_name = "DSMR-from amworkflow: "  + stl_in,
-        printer_name = "DESA1 - BAM",
-        nozzle_num = 180,                            # [-] number of nozzles over x, determine maximum resolution
-        nozzle_open = 5,                            # [ms] nozzle opening time
-        printer_x = 1.0032,                          # [m], changed at the bottom !!!
-        printer_y = 1.026,                           # [m] fixed Width, on which individual nozzles are placed 
-        printer_z = 2.0007,                          # [m]
-        voxel_dim_y = self.printer_y / nozzle_num,        # [m] cubic voxels only!, for 1026mm and 180 nozzles -> 5.7mm
-        voxel_dim_x = voxel_dim_y,                   # [m]
-        voxel_dim_z = voxel_dim_y,                   # [m]
-        print_speed_x = 50,                          # [mm/s]
-        print_speed_y = 0,                          # [mm/s]
-        print_speed_z = 4,                           # [mm/s]
-        laying_speed_x = 50,                         # [mm/s]
-        manual_speed_x = 50,                         # [mm/s]
-        manual_speed_y = 0,                          # [mm/s]
-        manual_speed_z = 10,                         # [mm/s]
-        lines_num = 176,                            # [-] should be 176
-        layer_num_max = 351,                         # [-]
-        delta_extra_plane_end = 10,                 # [mm] ?
-        delta_extra_plane_start = 290,                 # [mm] ?
-        voxel_raise_before_laying = 40,              # [%] ?
-        voxel_raise_before_printing = 60,            # [%] ?
-        recoater_opening_position_laying = 1,        # [mm]
-        recoater_closing_position_laying = np.floor(printer_x*1000) + 100,      # [mm], experimented with Petr
-        recoater_opening_position_printing = 100,    # [mm]
-        recoater_closing_position_printing = np.floor(printer_x*1000) + 200,   # [mm], experimented with Petr
-        recoater_open_close_speed = 3,               # [mm/s]
-        recoater_hole_opening = 59,                  # [mm]
-        lump_breaker_powder = 0,                     # [-] 0 = off, 1 = on
-        min_liquid_1_level_range_1_7 = 2,            # [-]
-        max_liquid_1_level_range_1_7 = 3,            # [-]
-        min_liquid_2_level_range_1_7 = 2,            # [-]
-        max_liquid_2_level_range_1_7 = 3,            # [-]
-        layer_num: float = 1,
-        layer_height: float = 1,
-        line_width: float = 1,
-        offset_from_origin: np.ndarray = np.array([0, 0]),
-        unit: str = "mm",
-        standard: str = "ConcretePrinter",
-        coordinate_system: str = "absolute",
-        nozzle_diameter: float = 0.4,
-        kappa: float = 1,
-        gamma: float = -1,
-        delta: float = 0,
-        tool_number: int = 0,
-        feedrate: int = 1800,
-        fixed_feedrate: bool = False,
-        rotate: bool = False,
-        density: float = 1,
+        standard: str = "PowderBedBAM",
         in_file_path: str = None,
         **kwargs,
     ) -> None:
-        self.line_width = line_width
-        # Width of the line
-        self.layer_num = layer_num
-        # Number of layers
-        self.layer_height = layer_height
-        # Layer height
-        self.unit = unit
         # Unit of the geometry
         self.standard = standard
         # Standard of the printer firmware
+        # Careful, the file "printer_config.py" also has to be changed whenever parameters in the config are added/removed
         self.load_standard()
-        self.coordinate_system = coordinate_system
-        # Coordinate system of the printer firmware
-        self.nozzle_diameter = nozzle_diameter
-        # Diameter of the nozzle
-        self.nozzle_area = 0.25 * np.pi * self.nozzle_diameter**2
-        # Area of the nozzle
-        self.kappa = kappa
-        # Coefficient of rectifying the extrusion length
-        self.gamma = gamma
-        # Coefficient of rectifying the feedrate, as well as the line width
-        self.delta = delta
-        # Coefficient of rectifying the feedrate, as well as the line width
-        self.tool_number = tool_number
-        # Tool number
-        self.feedrate = feedrate
-        # Feed rate
-        self.density = density
-        # Density of the material
-        self.fixed_feedrate = fixed_feedrate
-        # switch of fixed feedrate
-        self.offset_from_origin = offset_from_origin
-        # Offset of the points
-        self.print_length = 0
-        # Length of the print
-        self.material_consumption = 0
-        # Material consumption
-        self.time_consumption = 0
-        # Time consumption
-        self.timedelta = 0
-        # Time delta
-        self.points_t = []
-        # Transposed points
-        self.bbox = []
-        # Bounding box of the points
-        self.bbox_length = 0
-        # Length of the bounding box
-        self.bbox_width = 0
-        # Width of the bounding box
-        self.gcode = []
-        # Container of gcode
-        self.points = []
-        # Container of points
-        self.header = [
-            self.Absolute,
-            self.ExtruderAbsolute,
-            self.set_fanspeed(0),
-            self.set_tool(0),
-        ]
-        # Container of header of gcode
-        self.tail = [self.ExtruderOFF, self.FanOFF, self.MotorOFF]
-        # Container of tail of gcode
-        self.rotate = rotate
-        # rotate the model in 90 degree
-        self.extrusion_tracker = []
-        # Container of extrusion logs
-        self.in_file_path = in_file_path
         # Path to the input file
-        self.diff_geo_per_layer = False
-        # switch of different geometry per layer
-        self.read_points(self.in_file_path)
+        self.in_file_path = in_file_path
+                        
         super().__init__(**kwargs)
+
+    def create(self, in_file: Path, out_dsmn: str, out_xyz: str, out_dsmn_dir: Path = None) -> None:
+        """Create dsmn printer instructions file by given stl file
+
+        Args:
+            in_file: File path to path point file
+            out_dsmn: Name of output dsmn file.
+            out_xyz: Name of output xyz file.
+            out_dsmn_dir: Directory of output dsmn file. If not given, One output folder will be created in the root directory of the project.
+
+        Returns:
+
+        """
+
+        ### Recalculate parameters
+        self.RecoaterClosingPositionLaying = np.floor(self.PrinterX*1000) + 100
+        self.RecoaterClosingPositionPrinting = np.floor(self.PrinterX*1000) + 200
+        self.VoxelDimY = self.PrinterY / self.NozzleNum
+        self.VoxelDimX = self.VoxelDimY
+        self.VoxelDimZ = self.VoxelDimY
+
+        ### creating of paths for various stuff
+        stl_name, stl_fileending = os.path.splitext(os.path.basename(in_file))
+        #working_folder = os.getcwd()
+
+        recipe_name = "DSMR-" + stl_name + stl_fileending
+
+        if out_dsmn_dir is None:
+            current_directory = os.getcwd()
+            root_directory = os.path.dirname(current_directory)
+            out_dsmn_dir = os.path.join(current_directory, "output")
+
+
+            if not os.path.exists(out_dsmn_dir):
+                os.makedirs(out_dsmn_dir)
+        out_dsmn_dir = Path(out_dsmn_dir)
+        out_log = f"log_{stl_name}.txt"
+        log_file_path = out_dsmn_dir / out_log
+
+        ####
+        ### Convert to xyz file (one file total)
+        out = stltovoxel.convert_file(in_file, out_xyz, voxel_size = self.VoxelDimY*self.STLUnit, parallel = False)
+
+        ### Load xyz file for further processing
+        # Read xyz file and parse coordinates
+        with open(out_xyz, 'r') as file:
+            lines = file.readlines()
+
+        # Extract x, y, z coordinates from each line
+        coordinates = [list(map(float, line.strip().split())) for line in lines]
+
+        # Convert coordinates to a NumPy array
+        voxel_array = np.array(coordinates) / self.STLUnit
+
+        # Find unique values and sort ascending (1st col: x, 2nd col: y, 3rd col: z)
+        unique_x = np.unique(voxel_array[:,0])
+        unique_y = np.unique(voxel_array[:,1])
+        unique_z = np.unique(voxel_array[:,2])
+
+        # Get real voxel dimension produced by stl2voxel
+        sorted_x_temp = np.sort(unique_x)
+        sliced_voxel_dim_x = (sorted_x_temp[1]-sorted_x_temp[0])
+        sorted_y_temp = np.sort(unique_y)
+        sliced_voxel_dim_y = (sorted_y_temp[1]-sorted_y_temp[0])
+        sorted_z_temp = np.sort(unique_z)
+        sliced_voxel_dim_z = (sorted_z_temp[1]-sorted_z_temp[0])
+
+        # Create arrays for dimensions, adding small offset to stop-value, because it may not be included
+        sorted_x = np.arange(np.min(unique_x), np.max(unique_x)+0.01*self.VoxelDimX, sliced_voxel_dim_x)
+        sorted_y = np.arange(np.min(unique_y), np.max(unique_y)+0.01*self.VoxelDimY, sliced_voxel_dim_y)
+        sorted_z = np.arange(np.min(unique_z), np.max(unique_z)+0.01*self.VoxelDimZ, sliced_voxel_dim_z)
+
+        # Prepare array
+        voxel_3d_array = np.zeros((sorted_x.shape[0], sorted_y.shape[0], sorted_z.shape[0]))
+
+        # Sort ones where a coordinate exists into 3d array
+        for i, row in enumerate(voxel_array):
+
+            x_index = np.argmin(np.abs(sorted_x - row[0]))
+            y_index = np.argmin(np.abs(sorted_y - row[1]))
+            z_index = np.argmin(np.abs(sorted_z - row[2]))
+
+            voxel_3d_array[x_index, y_index, z_index] = 1
+
+        # Calculate optimized printer_x and lines_num for less printing duration, also recoater values
+        self.PrinterX = (voxel_3d_array.shape[1] + 2*self.AddZeros) * self.VoxelDimX
+        self.LinesNum = voxel_3d_array.shape[1] + 2*self.AddZeros
+        self.RecoaterClosingPositionLaying = np.floor(self.PrinterX*1000) + 100
+        self.RecoaterClosingPositionPrinting = np.floor(self.PrinterX*1000) + 200
+
+        ### Write header - printer parameters
+        with open(out_dsmn, "w") as file:
+            file.write(recipe_name + "\n")
+            file.write(self.PrinterName + "\n")
+            file.write(str(self.VoxelDimY*1000) + "\n")
+            file.write(str(self.PrinterY*1000) + "\n")
+            file.write(str(self.VoxelDimX*1000) + "\n")
+            file.write(str(np.round(self.PrinterX*1000, 1)) + "\n")
+            file.write(str(self.NozzleOpen) + "\n")
+            file.write(str(self.NozzleNum) + "\n")
+            file.write(str(self.VoxelDimZ*1000) + "\n")
+            file.write(str(self.PrinterZ*1000) + "\n")
+            file.write(str(self.PrintSpeedX) + "\n")
+            file.write(str(self.PrintSpeedY) + "\n")
+            file.write(str(self.PrintSpeedZ) + "\n")
+            file.write(str(self.LayingSpeedX) + "\n")
+            file.write(str(self.ManualSpeedX) + "\n")
+            file.write(str(self.ManualSpeedY) + "\n")
+            file.write(str(self.ManualSpeedZ) + "\n")
+            file.write(str(self.LinesNum) + "\n")
+            file.write(str(self.LayerNumMax) + "\n")
+            file.write(str(self.DeltaExtraPlaneEnd) + "\n")
+            file.write(str(self.VoxelRaiseBeforeLaying) + "\n")
+            file.write(str(self.VoxelRaiseBeforePrinting) + "\n")
+            file.write(str(self.DeltaExtraPlaneStart) + "\n")
+            file.write(str(self.RecoaterOpeningPositionLaying) + "\n")
+            file.write(str(self.RecoaterClosingPositionLaying) + "\n")
+            file.write(str(self.RecoaterOpeningPositionPrinting) + "\n")
+            file.write(str(self.RecoaterClosingPositionPrinting) + "\n")
+            file.write(str(self.RecoaterOpenCloseSpeed) + "\n")
+            file.write(str(self.RecoaterHoleOpening) + "\n")
+            file.write(str(self.LumpBreakerPowder) + "\n")
+            file.write(str(self.MinLiquid1LevelRange1To7) + "\n")
+            file.write(str(self.MaxLiquid1LevelRange1To7) + "\n")
+            file.write(str(self.MinLiquid2LevelRange1To7) + "\n")
+            file.write(str(self.MaxLiquid2LevelRange1To7) + "\n")
+            file.write("\n"*67)   # Values from 34 to 100 are not existant, therefore empty lines
+
+        ### Write body - voxel to hex
+        # Check if there are more voxels along x than nozzles
+        if voxel_3d_array.shape[0] > self.NozzleNum:
+            raise ValueError(f"{voxel_3d_array.shape[0]} x-voxels to only {self.NozzleNum} nozzles, rescale model to fit within printer width of {self.PrinterY}m")
+        # Check if 4 bit to hex encoding possible
+        if self.NozzleNum % 4 != 0:
+            raise ValueError("Number of nozzles not a multiple of 4, 4bit to hex encoding not possible")
+        
+        # Prepare array
+        printerbed_3d_array = np.zeros((self.NozzleNum, self.LinesNum, sorted_z.shape[0]))
+
+        # Sort into temporary array
+        for ii in range(voxel_3d_array.shape[2]):
+            # Position smaller prints into larger printer bed, roughly in the middle
+            A_large = printerbed_3d_array[:,:,ii]
+            A_small = voxel_3d_array[:,:,ii]
+            start_row = (A_large.shape[0] - A_small.shape[0]) // 2
+            start_col = (A_large.shape[1] - A_small.shape[1]) // 2
+
+            A_large[start_row:start_row + A_small.shape[0], start_col:start_col + A_small.shape[1]] = A_small
+            printerbed_3d_array[:,:,ii] = A_large
+
+        # Print the actual dsmn-file
+        for layers in range(printerbed_3d_array.shape[2]):
+            printer_hex = []
+            temp_array = np.transpose(printerbed_3d_array[:,:,layers])
+
+            for row in temp_array:
+                # Partitioning of rows in parts of length 4
+                chunks = [row[i:i+4] for i in range(0, len(row), 4)]
+
+                # Convert every chunk into binary number and then into hex number
+                hex_values = [hex(int(''.join(map(str, chunk.astype(int))), 2))[2:].upper() for chunk in chunks]
+
+                # Combine hex numbers
+                printer_hex.append(hex_values)
+
+            with open(out_dsmn, "a") as file:
+                for hex_values in printer_hex:
+                    file.write("".join(hex_values) + "\n")
+                if self.DebugMode:
+                    file.write("-" * (int(self.NozzleNum/4)) + "\n") # line separator between layers
+
+        # # Visualize voxels with pyvista
+        # def visualize_voxels(voxel_centers):
+        
+        #     # Create a point cloud representation
+        #     point_cloud = pv.PolyData(voxel_centers) #pv.PointCloud(voxel_polydata)
+
+        #     # Plot the point cloud using pyvista plotter
+        #     point_cloud.plot(eye_dome_lighting=True)
+        # visualize_voxels(voxel_array)
+
+        ### Print some data for the user to file
+        orig_stdout = sys.stdout
+        f = open(log_file_path, "w")
+        sys.stdout = f
+        print("-- Printing and slicing statistics --")
+        # Number of voxels
+        tot_voxel_num = np.count_nonzero(voxel_3d_array)
+        print(f"Number of voxels: {tot_voxel_num}")
+        # Total voxel volume
+        tot_voxel_volume = tot_voxel_num * self.VoxelDimX * self.VoxelDimY * self.VoxelDimZ
+        print(f"Print volume: {tot_voxel_volume*1000:.3f} liters")
+        # Number of layers
+        print(f"Number of layers: {unique_z.shape[0]}")
+        # Requested voxel dimensions
+        print("Requested voxel dimensions:")
+        print(f"\t x: {self.VoxelDimX*1000:.3f} mm")
+        print(f"\t y: {self.VoxelDimY*1000:.3f} mm")
+        print(f"\t z: {self.VoxelDimZ*1000:.3f} mm")
+        # Actual voxel dimensions
+        warning_x = ""
+        warning_y = ""
+        warning_z = ""
+        target_deviation = 0.05
+        if np.abs(1 - sliced_voxel_dim_x/self.VoxelDimX) > target_deviation:
+            warning_x = " \t -> Voxel size deviation threshold reached"
+        if np.abs(1 - sliced_voxel_dim_y/self.VoxelDimY) > target_deviation:
+            warning_y = " \t -> Voxel size deviation threshold reached"
+        if np.abs(1 - sliced_voxel_dim_z/self.VoxelDimZ) > target_deviation:
+            warning_z = " \t -> Voxel size deviation threshold reached"
+        print("Actual voxel dimensions:")
+        print(f"\t x: {sliced_voxel_dim_x*1000:.3f} mm" + warning_x)
+        print(f"\t y: {sliced_voxel_dim_y*1000:.3f} mm" + warning_y)
+        print(f"\t z: {sliced_voxel_dim_z*1000:.3f} mm" + warning_z)
+        sys.stdout = orig_stdout
+        f.close()
+
+    def load_standard(self, std: str = None):
+        """Load standard config file
+
+        :param std: defaults to None
+        :type std: str, optional
+        :raises ValueError:
+        """
+        directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
+        config_list_no_ext = [
+            os.path.splitext(file)[0] for file in os.listdir(directory)
+        ]
+        if std is not None:
+            self.standard = std
+        if self.standard not in config_list_no_ext:
+            raise ValueError(f"{self.standard} does not exist.")
+        config = printer_config.read_config(self.standard + ".yaml")
+        logging.info(f"Load config {self.standard}")
+        for state in printer_config.PrintState:
+            if state.name in config:
+                setattr(self, state.name, config[state.name])
+    
 
 class GcodeFromPoints(Gcode):
     """Gcode writer from path points."""
@@ -261,10 +390,10 @@ class GcodeFromPoints(Gcode):
         # Path to the input file
         self.diff_geo_per_layer = False
         # switch of different geometry per layer
-        self.read_points(self.in_file_path)
+        
         super().__init__(**kwargs)
 
-    def create(self, in_file: Path, out_gcode_dir: Path = None) -> None:
+    def create(self, in_file: Path, out_gcode: str, out_gcode_dir: Path = None) -> None:
         """Create gcode file by given path point file
 
         Args:
@@ -275,6 +404,8 @@ class GcodeFromPoints(Gcode):
         Returns:
 
         """
+        self.read_points(in_file)
+
         if out_gcode_dir is None:
             current_directory = os.getcwd()
             root_directory = os.path.dirname(current_directory)
@@ -304,10 +435,10 @@ class GcodeFromPoints(Gcode):
                     )
                 E += extrusion_length
                 self.move(coord, np.round(E, 5), self.feedrate)
-        gcode_file_path = Path(out_gcode_dir)
+        gcode_file_path = out_gcode_dir / out_gcode
         self.write_gcode(gcode_file_path, self.gcode)
-        out_log = f"log_{gcode_file_path.stem}.csv"
-        log_file_path = gcode_file_path.parent / out_log
+        out_log = f"log_{out_gcode}.csv"
+        log_file_path = out_gcode_dir / out_log
         self.write_log(log_file_path)
 
     def compute_extrusion(self, p0: list, p1: list):
@@ -717,11 +848,11 @@ class GcodeMultiplier(object):
         if auto_balance:
             for i in range(0, self.num_vertic):
                 for j in range(0, self.num_horizant):
-                    self.gcodelist[i * self.num_horizant + j].points = (
-                        self.auto_balance(
-                            self.grid[i * self.num_horizant + j],
-                            self.gcodelist[i * self.num_horizant + j].points,
-                        )
+                    self.gcodelist[
+                        i * self.num_horizant + j
+                    ].points = self.auto_balance(
+                        self.grid[i * self.num_horizant + j],
+                        self.gcodelist[i * self.num_horizant + j].points,
                     )
                     self.visualize_cache.append(
                         bcad.bounding_box(
@@ -876,11 +1007,11 @@ class GcodeMultiplier(object):
         if auto_balance:
             for i in range(0, self.num_vertic):
                 for j in range(0, self.num_horizant):
-                    self.gcodelist[i * self.num_horizant + j].points = (
-                        self.auto_balance(
-                            self.grid[i * self.num_horizant + j],
-                            self.gcodelist[i * self.num_horizant + j].points,
-                        )
+                    self.gcodelist[
+                        i * self.num_horizant + j
+                    ].points = self.auto_balance(
+                        self.grid[i * self.num_horizant + j],
+                        self.gcodelist[i * self.num_horizant + j].points,
                     )
                     self.visualize_cache.append(
                         bcad.bounding_box(
