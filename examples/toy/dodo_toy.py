@@ -39,9 +39,9 @@ params_gcode = {  # gcode parameters
     "standard": "ConcretePrinter",   # Standard of the printer firmware
     "coordinate_system": "absolute", # Coordinate system of the printer firmware
     "nozzle_diameter": 0.4, # Diameter of the nozzle in mm
-    "kappa": 1, # Parameter for the calculation of the extrusion width
+    #"kappa": 100, # Parameter for the calculation of the extrusion width
     "tool_number": 0, # Tool number of the extruder. Expected to be an integer
-    "feedrate": 1800,
+    #"feedrate": 1800,
 }
 
 # simulation parameters needs to be in pint units!!
@@ -105,7 +105,7 @@ def task_gcode():
 
     in_file_points = OUTPUT / f"{OUTPUT_NAME}.csv"
     out_file_gcode = OUTPUT / f"{OUTPUT_NAME}.gcode"
-
+    print('check',params_gcode)
     gcd = GcodeFromPoints(**params_gcode)
 
     return {

@@ -86,6 +86,7 @@ class GcodeFromPoints(Gcode):
         # Coefficient of rectifying the feedrate, as well as the line width
         self.tool_number = tool_number
         # Tool number
+        print('check ckeck', feedrate)
         self.feedrate = feedrate
         # Feed rate
         self.density = density
