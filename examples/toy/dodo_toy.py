@@ -105,7 +105,7 @@ def task_gcode():
 
     in_file_points = OUTPUT / f"{OUTPUT_NAME}.csv"
     out_file_gcode = OUTPUT / f"{OUTPUT_NAME}.gcode"
-    print('check',params_gcode)
+    print('check task',params_gcode)
     gcd = GcodeFromPoints(**params_gcode)
 
     return {
