@@ -182,8 +182,6 @@ class GcodeFromPoints(Gcode):
 
         self.init_gcode()
 
-        if self.standard == 'ConcretePrinter_BAM':
-            self.gcode.append(self.SpindleOn + "\n")  # for BAM printer
 
         if self.layer_num == 'given by file':
             # points include full path/all layers
@@ -196,7 +194,12 @@ class GcodeFromPoints(Gcode):
                     self.move(coord, e=np.round(E, 5), f=self.feedrate)
             elif self.standard == 'ConcretePrinter_BAM':  # BAM printer needs no extrusion info
                 for j, coord in enumerate(coordinates):
-                    self.move(coord, f=self.feedrate, s=self.pumpspeed)
+                    if j==0: # first point differently
+                        self.move([coord[0],coord[1]], f=self.feedrate)
+                        self.elevate(coord[-1])
+                        self.gcode.append(self.SpindleOn + "\n")  # for BAM printer
+                    else:
+                        self.move(coord, f=self.feedrate, s=self.pumpspeed)
         else:
             # repeat on given layer for the given layer number and z accoring layer height
             z = 0
@@ -204,13 +207,21 @@ class GcodeFromPoints(Gcode):
                 self.gcode.append(f';==========Layer {i+1}==========\n')
 
                 z += self.layer_height
+                coordinates = self.points
+                coordinates = np.round(np.vstack((coordinates, coordinates[0])), 5)
 
                 if not self.ramp:
                     self.elevate(z) # stepping
+
                 if self.standard == 'ConcretePrinter':
                     self.reset_extrusion() # for TU printer
-                coordinates = self.points
-                coordinates = np.round(np.vstack((coordinates, coordinates[0])), 5)
+                elif self.standard == 'ConcretePrinter_BAM':
+                    if i == 0:
+                        self.move(coordinates[0],f=self.feedrate)
+                        self.elevate(z)  # stepping
+                        self.gcode.append(self.SpindleOn + "\n")  # for BAM printer
+
+
                 if self.standard == 'ConcretePrinter': # TU printer needs extrusion info
                     E = 0
                     for j, coord in enumerate(coordinates):
@@ -232,7 +243,11 @@ class GcodeFromPoints(Gcode):
                     for j, coord in enumerate(coordinates):
                         if self.ramp:
                             coord = list(coord) + [z]  # ramping in z direction
-                        self.move(coord,f=self.feedrate, s=self.pumpspeed)
+
+                        if i==0 and j==0:
+                            print('start with second point here')
+                        else:
+                            self.move(coord,f=self.feedrate, s=self.pumpspeed)
 
 
         self.write_gcode(out_gcode, self.gcode)

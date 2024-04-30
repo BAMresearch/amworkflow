@@ -67,9 +67,9 @@ def test_gcode_3dpoints(tmp_path, standard:str):
     assert file_gcode.exists()
 
 # main
-# if __name__ == "__main__":
-#     test_gcode(Path.cwd(), 'ConcretePrinter',True)
-#     test_gcode(Path.cwd(), 'ConcretePrinter_BAM', True)
-#
-#     test_gcode_3dpoints(Path.cwd(), 'ConcretePrinter')
-#     test_gcode_3dpoints(Path.cwd(), 'ConcretePrinter_BAM')
+if __name__ == "__main__":
+    test_gcode(Path.cwd(), 'ConcretePrinter',True)
+    test_gcode(Path.cwd(), 'ConcretePrinter_BAM', True)
+
+    test_gcode_3dpoints(Path.cwd(), 'ConcretePrinter')
+    test_gcode_3dpoints(Path.cwd(), 'ConcretePrinter_BAM')
