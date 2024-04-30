@@ -245,7 +245,7 @@ class GcodeFromPoints(Gcode):
                             coord = list(coord) + [z]  # ramping in z direction
 
                         if i==0 and j==0:
-                            print('start with second point here')
+                            self.logger.info('start with second point here')
                         else:
                             self.move(coord,f=self.feedrate, s=self.pumpspeed)
 
@@ -253,7 +253,6 @@ class GcodeFromPoints(Gcode):
         self.write_gcode(out_gcode, self.gcode)
         out_log = f"log_{out_gcode.stem}.csv"
         log_file_path = out_gcode.parent / out_log
-        print('check', log_file_path)
         self.write_log(log_file_path)
 
     def compute_extrusion(self, p0: list, p1: list):
@@ -551,7 +550,6 @@ class GcodeFromPoints(Gcode):
         self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
         self.gcode.append(comment(f"Length: {length}"))
         self.gcode.append(comment(f"Width: {width}"))
-        print(self.layer_num, self.layer_height)
         if self.layer_num == 'given by file':
             height = np.array(self.points)[:,-1].max()
         else:
@@ -579,9 +577,6 @@ class GcodeFromPoints(Gcode):
         self.gcode.append(
             comment(f"Estimated time consumption: {hours}hr:{minutes}min:{seconds}sec")
         )
-        print('comment info',self.time_consumption)
-        print('comment info',self.feedrate)
-        print('check chekc', self.offset_from_origin)
         if self.offset_from_origin is not None:
             self.gcode.append(
                 comment(
