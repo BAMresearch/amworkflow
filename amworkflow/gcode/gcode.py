@@ -36,6 +36,27 @@ class Gcode:
         """
         raise NotImplementedError
 
+    def load_standard(self, standard: str = None):
+        """Load standard config file
+
+        :param standard: defaults to None
+
+        """
+        directory = os.path.join(ROOT_PATH, "amworkflow/gcode/config")
+        config_list_no_ext = [
+            os.path.splitext(file)[0] for file in os.listdir(directory)
+        ]
+        assert standard is not None, "Standard is not defined."
+
+        if standard not in config_list_no_ext:
+            raise ValueError(f"{standard} does not exist.")
+        config = printer_config.read_config(directory + "/" + standard + ".yaml")
+        # logging.info(f"Load config {standard}")
+        self.logger.info(f"Load config {standard}")
+        for state in printer_config.PrintState:
+            if state.name in config:
+                setattr(self, state.name, config[state.name])
+
 
 class GcodeFromPoints(Gcode):
     """Gcode writer from path points."""
@@ -125,9 +146,9 @@ class GcodeFromPoints(Gcode):
         self.ramp = ramp
         # switch on ramping movement z included in x-y movement
 
-        super().__init__(**kwargs)
+        super().__init__(self.standard, **kwargs)
 
-        self.load_standard() # requires logger from base class
+        self.load_standard(standard) # function from base class
 
     def head_tail(self):
         """create container of header and tail of gcode depending on selected standard"""
@@ -163,7 +184,7 @@ class GcodeFromPoints(Gcode):
             self.tail = []
 
     def create(self, in_file: Path, out_gcode: Path = None) -> None:
-        """Create gcode file by given path point file
+        """Create gcode file by given path point file plus additional log_file
 
         Args:
             in_file: File path to path point file
@@ -360,28 +381,6 @@ class GcodeFromPoints(Gcode):
         )
         self.bbox_length = self.bbox[1][0] - self.bbox[0][0]
         self.bbox_width = self.bbox[1][1] - self.bbox[0][1]
-
-    def load_standard(self, std: str = None):
-        """Load standard config file
-
-        :param std: defaults to None
-        :type std: str, optional
-        :raises ValueError:
-        """
-        directory = os.path.join(ROOT_PATH, "amworkflow/gcode/config")
-        config_list_no_ext = [
-            os.path.splitext(file)[0] for file in os.listdir(directory)
-        ]
-        if std is not None:
-            self.standard = std
-        if self.standard not in config_list_no_ext:
-            raise ValueError(f"{self.standard} does not exist.")
-        config = printer_config.read_config(directory+"/"+self.standard + ".yaml")
-        # logging.info(f"Load config {self.standard}")
-        self.logger.info(f"Load config {self.standard}")
-        for state in printer_config.PrintState:
-            if state.name in config:
-                setattr(self, state.name, config[state.name])
 
     def reset_extrusion(self):
         """Reset extrusion length
