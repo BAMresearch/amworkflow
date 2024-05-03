@@ -92,7 +92,7 @@ class SimulationFenicsXConcrete(Simulation):
         Returns:
 
         """
-
+        self.logger.info('run simulation with FenicsXConcrete')
         # add mesh file info to parameter dict
         self.pint_parameters["mesh_file"] = f"{mesh_file}" * ureg("")
 

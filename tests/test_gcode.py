@@ -68,6 +68,9 @@ def test_gcode_3dpoints(tmp_path, standard:str):
 
 # main
 if __name__ == "__main__":
+    import logging
+    logging.basicConfig(level=logging.INFO)
+
     test_gcode(Path.cwd(), 'ConcretePrinter',True)
     test_gcode(Path.cwd(), 'ConcretePrinter_BAM', True)
 

@@ -55,4 +55,9 @@ def task_gcode():
         "targets": [out_file_gcode],
         "clean": [clean_targets],
         "uptodate": [config_changed(params_gcode)],
+        "verbosity": 1,
     }
+
+if __name__ == '__main__':
+    import logging
+    logging.basicConfig(level=logging.INFO)

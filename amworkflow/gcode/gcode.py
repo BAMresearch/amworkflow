@@ -72,7 +72,6 @@ class GcodeFromPoints(Gcode):
         # Unit of the geometry
         self.standard = standard
         # Standard of the printer firmware
-        self.load_standard()
         self.coordinate_system = coordinate_system
         # Coordinate system of the printer firmware
         self.nozzle_diameter = nozzle_diameter
@@ -127,6 +126,8 @@ class GcodeFromPoints(Gcode):
         # switch on ramping movement z included in x-y movement
 
         super().__init__(**kwargs)
+
+        self.load_standard() # requires logger from base class
 
     def head_tail(self):
         """create container of header and tail of gcode depending on selected standard"""
@@ -253,7 +254,7 @@ class GcodeFromPoints(Gcode):
         self.write_gcode(out_gcode, self.gcode)
         out_log = f"log_{out_gcode.stem}.csv"
         log_file_path = out_gcode.parent / out_log
-        self.write_log(log_file_path)
+        self.write_log_file(log_file_path)
 
     def compute_extrusion(self, p0: list, p1: list):
         """Compute the extrusion length. rectify the extrusion length by the kappa factor.
@@ -289,7 +290,7 @@ class GcodeFromPoints(Gcode):
             [aggregate_time, volume, aggregate_volume, mass, speed]
         )
 
-    def write_log(self, filename: str):
+    def write_log_file(self, filename: str):
         with open(filename, "w") as f:
             writer = csv.writer(f)
             writer.writerow(
@@ -376,7 +377,8 @@ class GcodeFromPoints(Gcode):
         if self.standard not in config_list_no_ext:
             raise ValueError(f"{self.standard} does not exist.")
         config = printer_config.read_config(directory+"/"+self.standard + ".yaml")
-        logging.info(f"Load config {self.standard}")
+        # logging.info(f"Load config {self.standard}")
+        self.logger.info(f"Load config {self.standard}")
         for state in printer_config.PrintState:
             if state.name in config:
                 setattr(self, state.name, config[state.name])
@@ -415,7 +417,7 @@ class GcodeFromPoints(Gcode):
             cmd += f" {self.LengthOfExtrude}{e}"
         if f is not None:
             cmd += f" {self.SetFeedRate}{f}"
-        if s is not None:
+        if s is not None and s != 0:
             cmd += f" {self.SetExtrudeSpeed}{s}"
         self.gcode.append(cmd + "\n")
 
@@ -430,7 +432,8 @@ class GcodeFromPoints(Gcode):
         self.gcode.append(';==========Post==========\n')
         for line in self.tail:
             self.gcode.append(line + "\n")
-        logging.info(f"Write gcode to {filename}")
+        # logging.info(f"Write gcode to {filename}")
+        self.logger.info(f"Write gcode to {filename}")
         with open(filename, "w", encoding="utf-8") as f:
             f.write("".join(gcode))
 
