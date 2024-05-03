@@ -13,13 +13,14 @@ from OCC.Extend.DataExchange import read_step_file
 from amworkflow import occ_helpers
 
 typing.override = lambda x: x
+
 from amworkflow.config.settings import LOG_LEVEL
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger("amworkflow.meshing.meshing")
-logger.setLevel(LOG_LEVEL)
+# logging.basicConfig(
+#     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+# )
+# logger = logging.getLogger("amworkflow.meshing.meshing")
+# logger.setLevel(LOG_LEVEL)
 
 
 class Meshing:

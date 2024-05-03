@@ -42,6 +42,9 @@ class PrintState(Enum):
     BedOFF = auto()
     SetBedTemperature = auto()
     SetExtruderTemperature = auto()
+    SpindleOn = auto()
+    SpindleOff = auto()
+    Pause = auto()
     
 class CommentInfo(Enum):
     TIMESTAMP = "Timestamp"

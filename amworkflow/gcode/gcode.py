@@ -36,6 +36,27 @@ class Gcode:
         """
         raise NotImplementedError
 
+    def load_standard(self, standard: str = None):
+        """Load standard config file
+
+        :param standard: defaults to None
+
+        """
+        directory = os.path.join(ROOT_PATH, "amworkflow/gcode/config")
+        config_list_no_ext = [
+            os.path.splitext(file)[0] for file in os.listdir(directory)
+        ]
+        assert standard is not None, "Standard is not defined."
+
+        if standard not in config_list_no_ext:
+            raise ValueError(f"{standard} does not exist.")
+        config = printer_config.read_config(directory + "/" + standard + ".yaml")
+        # logging.info(f"Load config {standard}")
+        self.logger.info(f"Load config {standard}")
+        for state in printer_config.PrintState:
+            if state.name in config:
+                setattr(self, state.name, config[state.name])
+
 
 class GcodeFromPoints(Gcode):
     """Gcode writer from path points."""
@@ -45,33 +66,33 @@ class GcodeFromPoints(Gcode):
         layer_num: float = 1,
         layer_height: float = 1,
         line_width: float = 1,
-        offset_from_origin: np.ndarray = np.array([0, 0]),
+        offset_from_origin: np.ndarray|bool = None,
         unit: str = "mm",
-        standard: str = "ConcretePrinter",
+        standard: str = "ConcretePrinter", # TU Berlin ConcretePrinter, BAM ConcretePrinter_BAM !!
         coordinate_system: str = "absolute",
         nozzle_diameter: float = 0.4,
-        kappa: float = 1,
+        kappa: float = 1,  # to compute extrusion only for TU printer
         gamma: float = -1,
         delta: float = 1,
         tool_number: int = 0,
         feedrate: int = 1800,
         fixed_feedrate: bool = False,
+        pumpspeed: float = None, # precentage of pumpspeed only for BAM printer
         rotate: bool = False,
         density: float = 1,
-        in_file_path: str = None,
+        ramp: bool = False,
         **kwargs,
     ) -> None:
         self.line_width = line_width
         # Width of the line
         self.layer_num = layer_num
-        # Number of layers
+        # Number of layers either number and height with point in x-y or points are given in x,y,z
         self.layer_height = layer_height
         # Layer height
         self.unit = unit
         # Unit of the geometry
         self.standard = standard
         # Standard of the printer firmware
-        self.load_standard()
         self.coordinate_system = coordinate_system
         # Coordinate system of the printer firmware
         self.nozzle_diameter = nozzle_diameter
@@ -87,11 +108,13 @@ class GcodeFromPoints(Gcode):
         self.tool_number = tool_number
         # Tool number
         self.feedrate = feedrate
-        # Feed rate
+        # Feed rate will be calculated if fixed_feedrate is False
+        self.fixed_feedrate = fixed_feedrate
+        # switch of fixed feedrate (default False)
+        self.pumpspeed = pumpspeed
+        # pumpspeed for BAM printer in percentage to control extrusion
         self.density = density
         # Density of the material
-        self.fixed_feedrate = fixed_feedrate
-        # switch of fixed feedrate
         self.offset_from_origin = offset_from_origin
         # Offset of the points
         self.print_length = 0
@@ -114,26 +137,54 @@ class GcodeFromPoints(Gcode):
         # Container of gcode
         self.points = []
         # Container of points
-        self.header = [
-            self.Absolute,
-            self.ExtruderAbsolute,
-            self.set_fanspeed(0),
-            self.set_tool(0),
-        ]
-        # Container of header of gcode
-        self.tail = [self.ExtruderOFF, self.FanOFF, self.MotorOFF]
-        # Container of tail of gcode
         self.rotate = rotate
         # rotate the model in 90 degree
         self.extrusion_tracker = []
         # Container of extrusion logs
         self.diff_geo_per_layer = False
-        # switch of different geometry per layer
+        # switch of different geometry per layer,
+        self.ramp = ramp
+        # switch on ramping movement z included in x-y movement
 
-        super().__init__(**kwargs)
+        super().__init__(self.standard, **kwargs)
+
+        self.load_standard(standard) # function from base class
+
+    def head_tail(self):
+        """create container of header and tail of gcode depending on selected standard"""
+        if self.standard == 'ConcretePrinter':
+            self.header = [
+                self.Absolute,
+                self.ExtruderAbsolute,
+                self.set_fanspeed(0),
+                self.set_tool(0),
+            ]
+            # Container of header of gcode
+            self.tail = [self.ExtruderOFF, self.FanOFF, self.MotorOFF]
+        elif self.standard == 'ConcretePrinter_BAM':
+            # used examples from Anthony for header and tail
+            self.header = [
+                f"{self.LinearMove} {self.SetFeedRate}14000 {self.SetZ}500",
+                f"{self.LinearMove} {self.SetX}100 {self.SetY}1160",
+                f"{self.LinearMove} {self.SetZ}200",
+                self.SpindleOn,
+                self.Pause,
+                self.SpindleOff,
+                f"{self.LinearMove} {self.SetZ}500",
+            ]
+            self.tail = [
+                self.SpindleOff,
+                f"{self.LinearMove} {self.SetFeedRate}14000 {self.SetZ}500",
+                f"{self.LinearMove} {self.SetX}100 {self.SetY}1160",
+                f"{self.LinearMove} {self.SetZ}200",
+                self.SpindleOn,
+            ]
+        else:
+            self.header = []
+            self.tail = []
 
     def create(self, in_file: Path, out_gcode: Path = None) -> None:
-        """Create gcode file by given path point file
+        """Create gcode file by given path point file plus additional log_file
 
         Args:
             in_file: File path to path point file
@@ -142,41 +193,89 @@ class GcodeFromPoints(Gcode):
         Returns:
 
         """
-        assert in_file.is_file(), f"Step file {in_file} does not exist."
+        assert in_file.is_file(), f"File {in_file} does not exist."
 
         if out_gcode is None:
             assert ValueError("Output gcode file is not defined.")
 
         self.read_points(in_file)
 
+        self.head_tail()
+
         self.init_gcode()
-        z = 0
-        for i in range(self.layer_num):
-            z += self.layer_height
-            self.elevate(z)
-            self.reset_extrusion()
+
+
+        if self.layer_num == 'given by file':
+            # points include full path/all layers
+            self.gcode.append(f';==========Layers==========\n')
             coordinates = self.points
             coordinates = np.round(np.vstack((coordinates, coordinates[0])), 5)
-            E = 0
-            for j, coord in enumerate(coordinates):
-                if i == 0 and j == 0:
-                    extrusion_length = self.compute_extrusion(
-                        coord, np.zeros_like(coord)
-                    )
-                else:
-                    extrusion_length = (
-                        self.compute_extrusion(coord, coordinates[j - 1])
-                        if j > 0
-                        else 0
-                    )
-                E += extrusion_length
-                self.move(coord, np.round(E, 5), self.feedrate)
+            if self.standard == 'ConcretePrinter':  # TU printer needs extrusion info
+                E = 0 # TODO compute extrusion for that case
+                for j, coord in enumerate(coordinates):
+                    self.move(coord, e=np.round(E, 5), f=self.feedrate)
+            elif self.standard == 'ConcretePrinter_BAM':  # BAM printer needs no extrusion info
+                for j, coord in enumerate(coordinates):
+                    if j==0: # first point differently
+                        self.move([coord[0],coord[1]], f=self.feedrate)
+                        self.elevate(coord[-1])
+                        self.gcode.append(self.SpindleOn + "\n")  # for BAM printer
+                    else:
+                        self.move(coord, f=self.feedrate, s=self.pumpspeed)
+        else:
+            # repeat on given layer for the given layer number and z accoring layer height
+            z = 0
+            for i in range(self.layer_num):
+                self.gcode.append(f';==========Layer {i+1}==========\n')
+
+                z += self.layer_height
+                coordinates = self.points
+                coordinates = np.round(np.vstack((coordinates, coordinates[0])), 5)
+
+                if not self.ramp:
+                    self.elevate(z) # stepping
+
+                if self.standard == 'ConcretePrinter':
+                    self.reset_extrusion() # for TU printer
+                elif self.standard == 'ConcretePrinter_BAM':
+                    if i == 0:
+                        self.move(coordinates[0],f=self.feedrate)
+                        self.elevate(z)  # stepping
+                        self.gcode.append(self.SpindleOn + "\n")  # for BAM printer
+
+
+                if self.standard == 'ConcretePrinter': # TU printer needs extrusion info
+                    E = 0
+                    for j, coord in enumerate(coordinates):
+                        if i == 0 and j == 0:
+                            extrusion_length = self.compute_extrusion(
+                                coord, np.zeros_like(coord)
+                            )
+                        else:
+                            extrusion_length = (
+                                self.compute_extrusion(coord, coordinates[j - 1])
+                                if j > 0
+                                else 0
+                            )
+                        E += extrusion_length
+                        if self.ramp:
+                            coord = list(coord)+[z] # ramping in z direction
+                        self.move(coord, e=np.round(E, 5), f=self.feedrate)
+                elif self.standard == 'ConcretePrinter_BAM': # BAM printer needs no extrusion info
+                    for j, coord in enumerate(coordinates):
+                        if self.ramp:
+                            coord = list(coord) + [z]  # ramping in z direction
+
+                        if i==0 and j==0:
+                            self.logger.info('start with second point here')
+                        else:
+                            self.move(coord,f=self.feedrate, s=self.pumpspeed)
+
 
         self.write_gcode(out_gcode, self.gcode)
         out_log = f"log_{out_gcode.stem}.csv"
         log_file_path = out_gcode.parent / out_log
-        print('check', log_file_path)
-        self.write_log(log_file_path)
+        self.write_log_file(log_file_path)
 
     def compute_extrusion(self, p0: list, p1: list):
         """Compute the extrusion length. rectify the extrusion length by the kappa factor.
@@ -212,7 +311,7 @@ class GcodeFromPoints(Gcode):
             [aggregate_time, volume, aggregate_volume, mass, speed]
         )
 
-    def write_log(self, filename: str):
+    def write_log_file(self, filename: str):
         with open(filename, "w") as f:
             writer = csv.writer(f)
             writer.writerow(
@@ -225,7 +324,7 @@ class GcodeFromPoints(Gcode):
         return self.gamma * 60 / (self.layer_height * rect_width * self.density * 1e-6)
 
     def read_points(self, csv_file: str):
-        """Read points from file
+        """Read points from file x and y is mandatory, z coordination optional
 
         Args:
             filepath: Path to file
@@ -233,17 +332,40 @@ class GcodeFromPoints(Gcode):
         Returns:
             points: List of points
         """
+
+        points_form_file = np.genfromtxt(csv_file, delimiter=",", skip_header=1)
+        if self.offset_from_origin is None:
+            self.offset_from_origin = np.zeros_like(points_form_file[0])
+
+        assert len(self.offset_from_origin) == np.array(points_form_file).shape[1], "Offset from origin must have the same dimension as the points"
+        # subtract offset
         self.points = (
-            np.genfromtxt(csv_file, delimiter=",", skip_header=1)
+            points_form_file
             + self.offset_from_origin
         ).tolist()
+
+        # check if point are given for each layer or only for one
+        if np.array(self.points).shape[1] == 3:
+            # get layer height and layer number from file
+            self.layer_height = 'given by file'
+            self.layer_num = 'given by file'
+
         if self.rotate:
-            points_3d = np.zeros((np.array(self.points).shape[0], 3))
-            points_3d[:, :2] = self.points
-            self.points = bcad.rotate(
-                points_3d, angle_z=np.deg2rad(-90), cnt=points_3d[0]
-            )
-            self.points = self.points[:, :2]
+            if np.array(self.points).shape[1]==2:
+                # add zero z coordinate
+                points_3d = np.zeros((np.array(self.points).shape[0], 3))
+                points_3d[:, :2] = self.points
+                self.points = bcad.rotate(
+                    points_3d, angle_z=np.deg2rad(-90), cnt=points_3d[0]
+                )
+                self.points = self.points[:, :2]
+            else:
+                points_3d = np.array(self.points)
+
+                self.points = bcad.rotate(
+                    points_3d, angle_z=np.deg2rad(-90), cnt=points_3d[0]
+                )
+
         self.points_t = np.array(self.points).T
         self.bbox = np.array(
             [
@@ -259,29 +381,6 @@ class GcodeFromPoints(Gcode):
         )
         self.bbox_length = self.bbox[1][0] - self.bbox[0][0]
         self.bbox_width = self.bbox[1][1] - self.bbox[0][1]
-
-    def load_standard(self, std: str = None):
-        """Load standard config file
-
-        :param std: defaults to None
-        :type std: str, optional
-        :raises ValueError:
-        """
-        directory = os.path.join(ROOT_PATH, "amworkflow/gcode/config")
-        print('check', directory)
-        config_list_no_ext = [
-            os.path.splitext(file)[0] for file in os.listdir(directory)
-        ]
-        print('check', config_list_no_ext)
-        if std is not None:
-            self.standard = std
-        if self.standard not in config_list_no_ext:
-            raise ValueError(f"{self.standard} does not exist.")
-        config = printer_config.read_config(directory+"/"+self.standard + ".yaml")
-        logging.info(f"Load config {self.standard}")
-        for state in printer_config.PrintState:
-            if state.name in config:
-                setattr(self, state.name, config[state.name])
 
     def reset_extrusion(self):
         """Reset extrusion length
@@ -307,13 +406,18 @@ class GcodeFromPoints(Gcode):
             cmd += f" {self.SetFeedRate}{f}"
         self.gcode.append(cmd + "\n")
 
-    def move(self, p: list, e: float = None, f: float = None):
-        """Move to a point in XY plane"""
-        cmd = f"{self.LinearMove} {self.SetX}{p[0]} {self.SetY}{p[1]}"
+    def move(self, p: list, e: float|bool = None, f: float|bool = None, s: float|bool=None):
+        """Move to a point in XY or XYZ plane"""
+        if len(p) == 2:
+            cmd = f"{self.LinearMove} {self.SetX}{p[0]} {self.SetY}{p[1]}"
+        elif len(p) == 3:
+            cmd = f"{self.LinearMove} {self.SetX}{p[0]} {self.SetY}{p[1]} {self.SetZ}{p[2]}"
         if e is not None:
             cmd += f" {self.LengthOfExtrude}{e}"
         if f is not None:
             cmd += f" {self.SetFeedRate}{f}"
+        if s is not None and s != 0:
+            cmd += f" {self.SetExtrudeSpeed}{s}"
         self.gcode.append(cmd + "\n")
 
     def write_gcode(self, filename: str, gcode: str):
@@ -324,9 +428,11 @@ class GcodeFromPoints(Gcode):
         :param gcode: gcode string
         :type gcode: str
         """
+        self.gcode.append(';==========Post==========\n')
         for line in self.tail:
             self.gcode.append(line + "\n")
-        logging.info(f"Write gcode to {filename}")
+        # logging.info(f"Write gcode to {filename}")
+        self.logger.info(f"Write gcode to {filename}")
         with open(filename, "w", encoding="utf-8") as f:
             f.write("".join(gcode))
 
@@ -376,20 +482,33 @@ class GcodeFromPoints(Gcode):
             ]  # next point or the first point for the last one
             self.print_length += distance(current_pt, next_pt)
 
-        self.material_consumption = (
-            self.print_length
-            * self.line_width
-            * self.layer_height
-            * self.layer_num
-            * 1e-6
-        )  # in Liters
-        self.time_consumption = (
-            self.print_length * self.layer_num / self.feedrate * 60
-        )  # in seconds
+        if len(current_pt) == 3:
+            # points for all layers given
+            self.material_consumption = (
+                    self.print_length
+                    * self.line_width
+                    * 1e-6
+            )  # in Liters
+            self.time_consumption = (
+                    self.print_length / self.feedrate * 60
+            )  # in seconds
+        else:
+            self.material_consumption = (
+                self.print_length
+                * self.line_width
+                * self.layer_height
+                * self.layer_num
+                * 1e-6
+            )  # in Liters
+            self.time_consumption = (
+                self.print_length * self.layer_num / self.feedrate * 60
+            )  # in seconds
         self.timedelta = timedelta(seconds=self.time_consumption)
         self.comment_info()
+        self.gcode.append(';==========Priming==========\n')
         for line in self.header:
             self.gcode.append(line + "\n")
+
 
     def set_fanspeed(self, speed):
         """Set fan speed
@@ -433,7 +552,11 @@ class GcodeFromPoints(Gcode):
         self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
         self.gcode.append(comment(f"Length: {length}"))
         self.gcode.append(comment(f"Width: {width}"))
-        self.gcode.append(comment(f"Height: {self.layer_height * self.layer_num}"))
+        if self.layer_num == 'given by file':
+            height = np.array(self.points)[:,-1].max()
+        else:
+            height = self.layer_height * self.layer_num
+        self.gcode.append(comment(f"Height: {height}"))
         self.gcode.append(comment(f"Layer height: {self.layer_height}"))
         self.gcode.append(comment(f"Layer number: {self.layer_num}"))
         self.gcode.append(comment(f"Line width: {self.line_width}"))
@@ -456,13 +579,12 @@ class GcodeFromPoints(Gcode):
         self.gcode.append(
             comment(f"Estimated time consumption: {hours}hr:{minutes}min:{seconds}sec")
         )
-        print(self.time_consumption)
-        print(self.feedrate)
-        self.gcode.append(
-            comment(
-                f"Original point: ({self.offset_from_origin[0]},{self.offset_from_origin[1]})"
+        if self.offset_from_origin is not None:
+            self.gcode.append(
+                comment(
+                    f"Original point: ({str(self.offset_from_origin)})"
+                )
             )
-        )
 
 
 class GcodeMultiplier(object):

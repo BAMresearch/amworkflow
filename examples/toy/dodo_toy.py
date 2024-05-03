@@ -36,12 +36,13 @@ params_gcode = {  # gcode parameters
     "layer_width":  params["layer_thickness"],
     "offset_from_origin": [0, 0], # Offset from origin in mm
     "unit": "mm",    # Unit of the geometry
-    "standard": "ConcretePrinter",   # Standard of the printer firmware
+    "standard": "ConcretePrinter",   # Standard of the printer firmware TU printer
     "coordinate_system": "absolute", # Coordinate system of the printer firmware
     "nozzle_diameter": 0.4, # Diameter of the nozzle in mm
-    "kappa": 1, # Parameter for the calculation of the extrusion width
+    #"kappa": 100, # Parameter for the calculation of the extrusion width
     "tool_number": 0, # Tool number of the extruder. Expected to be an integer
     "feedrate": 1800,
+    "fixed_feedrate": True,
 }
 
 # simulation parameters needs to be in pint units!!

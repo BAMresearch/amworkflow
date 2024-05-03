@@ -117,5 +117,9 @@ def test_simulation_process(tmp_path):
 
 ###
 if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+
     test_simulation_structure(Path.cwd())
     test_simulation_process(Path.cwd())
