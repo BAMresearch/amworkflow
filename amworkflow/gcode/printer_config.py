@@ -43,9 +43,6 @@ class PrintState(Enum):
     SetBedTemperature = auto()
     SetExtruderTemperature = auto()
     # inserted for BAM powder bed printer
-    STLUnit = auto()
-    DebugMode = auto()
-    AddZeros = auto()
     PrinterName = auto()
     NozzleNum = auto()                
     NozzleOpen = auto()               

@@ -20,7 +20,6 @@ import stltovoxel
 
 typing.override = lambda x: x
 
-
 class Gcode:
     """Base class with API for any gcode writer."""
 
@@ -47,6 +46,9 @@ class PowderbedCodeFromSTL(Gcode):
         self,
         standard: str = "PowderBedBAM",
         in_file_path: str = None,
+        stl_unit: float = 1,
+        debug_mode: bool = False,
+        add_zeros: int = 0,
         **kwargs,
     ) -> None:
         # Unit of the geometry
@@ -56,10 +58,16 @@ class PowderbedCodeFromSTL(Gcode):
         self.load_standard()
         # Path to the input file
         self.in_file_path = in_file_path
+        # units of your STL-file (how much of your unit is 1m, mm would be 1000)
+        self.stl_unit = stl_unit
+        # if True, prints extra stuff into dsmn-file
+        self.debug_mode = debug_mode
+        # additional zeros at the top and bottom of each layer in dsmn-file
+        self.add_zeros = add_zeros
                         
         super().__init__(**kwargs)
 
-    def create(self, in_file: Path, out_dsmn: str, out_xyz: str, out_dsmn_dir: Path = None) -> None:
+    def create(self, in_file: Path, out_dsmn: Path, out_xyz: Path, out_dsmn_dir: Path = None) -> None:
         """Create dsmn printer instructions file by given stl file
 
         Args:
@@ -99,7 +107,7 @@ class PowderbedCodeFromSTL(Gcode):
 
         ####
         ### Convert to xyz file (one file total)
-        out = stltovoxel.convert_file(in_file, out_xyz, voxel_size = self.VoxelDimY*self.STLUnit, parallel = False)
+        out = stltovoxel.convert_file(in_file, out_xyz, voxel_size = self.VoxelDimY*self.stl_unit, parallel = False)
 
         ### Load xyz file for further processing
         # Read xyz file and parse coordinates
@@ -110,7 +118,7 @@ class PowderbedCodeFromSTL(Gcode):
         coordinates = [list(map(float, line.strip().split())) for line in lines]
 
         # Convert coordinates to a NumPy array
-        voxel_array = np.array(coordinates) / self.STLUnit
+        voxel_array = np.array(coordinates) / self.stl_unit
 
         # Find unique values and sort ascending (1st col: x, 2nd col: y, 3rd col: z)
         unique_x = np.unique(voxel_array[:,0])
@@ -143,8 +151,8 @@ class PowderbedCodeFromSTL(Gcode):
             voxel_3d_array[x_index, y_index, z_index] = 1
 
         # Calculate optimized printer_x and lines_num for less printing duration, also recoater values
-        self.PrinterX = (voxel_3d_array.shape[1] + 2*self.AddZeros) * self.VoxelDimX
-        self.LinesNum = voxel_3d_array.shape[1] + 2*self.AddZeros
+        self.PrinterX = (voxel_3d_array.shape[1] + 2*self.add_zeros) * self.VoxelDimX
+        self.LinesNum = voxel_3d_array.shape[1] + 2*self.add_zeros
         self.RecoaterClosingPositionLaying = np.floor(self.PrinterX*1000) + 100
         self.RecoaterClosingPositionPrinting = np.floor(self.PrinterX*1000) + 200
 
@@ -226,7 +234,7 @@ class PowderbedCodeFromSTL(Gcode):
             with open(out_dsmn, "a") as file:
                 for hex_values in printer_hex:
                     file.write("".join(hex_values) + "\n")
-                if self.DebugMode:
+                if self.debug_mode:
                     file.write("-" * (int(self.NozzleNum/4)) + "\n") # line separator between layers
 
         # # Visualize voxels with pyvista
@@ -240,40 +248,19 @@ class PowderbedCodeFromSTL(Gcode):
         # visualize_voxels(voxel_array)
 
         ### Print some data for the user to file
-        orig_stdout = sys.stdout
-        f = open(log_file_path, "w")
-        sys.stdout = f
-        print("-- Printing and slicing statistics --")
-        # Number of voxels
-        tot_voxel_num = np.count_nonzero(voxel_3d_array)
-        print(f"Number of voxels: {tot_voxel_num}")
-        # Total voxel volume
-        tot_voxel_volume = tot_voxel_num * self.VoxelDimX * self.VoxelDimY * self.VoxelDimZ
-        print(f"Print volume: {tot_voxel_volume*1000:.3f} liters")
-        # Number of layers
-        print(f"Number of layers: {unique_z.shape[0]}")
-        # Requested voxel dimensions
-        print("Requested voxel dimensions:")
-        print(f"\t x: {self.VoxelDimX*1000:.3f} mm")
-        print(f"\t y: {self.VoxelDimY*1000:.3f} mm")
-        print(f"\t z: {self.VoxelDimZ*1000:.3f} mm")
-        # Actual voxel dimensions
-        warning_x = ""
-        warning_y = ""
-        warning_z = ""
-        target_deviation = 0.05
-        if np.abs(1 - sliced_voxel_dim_x/self.VoxelDimX) > target_deviation:
-            warning_x = " \t -> Voxel size deviation threshold reached"
-        if np.abs(1 - sliced_voxel_dim_y/self.VoxelDimY) > target_deviation:
-            warning_y = " \t -> Voxel size deviation threshold reached"
-        if np.abs(1 - sliced_voxel_dim_z/self.VoxelDimZ) > target_deviation:
-            warning_z = " \t -> Voxel size deviation threshold reached"
-        print("Actual voxel dimensions:")
-        print(f"\t x: {sliced_voxel_dim_x*1000:.3f} mm" + warning_x)
-        print(f"\t y: {sliced_voxel_dim_y*1000:.3f} mm" + warning_y)
-        print(f"\t z: {sliced_voxel_dim_z*1000:.3f} mm" + warning_z)
-        sys.stdout = orig_stdout
-        f.close()
+        out_log = f"log_{out_dsmn.stem}.log"
+        log_file_path = out_dsmn.parent / out_log
+        params_log = {
+            "tot_voxel_num": np.count_nonzero(voxel_3d_array),
+            "tot_voxel_volume": np.count_nonzero(voxel_3d_array) * self.VoxelDimX * self.VoxelDimY * self.VoxelDimZ,
+            "tot_num_layers": unique_z.shape[0],
+            "target_deviation": 0.05,
+            "sliced_voxel_dim_x": sliced_voxel_dim_x,
+            "sliced_voxel_dim_y": sliced_voxel_dim_y,
+            "sliced_voxel_dim_z": sliced_voxel_dim_z,
+        }
+
+        self.write_log(log_file_path, params_log)
 
     def load_standard(self, std: str = None):
         """Load standard config file
@@ -282,20 +269,50 @@ class PowderbedCodeFromSTL(Gcode):
         :type std: str, optional
         :raises ValueError:
         """
-        directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config")
+        directory = os.path.join(ROOT_PATH, "amworkflow/gcode/config")
+        print('check', directory)
         config_list_no_ext = [
             os.path.splitext(file)[0] for file in os.listdir(directory)
         ]
+        print('check', config_list_no_ext)
         if std is not None:
             self.standard = std
         if self.standard not in config_list_no_ext:
             raise ValueError(f"{self.standard} does not exist.")
-        config = printer_config.read_config(self.standard + ".yaml")
+        config = printer_config.read_config(directory+"/"+self.standard + ".yaml")
         logging.info(f"Load config {self.standard}")
         for state in printer_config.PrintState:
             if state.name in config:
                 setattr(self, state.name, config[state.name])
-    
+
+    def write_log(self, filename: str, params_log):
+        with open(filename, "w") as f:
+            print("-- Printing and slicing statistics --", file=f)
+            # Number of voxels
+            print(f"Number of voxels: {params_log['tot_voxel_num']}", file=f)
+            # Total voxel volume
+            print(f"Print volume: {params_log['tot_voxel_volume']*1000:.3f} liters", file=f)
+            # Number of layers
+            print(f"Number of layers: {params_log['tot_num_layers']}", file=f)
+            # Requested voxel dimensions
+            print("Requested voxel dimensions:", file=f)
+            print(f"\t x: {self.VoxelDimX*1000:.3f} mm", file=f)
+            print(f"\t y: {self.VoxelDimY*1000:.3f} mm", file=f)
+            print(f"\t z: {self.VoxelDimZ*1000:.3f} mm", file=f)
+            # Actual voxel dimensions
+            warning_x = ""
+            warning_y = ""
+            warning_z = ""
+            if np.abs(1 - params_log["sliced_voxel_dim_x"]/self.VoxelDimX) > params_log["target_deviation"]:
+                warning_x = " \t -> Voxel size deviation threshold reached"
+            if np.abs(1 - params_log["sliced_voxel_dim_y"]/self.VoxelDimY) > params_log["target_deviation"]:
+                warning_y = " \t -> Voxel size deviation threshold reached"
+            if np.abs(1 - params_log["sliced_voxel_dim_z"]/self.VoxelDimZ) > params_log["target_deviation"]:
+                warning_z = " \t -> Voxel size deviation threshold reached"
+            print("Actual voxel dimensions:", file=f)
+            print(f"\t x: {params_log['sliced_voxel_dim_x']*1000:.3f} mm" + warning_x, file=f)
+            print(f"\t y: {params_log['sliced_voxel_dim_y']*1000:.3f} mm" + warning_y, file=f)
+            print(f"\t z: {params_log['sliced_voxel_dim_z']*1000:.3f} mm" + warning_z, file=f)
 
 class GcodeFromPoints(Gcode):
     """Gcode writer from path points."""

@@ -1,8 +1,5 @@
 # Printer config for BAM powder bed printer
 # note: PrinterX and LinesNum are recalculated during run, same applies for recoater closing positions
-- STLUnit: 1000
-- DebugMode: False
-- AddZeros: 0
 - PrinterName: DESA1 - BAM
 - NozzleNum: 180                        # [-]
 - NozzleOpen: 5                         # [-]

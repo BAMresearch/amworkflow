@@ -1,8 +1,9 @@
 import os
 from pathlib import Path
+import logging
 
 from amworkflow.gcode.gcode import GcodeFromPoints
-
+logging.basicConfig(level=logging.INFO)
 # define required parameters
 params = {  # geometry parameters
     "layer_num": 1,
