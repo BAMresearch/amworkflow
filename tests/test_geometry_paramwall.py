@@ -25,8 +25,8 @@ def test_geometry_paramwall_solid(tmp_path):
     geometry.create(file_step, file_points, file_stl)
 
     # check if output files exist
-    assert file_step.exists()
-    assert file_stl.exists()
+    assert file_step.exists() & (file_step.stat().st_size > 0)
+    assert file_stl.exists() & (file_stl.stat().st_size > 0)
     # assert out_file_points.exists() #not yet implemented
 
 ##

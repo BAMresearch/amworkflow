@@ -35,8 +35,8 @@ def test_meshingGmsh(tmp_path):
     meshing.create(file_step, file_xdmf, file_vtk)
 
     # check if output files exist
-    assert file_xdmf.exists()
-    assert file_vtk.exists()
+    assert file_xdmf.exists() & (file_xdmf.stat().st_size > 0)
+    assert file_vtk.exists() & (file_vtk.stat().st_size > 0)
 
 
 ##

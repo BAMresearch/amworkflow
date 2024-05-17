@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
 import pytest
+import logging
 
 from amworkflow.gcode.gcode import GcodeFromPoints
-
+logging.basicConfig(level=logging.INFO)
 # define required parameters
 params1 = {  # geometry parameters
     "layer_num": 2,
@@ -54,7 +55,7 @@ def test_gcode(tmp_path, standard:str, ramp:bool):
     gcd = GcodeFromPoints(**params1)
     file_gcode = Path(tmp_path) / f"test_{standard}.gcode"
     gcd.create(file_point, file_gcode)
-    assert file_gcode.exists()
+    assert file_gcode.exists() & (file_gcode.stat().st_size > 0)
 
 @pytest.mark.parametrize("standard", ["ConcretePrinter", "ConcretePrinter_BAM"])
 def test_gcode_3dpoints(tmp_path, standard:str):
@@ -64,7 +65,7 @@ def test_gcode_3dpoints(tmp_path, standard:str):
     gcd = GcodeFromPoints(**params2)
     file_gcode = Path(tmp_path) / f"test_{standard}.gcode"
     gcd.create(file_point, file_gcode)
-    assert file_gcode.exists()
+    assert file_gcode.exists() & (file_gcode.stat().st_size > 0)
 
 # main
 if __name__ == "__main__":
