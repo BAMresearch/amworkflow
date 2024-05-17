@@ -75,9 +75,6 @@ class PowderbedCodeFromSTL(Gcode):
     ) -> None:
         # Unit of the geometry
         self.standard = standard
-        # Standard of the printer firmware
-        # Careful, the file "printer_config.py" also has to be changed whenever parameters in the config are added/removed
-        self.load_standard(self.standard)
         # Path to the input file
         self.in_file_path = in_file_path
         # units of your STL-file (how much of your unit is 1m, mm would be 1000)
@@ -88,6 +85,10 @@ class PowderbedCodeFromSTL(Gcode):
         self.add_zeros = add_zeros
                         
         super().__init__(**kwargs)
+
+        # Standard of the printer firmware
+        # Careful, the file "printer_config.py" also has to be changed whenever parameters in the config are added/removed
+        self.load_standard(self.standard)
 
     def create(self, in_file: Path, out_dsmn: Path, out_xyz: Path, out_dsmn_dir: Path = None) -> None:
         """Create dsmn printer instructions file by given stl file
@@ -283,29 +284,6 @@ class PowderbedCodeFromSTL(Gcode):
         }
 
         self.write_log(log_file_path, params_log)
-
-    def load_standard(self, std: str = None):
-        """Load standard config file
-
-        :param std: defaults to None
-        :type std: str, optional
-        :raises ValueError:
-        """
-        directory = os.path.join(ROOT_PATH, "amworkflow/gcode/config")
-        print('check', directory)
-        config_list_no_ext = [
-            os.path.splitext(file)[0] for file in os.listdir(directory)
-        ]
-        print('check', config_list_no_ext)
-        if std is not None:
-            self.standard = std
-        if self.standard not in config_list_no_ext:
-            raise ValueError(f"{self.standard} does not exist.")
-        config = printer_config.read_config(directory+"/"+self.standard + ".yaml")
-        logging.info(f"Load config {self.standard}")
-        for state in printer_config.PrintState:
-            if state.name in config:
-                setattr(self, state.name, config[state.name])
 
     def write_log(self, filename: str, params_log):
         with open(filename, "w") as f:
