@@ -47,7 +47,7 @@ def test_simulation_structure(tmp_path):
     simulation.run(file_xdmf, file_xdmf_sim)
 
     # check if output files exist
-    assert file_xdmf_sim.exists()
+    assert file_xdmf_sim.exists() & (file_xdmf_sim.stat().st_size > 0)
 
     # check if file has displacement field with nonzero values
     with XDMFFile(MPI.COMM_WORLD, file_xdmf_sim, "r") as xdmf:
@@ -100,7 +100,7 @@ def test_simulation_process(tmp_path):
     simulation.run(file_xdmf, file_xdmf_sim)
 
     # check if output files exist
-    assert file_xdmf_sim.exists()
+    assert file_xdmf_sim.exists() & (file_xdmf_sim.stat().st_size > 0)
 
     # check if file has displacement field with nonzero values
     with XDMFFile(MPI.COMM_WORLD, file_xdmf_sim, "r") as xdmf:

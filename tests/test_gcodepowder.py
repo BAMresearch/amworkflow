@@ -20,4 +20,4 @@ def test_gcodepowder(tmp_path):
     gcd = PowderbedCodeFromSTL(**params)
     file_dsmn = Path(tmp_path) / "cube_100x100x100mm.dsmn"
     gcd.create(stl_in, dsmn_out, xyz_out)
-    assert (file_dsmn.exists() & file_dsmn.stat().st_size > 0)
+    assert file_dsmn.exists() & (file_dsmn.stat().st_size > 0)

@@ -77,7 +77,7 @@ class PowderbedCodeFromSTL(Gcode):
         self.standard = standard
         # Standard of the printer firmware
         # Careful, the file "printer_config.py" also has to be changed whenever parameters in the config are added/removed
-        self.load_standard()
+        self.load_standard(self.standard)
         # Path to the input file
         self.in_file_path = in_file_path
         # units of your STL-file (how much of your unit is 1m, mm would be 1000)

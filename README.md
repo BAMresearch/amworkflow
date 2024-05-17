@@ -70,6 +70,9 @@ The design is created by those points and additional parameters like layer thick
 ### Umrandung
 Workflow example creating gcode using a given csv file with the path points (all layers).
 
+### Chair
+Workflow example creating printing instructions for powder bed 3D printer using a given stl file. Make sure to set ```stl_unit``` accordingly.
+
 ## Create new usecase  
 
 By
