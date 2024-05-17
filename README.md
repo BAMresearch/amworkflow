@@ -67,6 +67,8 @@ The workflow is created for a curved wall element with geometrical parameters li
 A arc with truss structure is given by a list of points defining the centerline.
 The design is created by those points and additional parameters like layer thickness and the gcode and simulation is set-up.
 
+### Umrandung
+Workflow example creating gcode using a given csv file with the path points (all layers).
 
 ## Create new usecase  
 

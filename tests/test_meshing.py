@@ -39,6 +39,10 @@ def test_meshingGmsh(tmp_path):
     assert file_vtk.exists()
 
 
-# ##
-# if __name__ == "__main__":
-#     test_meshingGmsh(Path.cwd())
+##
+if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+
+    test_meshingGmsh(Path.cwd())
