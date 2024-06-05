@@ -189,3 +189,9 @@ usecases/*
 
 # MacOS files
 .DS_Store
+
+# fenicsconcrete
+fenicsxconcrete/
+
+# Playgrounds
+playground/
