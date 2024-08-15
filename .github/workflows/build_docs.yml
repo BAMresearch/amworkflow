@@ -47,6 +47,8 @@ jobs:
         run: |
             pip install sphinx
             pip install myst-parser
+            pip install sphinx-rtd-theme
+
       
       - name: Check Sphinx installation
         run: sphinx-build --version
