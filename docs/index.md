@@ -27,6 +27,8 @@ The function returns the shortest distance between a point and a line (segment).
 ```
 
 
+
+
 ```{math}
 e^{i\pi} + 1 = 0
 ```

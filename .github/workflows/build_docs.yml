@@ -47,6 +47,7 @@ jobs:
         run: |
             pip install sphinx
             pip install myst-parser
+            pip install matplotlib
             pip install sphinx-rtd-theme
             pip install sphinxcontrib-applehelp
             pip install sphinxcontrib-devhelp

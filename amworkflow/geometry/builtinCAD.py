@@ -1595,6 +1595,23 @@ def p_rotate(
     angle_z: float = 0,
     cnt: np.ndarray = None,
 ) -> np.ndarray:
+    """
+    Rotate points around a center point
+
+    :param pts: The points to be rotated
+    :type pts: np.ndarray
+    :param angle_x: The angle to rotate around x-axis, defaults to 0
+    :type angle_x: float, optional
+    :param angle_y: The angle to rotate around y-axis, defaults to 0
+    :type angle_y: float, optional
+    :param angle_z: The angle to rotate around z-axis, defaults to 0
+    :type angle_z: float, optional
+    :param cnt: The center point to rotate around, defaults to None
+    :type cnt: np.ndarray, optional
+    :return: The rotated points
+    :rtype: np.ndarray
+
+    """
     pts = np.array(
         [
             np.array(list(i.Coord())) if isinstance(i, gp_Pnt) else np.array(i)
@@ -1636,6 +1653,27 @@ def p_rotate(
 def get_random_pnt(
     xmin, xmax, ymin, ymax, zmin=0, zmax=0, numpy_array=True
 ) -> Union[Pnt, np.ndarray]:
+    """
+    Get a random point within the specified range
+
+    :param xmin: The minimum value of x
+    :type xmin: int
+    :param xmax: The maximum value of x
+    :type xmax: int
+    :param ymin: The minimum value of y
+    :type ymin: int
+    :param ymax: The maximum value of y
+    :type ymax: int
+    :param zmin: The minimum value of z, defaults to 0
+    :type zmin: int, optional
+    :param zmax: The maximum value of z, defaults to 0
+    :type zmax: int, optional
+    :param numpy_array: If True, return a numpy array, otherwise return a Pnt object, defaults to True
+    :type numpy_array: bool, optional
+    :return: The random point
+    :rtype: Union[Pnt, np.ndarray]
+
+    """
     random_x = np.random.randint(xmin, xmax)
     random_y = np.random.randint(ymin, ymax)
     if zmin == 0 and zmax == 0:
@@ -1651,6 +1689,25 @@ def get_random_pnt(
 
 
 def get_random_line(xmin, xmax, ymin, ymax, zmin=0, zmax=0):
+    """
+    Get a random line within the specified range
+
+    :param xmin: The minimum value of x
+    :type xmin: int
+    :param xmax: The maximum value of x
+    :type xmax: int
+    :param ymin: The minimum value of y
+    :type ymin: int
+    :param ymax: The maximum value of y
+    :type ymax: int
+    :param zmin: The minimum value of z, defaults to 0
+    :type zmin: int, optional
+    :param zmax: The maximum value of z, defaults to 0
+    :type zmax: int, optional
+    :return: The random line
+    :rtype: np.ndarray
+    """
+
     pt1 = get_random_pnt(xmin, xmax, ymin, ymax, zmin, zmax)
     pt2 = get_random_pnt(xmin, xmax, ymin, ymax, zmin, zmax)
     return np.array([pt1, pt2])
@@ -1665,6 +1722,10 @@ def find_intersect_node_on_edge(
     :type line1: Union[np.ndarray, Segment]
     :param line2: The second line
     :type line2: Union[np.ndarray, Segment]
+    :param update_property: The property to update, defaults to None
+    :type update_property: dict, optional
+    :return: The possible intersect node on the two lines
+    :rtype: tuple
     """
     result = []
     parallel, colinear = check_parallel_line_line(line1, line2)
