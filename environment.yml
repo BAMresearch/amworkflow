@@ -21,10 +21,9 @@ dependencies:
     - gmsh==4.11.1
     - networkx
     - pyqt5
-    - sphinx
+    - Sphinx
     - sqlalchemy
     - stl-to-voxel
-    - sphinx-build
     - sphinx-autobuild
     - sphinx-rtd-theme
     - sphinxcontrib-applehelp

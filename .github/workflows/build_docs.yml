@@ -14,10 +14,6 @@ jobs:
     steps:
       - name: checkout repo content
         uses: actions/checkout@v2
-      - name: Clean up incorrect submodule references
-        run: |
-            git rm --cached pythonocc-utils || true
-            rm -rf pythonocc-utils || true
         
       - name: Setup Mambaforge
         uses: conda-incubator/setup-miniconda@v2
