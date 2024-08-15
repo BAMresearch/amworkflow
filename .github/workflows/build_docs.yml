@@ -70,6 +70,7 @@ jobs:
           which python
           python --version
           python -m pip list
+          python -m pip list | grep amworkflow
 
       - name: Build documentation
         run: |
