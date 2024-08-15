@@ -49,6 +49,12 @@ jobs:
       - name: Check Sphinx installation
         run: sphinx-build --version
 
+      - name: Verify environment setup
+        run: |
+          which python
+          python --version
+          python -m pip list
+
       - name: Build documentation
         run: |
           cd docs
