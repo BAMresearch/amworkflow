@@ -33,3 +33,4 @@ dependencies:
     - sphinxcontrib-jsmath
     - sphinxcontrib-qthelp
     - sphinxcontrib-serializinghtml
+    - myst-parser
