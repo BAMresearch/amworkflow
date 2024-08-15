@@ -24,6 +24,7 @@ dependencies:
     - sphinx
     - sqlalchemy
     - stl-to-voxel
+    - sphinx-build
     - sphinx-autobuild
     - sphinx-rtd-theme
     - sphinxcontrib-applehelp
