@@ -1214,6 +1214,16 @@ def project_array(array: np.ndarray, direct: np.ndarray) -> np.ndarray:
 def shortest_distance_point_line(
     line: Union[list, Segment, np.ndarray], p: Union[list, Segment, np.ndarray]
 ):
+    """
+    Calculate the shortest distance between a point and a line (segment).
+
+    :param line: The line (segment) to be examined.
+    :type line: Union[list, Segment, np.ndarray]
+    :param p: The point to be examined.
+    :type p: Union[list, Segment, np.ndarray]
+    :return: The relative coordinate of the point on the line (segment) and The shortest distance between the point and the line (segment).
+    :rtype: Tuple[Union[int, float], float]
+    """
     if isinstance(line, Segment):
         pt1, pt2 = line.raw_value
         p = p.value
@@ -1807,10 +1817,11 @@ class CreateWallByPoints:
     def init_points(self, points: list, prop: dict = None) -> None:
         """
         Initialize the points of the wall. The property of the points can be enriched by the prop parameter.
-        :points: list of coordinates
-        :type: list
-        :prop: dict of properties
-        :type: dict
+
+        :param points: list of coordinates
+        :type points: list
+        :param prop: dict of properties
+        :type prop: dict
         """
         for i, p in enumerate(points):
             if not isinstance(p, Pnt):
@@ -1851,10 +1862,11 @@ class CreateWallByPoints:
     def enrich_component(self, component: TopoObj, prop: dict = None) -> TopoObj:
         """
         Enrich the property of the component
-        :component: The component to be enriched
-        :type: TopoObj
-        :prop: The property to be enriched
-        :type: dict"""
+
+        :param component: The component to be enriched
+        :type component: TopoObj
+        :param prop: The property to be enriched
+        :type prop: dict"""
         if not isinstance(component, TopoObj):
             raise ValueError("Component must be a TopoObj")
         component.enrich_property({"CWBP": prop})
@@ -1863,20 +1875,22 @@ class CreateWallByPoints:
     def compute_index(self, ind, length) -> int:
         """
         Compute the index of the component. The index will be periodic if it is out of the range.
-        :ind: The index
-        :type: int
-        :length: The length of the component
-        :type: int
+
+        :param ind: The index
+        :type ind: int
+        :param length: The length of the component
+        :type length: int
         """
         return ind % length if ind > 0 else -(-ind % length)
 
     def compute_support_vector(self, seg1: Segment, seg2: Segment = None) -> tuple:
         """
         Compute the support vector of the wall. The support vector is the vector perpendicular to the wall. Specifically in this case it will always on the left side of the wall.
-        :seg1: The first segment
-        :type: Segment
-        :seg2: The second segment
-        :type: Segment
+
+        :param seg1: The first segment
+        :type seg1: Segment
+        :param seg2: The second segment
+        :type seg2: Segment
         """
         lit_vector = get_literal_vector(seg1.vector, True)
         if seg2 is None:
@@ -1981,14 +1995,15 @@ class CreateWallByPoints:
     ) -> None:
         """
         Update the directed graph
-        :start_node: The start node
-        :type: int
-        :end_node: The end node
-        :type: int
-        :insert_node: The inserting node
-        :type: int
-        :build_new_edge: Whether to build a new edge
-        :type: bool
+
+        :param start_node: The start node
+        :type start_node: int
+        :param end_node: The end node
+        :type end_node: int
+        :param insert_node: The inserting node
+        :type insert_node: int
+        :param build_new_edge: Whether to build a new edge
+        :type build_new_edge: bool
         """
         self.update_index_component()
         points = {
@@ -2040,10 +2055,11 @@ class CreateWallByPoints:
     def delete_digraph(self, start_node: int, end_node: int) -> None:
         """
         Delete the directed graph
-        :start_node: The start node
-        :type: int
-        :end_node: The end node
-        :type: int
+
+        :param start_node: The start node
+        :type start_node: int
+        :param end_node: The end node
+        :type end_node: int
         """
         if start_node in self.digraph_points:
             if end_node in self.digraph_points[start_node]:
@@ -2106,6 +2122,9 @@ class CreateWallByPoints:
                         self.edges_to_be_modified[pair[0]].append(pair[1])
 
     def modify_edge(self):
+        """
+        Modify the edge based on the overlap nodes.
+        """
         self.update_index_component()
         edges = {}
         for i in self.index_components["segment"]:
@@ -2142,6 +2161,8 @@ class CreateWallByPoints:
                 # self.imaginary_segments.update({seg.id: seg})
 
     def check_pnt_in_wall(self):
+        """
+        Check if the points are in the wall."""
         self.update_index_component()
         edges = {}
         in_wall_points = []
@@ -2184,6 +2205,8 @@ class CreateWallByPoints:
         logger.debug(f"digraph:{self.digraph_points}")
 
     def check_segment_intersect_wall(self):
+        """
+        Check if the segments intersect with the wall."""
         self.update_index_component()
         edges = {}
         for i, seg in self.digraph_points.items():
@@ -2224,6 +2247,11 @@ class CreateWallByPoints:
                     break
 
     def postprocessing(self):
+        """
+        Postprocessing the wall.
+        Update the digraph of the wall.
+        Find the proper loops of the wall.
+        """
         self.update_index_component()
         self.check_pnt_in_wall()
         self.check_segment_intersect_wall()
@@ -2249,6 +2277,7 @@ class CreateWallByPoints:
         logger.debug(f"result loops:{self.result_loops}")
 
     def rank_result_loops(self):
+        """Rank the result loops based on the area of the loops."""
         points = {}
         for i in get_from_source(obj_type="point"):
             points.update({i.id: i})
@@ -2268,6 +2297,7 @@ class CreateWallByPoints:
         return self.result_loops
 
     def Shape(self):
+        """Create the shape of the wall."""
         loop_r = self.rank_result_loops()
         if not ENABLE_OCC:
             raise Exception("OpenCASCADE is not enabled.")
@@ -2301,6 +2331,7 @@ class CreateWallByPoints:
             return poly
 
     def visualize_graph(self):
+        """Visualize the graph of the wall."""
         layout = nx.spring_layout(self.G)
         # Draw the nodes and edges
         nx.draw(
@@ -2320,6 +2351,17 @@ class CreateWallByPoints:
         display_central_path: bool = False,
         all_polygons: bool = False,
     ):
+        """
+        Visualize the wall.
+
+        :param display_polygon: Whether to display the polygons, defaults to True
+        :type display_polygon: bool, optional
+        :param display_central_path: Whether to display the central path, defaults to False
+        :type display_central_path: bool, optional
+        :param all_polygons: Whether to display all polygons, defaults to False
+        :type all_polygons: bool, optional
+
+        """
         # Extract the x and y coordinates and IDs
         a = self.index_components["point"]
         components = {}
