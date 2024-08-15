@@ -8,7 +8,14 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../amworkflow"))
+print("Current sys.path:", sys.path)
+print("Checking if 'amworkflow' is importable:")
+try:
+    import amworkflow
+
+    print("amworkflow imported successfully.")
+except ImportError as e:
+    print("Failed to import amworkflow:", e)
 
 project = "amworkflow"
 copyright = "2024, Annika Robens-Radermacher, Yuxiang He"
