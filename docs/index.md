@@ -47,6 +47,8 @@ Some Intro
 ![Small dist line point](pics/Pasted-Graphic.png)
 The function returns the shortest distance between a point and a line (segment). For example in figure above the result will be $(\frac{L_1}{L_1+L_2},d_{min})$.
 
+<!-- This is how you cherry-pick a function docstring: -->
+
 ```{eval-rst}
 .. autofunction:: amworkflow.geometry.builtinCAD.shortest_distance_point_line
 ```
@@ -57,6 +59,8 @@ The function returns the shortest distance between a point and a line (segment).
 <!-- ```{math}
 e^{i\pi} + 1 = 0
 ``` --> 
+
+<!-- This is how you print the rest of docstrings and make sure those functions shown above won't appear again: -->
 
 ```{eval-rst}
 .. automodule:: amworkflow.geometry.builtinCAD
@@ -84,7 +88,17 @@ e^{i\pi} + 1 = 0
    :members:
 ```
 
-## Simulation
+## OCC Helpers
+
+```{eval-rst}
+.. automodule:: amworkflow.occ_helpers
+   :members:
+```
+
+
+<!-- Something is wrong with the fenicxconcrete on on my local machine so I commented these two modules for now. -->
+
+<!-- ## Simulation
 
 ```{eval-rst}
 .. automodule:: amworkflow.simulation.simulation
@@ -96,4 +110,4 @@ e^{i\pi} + 1 = 0
 ```{eval-rst}
 .. automodule:: amworkflow.simulation.experiment
    :members:
-```
+``` -->

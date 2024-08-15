@@ -27,6 +27,7 @@ dependencies:
     - stl-to-voxel
     - sphinx-autobuild
     - sphinx-rtd-theme
+    - sphinx-book-theme
     - sphinxcontrib-applehelp
     - sphinxcontrib-devhelp
     - sphinxcontrib-htmlhelp

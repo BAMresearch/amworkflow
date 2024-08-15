@@ -51,9 +51,19 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # html_theme = 'alabaster'
 html_static_path = ["_static"]
 
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_book_theme"
 
 source_suffix = {
     ".rst": "restructuredtext",
     ".md": "markdown",
+}
+
+html_theme_options = {
+    "show_navbar_depth": 4,  # Adjust to control the depth of the navbar (book theme)
+    "collapse_navigation": False,  # Set to False to keep the navigation unfolded (rtd theme and book theme)
+    # "sticky_navigation": True,  # Set to True to make the sidebar scroll with the page (rtd theme)
+    # "navigation_depth": 4,  # Adjust to control the depth of the TOC that is unfolded (rtd theme)
+    # "includehidden": True,  # Include hidden toctrees in the sidebar
+    # "display_version": True,  # Display the docs version (rtd theme)
+    "show_navbar_depth": 2,  # Adjust to control the depth of the navbar (book theme)
 }
