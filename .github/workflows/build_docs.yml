@@ -47,19 +47,19 @@ jobs:
       - name: Install amworkflow
         run: python -m pip install .
 
-      - name: Install Sphinx with pip
-        run: |
-            pip install sphinx
-            pip install myst-parser
-            pip install matplotlib
-            pip install sphinx-rtd-theme
-            pip install sphinxcontrib-applehelp
-            pip install sphinxcontrib-devhelp
-            pip install sphinxcontrib-htmlhelp
-            pip install sphinxcontrib-jquery
-            pip install sphinxcontrib-jsmath
-            pip install sphinxcontrib-qthelp
-            pip install sphinxcontrib-serializinghtml
+      # - name: Install Sphinx with pip
+      #   run: |
+      #       pip install sphinx
+      #       pip install myst-parser
+      #       pip install matplotlib
+      #       pip install sphinx-rtd-theme
+      #       pip install sphinxcontrib-applehelp
+      #       pip install sphinxcontrib-devhelp
+      #       pip install sphinxcontrib-htmlhelp
+      #       pip install sphinxcontrib-jquery
+      #       pip install sphinxcontrib-jsmath
+      #       pip install sphinxcontrib-qthelp
+      #       pip install sphinxcontrib-serializinghtml
 
       
       - name: Check Sphinx installation
@@ -69,8 +69,12 @@ jobs:
         run: |
           which python
           python --version
-          python -m pip list
           python -m pip list | grep amworkflow
+      
+      - name: Test Import of amworkflow.geometry
+        run: |
+          python -c "import amworkflow.geometry.builtinCAD"
+        
 
       - name: Build documentation
         run: |

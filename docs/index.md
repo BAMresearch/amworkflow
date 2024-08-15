@@ -20,7 +20,7 @@ Some info about organization
 
 ### Shortest_distance_point_line
 ![Small dist line point](pics/Pasted-Graphic.png)
-The function returns the shortest distance between a point and a line (segment). For example in figure above the result will be $(d_{min},\frac{L_1}{L_1+L_2})$.
+The function returns the shortest distance between a point and a line (segment). For example in figure above the result will be $(\frac{L_1}{L_1+L_2},d_{min})$.
 
 ```{eval-rst}
 .. autofunction:: amworkflow.geometry.builtinCAD.shortest_distance_point_line
