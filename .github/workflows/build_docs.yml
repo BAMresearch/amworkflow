@@ -48,6 +48,13 @@ jobs:
             pip install sphinx
             pip install myst-parser
             pip install sphinx-rtd-theme
+            pip install sphinxcontrib-applehelp
+            pip install sphinxcontrib-devhelp
+            pip install sphinxcontrib-htmlhelp
+            pip install sphinxcontrib-jquery
+            pip install sphinxcontrib-jsmath
+            pip install sphinxcontrib-qthelp
+            pip install sphinxcontrib-serializinghtml
 
       
       - name: Check Sphinx installation
