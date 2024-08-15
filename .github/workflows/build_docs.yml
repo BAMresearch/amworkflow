@@ -76,10 +76,15 @@ jobs:
           python -c "import amworkflow.geometry.builtinCAD"
         
 
-      - name: Build documentation
+      # - name: Build documentation
+      #   run: |
+      #     cd docs
+      #     make clean
+      #     make html
+
+      - name: Sphinx build
         run: |
-          cd docs
-          make html
+          sphinx-build doc _build/html
           
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
