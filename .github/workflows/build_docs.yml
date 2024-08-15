@@ -44,7 +44,9 @@ jobs:
         run: python -m pip install .
 
       - name: Install Sphinx with pip
-        run: pip install sphinx
+        run: |
+            pip install sphinx
+            pip install myst-parser
       
       - name: Check Sphinx installation
         run: sphinx-build --version
