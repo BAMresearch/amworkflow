@@ -1,0 +1,874 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>amworkflow.geometry.geometry &#8212; amworkflow 1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=a3416100" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=a681ed88"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/amworkflow/geometry/geometry';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">amworkflow 1.0 documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for amworkflow.geometry.geometry</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">typing</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.StlAPI</span> <span class="kn">import</span> <span class="n">StlAPI_Writer</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.TopoDS</span> <span class="kn">import</span> <span class="n">TopoDS_Shape</span>
+<span class="kn">from</span> <span class="nn">OCC.Extend.DataExchange</span> <span class="kn">import</span> <span class="n">write_step_file</span><span class="p">,</span> <span class="n">write_stl_file</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">fsolve</span>
+
+<span class="kn">import</span> <span class="nn">amworkflow.geometry.builtinCAD</span> <span class="k">as</span> <span class="nn">builtincad</span>
+<span class="kn">import</span> <span class="nn">amworkflow.occ_helpers</span> <span class="k">as</span> <span class="nn">occ_helpers</span>
+
+<span class="n">typing</span><span class="o">.</span><span class="n">override</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+
+
+<div class="viewcode-block" id="Geometry">
+<a class="viewcode-back" href="../../../index.html#amworkflow.geometry.geometry.Geometry">[docs]</a>
+<span class="k">class</span> <span class="nc">Geometry</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class with API for any geometry creation.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Geometry.create">
+<a class="viewcode-back" href="../../../index.html#amworkflow.geometry.geometry.Geometry.create">[docs]</a>
+    <span class="nd">@typing</span><span class="o">.</span><span class="n">override</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">out_step</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">out_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">out_stl</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create step and stl file from the geometry.</span>
+
+<span class="sd">            To be defined in child classes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            out_step: File path of step file.</span>
+<span class="sd">            out_path: File path of file containing the print path points (csv).</span>
+<span class="sd">            out_path: File path of file containing the print path points (csv).</span>
+
+<span class="sd">            out_stl: Optional file path of stl file.</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="GeometryOCC">
+<a class="viewcode-back" href="../../../index.html#amworkflow.geometry.geometry.GeometryOCC">[docs]</a>
+<span class="k">class</span> <span class="nc">GeometryOCC</span><span class="p">(</span><span class="n">Geometry</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Geometry base class for OCC geometry creation.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">stl_linear_deflection</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span>
+        <span class="n">stl_angular_deflection</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Geometry case class for OCC geometry creation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            stl_linear_deflection: Linear deflection parameter of OCC stl export (Lower, more accurate mesh; OCC default is 0.001)</span>
+<span class="sd">            stl_angular_deflection: Angular deflection parameter of OCC stl export (Lower, more accurate_mesh: OCC default is 0.5).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stl_linear_deflection</span> <span class="o">=</span> <span class="n">stl_linear_deflection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stl_angular_deflection</span> <span class="o">=</span> <span class="n">stl_angular_deflection</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GeometryOCC.geometry_spawn">
+<a class="viewcode-back" href="../../../index.html#amworkflow.geometry.geometry.GeometryOCC.geometry_spawn">[docs]</a>
+    <span class="nd">@typing</span><span class="o">.</span><span class="n">override</span>
+    <span class="k">def</span> <span class="nf">geometry_spawn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Define geometry using occ fct or own.</span>
+
+<span class="sd">            To be overwritten by user.</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            shape: OCC shape.</span>
+<span class="sd">            points: list of centerline points (x,y,z)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="GeometryOCC.create">
+<a class="viewcode-back" href="../../../index.html#amworkflow.geometry.geometry.GeometryOCC.create">[docs]</a>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">out_step</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">out_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">out_stl</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create step and stl file from OCC shape geometry created by function geometry_spawn.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            out_step: File path of step file.</span>
+<span class="sd">            out_path: File path of file containing the print path points.</span>
+<span class="sd">            out_stl: File path of stl file.</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry_spawn</span><span class="p">()</span>
+
+        <span class="c1"># stl_write = StlAPI_Writer()</span>
+        <span class="c1"># stl_write.SetASCIIMode(True)  # Set to False for binary STL output</span>
+        <span class="c1"># status = stl_write.Write(self.shape, str(out_stl))</span>
+        <span class="c1"># print(status)</span>
+        <span class="c1"># if status:</span>
+        <span class="c1">#     print(&quot;Done!&quot;)</span>
+
+        <span class="k">if</span> <span class="n">out_stl</span><span class="p">:</span>
+            <span class="n">write_stl_file</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">out_stl</span><span class="p">),</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span><span class="p">,</span>
+                <span class="n">linear_deflection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stl_linear_deflection</span><span class="p">,</span>
+                <span class="n">angular_deflection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stl_angular_deflection</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">write_step_file</span><span class="p">(</span><span class="n">a_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">out_step</span><span class="p">))</span>
+
+        <span class="c1"># save print path points</span>
+        <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]}</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">out_path</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="GeometryParamWall">
+<a class="viewcode-back" href="../../../index.html#amworkflow.geometry.geometry.GeometryParamWall">[docs]</a>
+<span class="k">class</span> <span class="nc">GeometryParamWall</span><span class="p">(</span><span class="n">GeometryOCC</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">length</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">width</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">line_width</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">infill</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;solid&quot;</span><span class="p">,</span> <span class="s2">&quot;honeycomb&quot;</span><span class="p">,</span> <span class="s2">&quot;zigzag&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">infill_num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">layer_thickness</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;OCC geometry class for parametric wall element with following parameters:</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            height: Height of wall.</span>
+<span class="sd">            length: Length of wall.</span>
+<span class="sd">            width: Width of wall.</span>
+<span class="sd">            radius: Radius of wall curvature.</span>
+<span class="sd">            infill: Infill of wall: possible solid, honeycomb, zigzag.</span>
+<span class="sd">            layer_thickness: Thickness of the layers.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">radius</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">infill</span> <span class="o">=</span> <span class="n">infill</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">line_width</span> <span class="o">=</span> <span class="n">line_width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_thickness</span> <span class="o">=</span> <span class="n">layer_thickness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">infill_num</span> <span class="o">=</span> <span class="n">infill_num</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GeometryParamWall.geometry_spawn">
+<a class="viewcode-back" href="../../../index.html#amworkflow.geometry.geometry.GeometryParamWall.geometry_spawn">[docs]</a>
+    <span class="k">def</span> <span class="nf">geometry_spawn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Define wall geometry based on given parameters.</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            shape: OCC shape.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="c1"># assert self.radius is not None</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">infill</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="c1"># assert self.layer_thickness is not None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">infill</span> <span class="o">==</span> <span class="s2">&quot;solid&quot;</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">occ_helpers</span><span class="o">.</span><span class="n">create_box</span><span class="p">(</span>
+                <span class="n">length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">,</span>
+                <span class="n">width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span>
+                <span class="n">height</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">,</span>
+                <span class="n">radius</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">infill</span> <span class="o">==</span> <span class="s2">&quot;no&quot;</span><span class="p">:</span>
+            <span class="n">W</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span>
+            <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_width</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="p">(</span><span class="n">W</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+                <span class="p">[(</span><span class="n">L</span> <span class="o">-</span> <span class="n">t</span><span class="p">),</span> <span class="p">(</span><span class="n">W</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+                <span class="p">[(</span><span class="n">L</span> <span class="o">-</span> <span class="n">t</span><span class="p">),</span> <span class="o">-</span><span class="p">(</span><span class="n">W</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">W</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+            <span class="p">]</span>
+
+            <span class="n">creator</span> <span class="o">=</span> <span class="n">builtincad</span><span class="o">.</span><span class="n">CreateWallByPoints</span><span class="p">(</span>
+                <span class="n">points</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">line_width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span>
+            <span class="p">)</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">creator</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+            <span class="n">creator</span><span class="o">.</span><span class="n">visualize</span><span class="p">()</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">infill</span> <span class="o">==</span> <span class="s2">&quot;honeycomb&quot;</span><span class="p">:</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">honeycomb_infill</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">infill_num</span>
+            <span class="p">)</span>
+            <span class="n">creator</span> <span class="o">=</span> <span class="n">builtincad</span><span class="o">.</span><span class="n">CreateWallByPoints</span><span class="p">(</span>
+                <span class="n">points</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">line_width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span>
+            <span class="p">)</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">creator</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">infill</span> <span class="o">==</span> <span class="s2">&quot;zigzag&quot;</span><span class="p">:</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zigzag_infill</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">infill_num</span>
+            <span class="p">)</span>
+            <span class="n">creator</span> <span class="o">=</span> <span class="n">builtincad</span><span class="o">.</span><span class="n">CreateWallByPoints</span><span class="p">(</span>
+                <span class="n">points</span><span class="p">,</span> <span class="n">th</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">line_width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span>
+            <span class="p">)</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">creator</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown infill type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">infill</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">shape</span><span class="p">,</span> <span class="n">points</span></div>
+
+
+<div class="viewcode-block" id="GeometryParamWall.honeycomb_infill">
+<a class="viewcode-back" href="../../../index.html#amworkflow.geometry.geometry.GeometryParamWall.honeycomb_infill">[docs]</a>
+    <span class="k">def</span> <span class="nf">honeycomb_infill</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">overall_length</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">overall_width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">line_width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">honeycomb_num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.1468</span><span class="p">,</span>
+        <span class="n">regular</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">side_len</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">expand_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create honeycomb geometry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overall_length: Length of the honeycomb infill.</span>
+<span class="sd">            overall_width: Width of the honeycomb infill.</span>
+<span class="sd">            line_width: Width of the honeycomb lines.</span>
+<span class="sd">            honeycomb_num: Number of honeycomb units.</span>
+<span class="sd">            angle: Angle of the honeycomb lines.</span>
+<span class="sd">            regular: Regular honeycomb or not. A regular honeycomb has a fixed side length.</span>
+<span class="sd">            side_len: Side length of the honeycomb.</span>
+<span class="sd">            expand_factor: Factor to expand the honeycomb geometry.</span>
+
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: Array of points defining the honeycomb geometry.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">calculate_lengths_and_widths</span><span class="p">(</span><span class="n">angle_length_pair</span><span class="p">):</span>
+            <span class="n">x_rad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">angle_length_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">equation1</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x_rad</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">angle_length_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">honeycomb_num</span>
+                <span class="o">+</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">line_width</span>
+                <span class="o">-</span> <span class="n">overall_length</span>
+            <span class="p">)</span>
+            <span class="n">equation2</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="mi">3</span> <span class="o">*</span> <span class="n">line_width</span>
+                <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">angle_length_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x_rad</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">overall_width</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">equation1</span><span class="p">,</span> <span class="n">equation2</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">create_half_honeycomb</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">side_length1</span><span class="p">,</span> <span class="n">side_length2</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">origin</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">origin</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">side_length1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="n">side_length1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)]</span>
+            <span class="p">)</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">side_length2</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">side_length1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="o">-</span><span class="n">side_length1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)]</span>
+            <span class="p">)</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">side_length2</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">points</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">regular</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">overall_width</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">overall_length</span> <span class="o">-=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_width</span><span class="p">)</span>
+                <span class="n">overall_width</span> <span class="o">-=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_width</span><span class="p">)</span>
+                <span class="n">initial_guesses</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">89</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">overall_length</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+                <span class="p">]</span>
+                <span class="n">updated_solutions</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">sol</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">10</span><span class="p">),</span> <span class="nb">round</span><span class="p">(</span><span class="n">sol</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">10</span><span class="p">))</span>
+                    <span class="k">for</span> <span class="n">guess</span> <span class="ow">in</span> <span class="n">initial_guesses</span>
+                    <span class="k">for</span> <span class="n">sol</span> <span class="ow">in</span> <span class="p">[</span><span class="n">fsolve</span><span class="p">(</span><span class="n">calculate_lengths_and_widths</span><span class="p">,</span> <span class="n">guess</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">sol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">90</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">sol</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">150</span>
+                <span class="p">}</span>
+                <span class="k">if</span> <span class="n">updated_solutions</span><span class="p">:</span>
+                    <span class="n">ideal_solution</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                        <span class="n">updated_solutions</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">45</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No solution found&quot;</span><span class="p">)</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="n">ideal_solution</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">ideal_solution</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">overall_length</span> <span class="o">-</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">line_width</span><span class="p">)</span>
+                    <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+                    <span class="o">/</span> <span class="n">honeycomb_num</span>
+                <span class="p">)</span>
+                <span class="n">overall_width</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">line_width</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">length</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="n">side_len</span>
+            <span class="n">overall_length</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="mf">1.5</span> <span class="o">*</span> <span class="n">line_width</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">side_len</span> <span class="o">*</span> <span class="n">honeycomb_num</span>
+            <span class="p">)</span>
+            <span class="n">overall_width</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">line_width</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">length</span>
+
+        <span class="n">start_point</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">line_width</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">])</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">line_width</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="n">length</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">half_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">int</span><span class="p">((</span><span class="mi">12</span> <span class="o">+</span> <span class="p">(</span><span class="n">honeycomb_num</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">half_points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_point</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">honeycomb_num</span><span class="p">):</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">start_point</span>
+                <span class="o">+</span> <span class="n">offset</span>
+                <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">length</span> <span class="o">*</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="p">)</span>
+            <span class="n">honeycomb_unit</span> <span class="o">=</span> <span class="n">create_half_honeycomb</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+            <span class="n">half_points</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">honeycomb_unit</span>
+
+        <span class="n">another_half</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">half_points</span><span class="p">)</span> <span class="o">*</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">half_points</span><span class="p">,</span> <span class="n">another_half</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">outer_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">overall_width</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">],</span>
+                <span class="p">[</span><span class="n">overall_length</span><span class="p">,</span> <span class="o">-</span><span class="n">overall_width</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">],</span>
+                <span class="p">[</span><span class="n">overall_length</span><span class="p">,</span> <span class="n">overall_width</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">overall_width</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">],</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">points</span><span class="p">,</span> <span class="n">outer_points</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">expand_factor</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cnt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">6</span><span class="p">]</span> <span class="o">-</span> <span class="n">cnt</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">expand_factor</span><span class="p">)</span> <span class="o">+</span> <span class="n">cnt</span>
+        <span class="k">return</span> <span class="n">points</span></div>
+
+
+<div class="viewcode-block" id="GeometryParamWall.zigzag_infill">
+<a class="viewcode-back" href="../../../index.html#amworkflow.geometry.geometry.GeometryParamWall.zigzag_infill">[docs]</a>
+    <span class="k">def</span> <span class="nf">zigzag_infill</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">overall_length</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">overall_width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">line_width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">zigzag_num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.1468</span><span class="p">,</span>
+        <span class="n">regular</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">side_len</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">expand_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create zigzag geometry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overall_length: Length of the zigzag infill.</span>
+<span class="sd">            overall_width: Width of the zigzag infill.</span>
+<span class="sd">            line_width: Width of the zigzag lines.</span>
+<span class="sd">            zigzag_num: Number of zigzag units.</span>
+<span class="sd">            angle: Angle of the zigzag lines.</span>
+<span class="sd">            regular: Regular zigzag or not. A regular zigzag is equivalent to a diamond.</span>
+<span class="sd">            side_len: Side length of the zigzag.</span>
+<span class="sd">            expand_factor: Factor to expand the zigzag geometry.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: Array of points defining the zigzag geometry.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">calculate_lengths_and_widths</span><span class="p">(</span><span class="n">angle_length_pair</span><span class="p">):</span>
+            <span class="n">x_rad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">angle_length_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">eq1</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x_rad</span><span class="p">))</span> <span class="o">*</span> <span class="n">angle_length_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="o">+</span> <span class="n">line_width</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x_rad</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+                <span class="p">)</span>
+                <span class="o">*</span> <span class="n">zigzag_num</span>
+                <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">line_width</span>
+                <span class="o">-</span> <span class="n">overall_length</span>
+            <span class="p">)</span>
+            <span class="n">eq2</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="mi">3</span> <span class="o">*</span> <span class="n">line_width</span>
+                <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">angle_length_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x_rad</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">overall_width</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">eq1</span><span class="p">,</span> <span class="n">eq2</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">create_half_zigzag</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">side_length1</span><span class="p">,</span> <span class="n">side_length2</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">origin</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">origin</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">side_length1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="n">side_length1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)]</span>
+            <span class="p">)</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">side_length2</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">side_length1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="o">-</span><span class="n">side_length1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)]</span>
+            <span class="p">)</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">side_length2</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">points</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">regular</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">overall_width</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">overall_length</span> <span class="o">-=</span> <span class="n">line_width</span>
+                <span class="n">overall_width</span> <span class="o">-=</span> <span class="n">line_width</span>
+                <span class="n">initial_guesses</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">89</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">overall_length</span><span class="p">),</span> <span class="mi">10</span><span class="p">)</span>
+                <span class="p">]</span>
+                <span class="n">updated_solutions</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">sol</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">16</span><span class="p">),</span> <span class="nb">round</span><span class="p">(</span><span class="n">sol</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">16</span><span class="p">))</span>
+                    <span class="k">for</span> <span class="n">guess</span> <span class="ow">in</span> <span class="n">initial_guesses</span>
+                    <span class="k">for</span> <span class="n">sol</span> <span class="ow">in</span> <span class="p">[</span><span class="n">fsolve</span><span class="p">(</span><span class="n">calculate_lengths_and_widths</span><span class="p">,</span> <span class="n">guess</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">sol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">90</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">sol</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">150</span>
+                <span class="p">}</span>
+                <span class="k">if</span> <span class="n">updated_solutions</span><span class="p">:</span>
+                    <span class="n">ideal_solution</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                        <span class="n">updated_solutions</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">45</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No solution found&quot;</span><span class="p">)</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="n">ideal_solution</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">ideal_solution</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">overall_length</span> <span class="o">-</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">line_width</span>
+                <span class="p">)</span> <span class="o">/</span> <span class="n">zigzag_num</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">line_width</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span>
+                <span class="n">overall_width</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">line_width</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">length</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="n">side_len</span>
+            <span class="n">overall_length</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="mf">1.5</span> <span class="o">*</span> <span class="n">line_width</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">side_len</span> <span class="o">*</span> <span class="n">zigzag_num</span>
+            <span class="p">)</span>
+            <span class="n">overall_width</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">line_width</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">length</span>
+
+        <span class="n">start_point</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">line_width</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">])</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">line_width</span> <span class="o">*</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">line_width</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+        <span class="n">point_num</span> <span class="o">=</span> <span class="mi">12</span> <span class="o">+</span> <span class="p">(</span><span class="n">zigzag_num</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">10</span>
+        <span class="n">half_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">point_num</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">half_points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_point</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">zigzag_num</span><span class="p">):</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">start_point</span>
+                <span class="o">+</span> <span class="n">offset</span>
+                <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">length</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">line_width</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span>
+                        <span class="o">*</span> <span class="n">i</span><span class="p">,</span>
+                        <span class="mi">0</span><span class="p">,</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">zigzag_unit</span> <span class="o">=</span> <span class="n">create_half_zigzag</span><span class="p">(</span>
+                <span class="n">start</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">line_width</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="n">angle</span>
+            <span class="p">)</span>
+            <span class="n">half_points</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">zigzag_unit</span>
+
+        <span class="n">another_half</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">half_points</span><span class="p">)</span> <span class="o">*</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">half_points</span><span class="p">,</span> <span class="n">another_half</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">outer_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">overall_width</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">],</span>
+                <span class="p">[</span><span class="n">overall_length</span><span class="p">,</span> <span class="o">-</span><span class="n">overall_width</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">],</span>
+                <span class="p">[</span><span class="n">overall_length</span><span class="p">,</span> <span class="n">overall_width</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">overall_width</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">],</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">points</span><span class="p">,</span> <span class="n">outer_points</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">expand_factor</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cnt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">points</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">6</span><span class="p">]</span> <span class="o">-</span> <span class="n">cnt</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">expand_factor</span><span class="p">)</span> <span class="o">+</span> <span class="n">cnt</span>
+
+        <span class="k">return</span> <span class="n">points</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="GeometryCenterline">
+<a class="viewcode-back" href="../../../index.html#amworkflow.geometry.geometry.GeometryCenterline">[docs]</a>
+<span class="k">class</span> <span class="nc">GeometryCenterline</span><span class="p">(</span><span class="n">GeometryOCC</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">points</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">layer_thickness</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">is_close</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;OCC geometry class for creating a layer by layer geometry from a given array of centerline points (x,y,z)</span>
+<span class="sd">        and following paramters:</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            points: Array with the centerline points with shape (n_points, 3).</span>
+<span class="sd">            layer_thickness: Thickness of the layers.</span>
+<span class="sd">            height: Height of total structure (number of layer x layer height).</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_thickness</span> <span class="o">=</span> <span class="n">layer_thickness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_close</span> <span class="o">=</span> <span class="n">is_close</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GeometryCenterline.geometry_spawn">
+<a class="viewcode-back" href="../../../index.html#amworkflow.geometry.geometry.GeometryCenterline.geometry_spawn">[docs]</a>
+    <span class="k">def</span> <span class="nf">geometry_spawn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Define geometry from centerline points</span>
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_thickness</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="n">creator</span> <span class="o">=</span> <span class="n">builtincad</span><span class="o">.</span><span class="n">CreateWallByPoints</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">,</span>
+            <span class="n">th</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_thickness</span><span class="p">,</span>
+            <span class="n">height</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">,</span>
+            <span class="n">is_close</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">is_close</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">creator</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">points</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Annika Robens-Radermacher, Yuxiang He
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Annika Robens-Radermacher, Yuxiang He.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

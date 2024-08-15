@@ -1,0 +1,1073 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>amworkflow.occ_helpers &#8212; amworkflow 1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=a3416100" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=a681ed88"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/amworkflow/occ_helpers';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">amworkflow 1.0 documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for amworkflow.occ_helpers</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">math</span> <span class="k">as</span> <span class="nn">m</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.Bnd</span> <span class="kn">import</span> <span class="n">Bnd_Box</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.BOPAlgo</span> <span class="kn">import</span> <span class="n">BOPAlgo_Splitter</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.BRep</span> <span class="kn">import</span> <span class="n">BRep_Builder</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.BRepAlgoAPI</span> <span class="kn">import</span> <span class="n">BRepAlgoAPI_Common</span><span class="p">,</span> <span class="n">BRepAlgoAPI_Cut</span><span class="p">,</span> <span class="n">BRepAlgoAPI_Fuse</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.BRepBndLib</span> <span class="kn">import</span> <span class="n">brepbndlib_Add</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.BRepBuilderAPI</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BRepBuilderAPI_Copy</span><span class="p">,</span>
+    <span class="n">BRepBuilderAPI_MakeEdge</span><span class="p">,</span>
+    <span class="n">BRepBuilderAPI_MakeFace</span><span class="p">,</span>
+    <span class="n">BRepBuilderAPI_MakePolygon</span><span class="p">,</span>
+    <span class="n">BRepBuilderAPI_MakeShell</span><span class="p">,</span>
+    <span class="n">BRepBuilderAPI_MakeSolid</span><span class="p">,</span>
+    <span class="n">BRepBuilderAPI_MakeWire</span><span class="p">,</span>
+    <span class="n">BRepBuilderAPI_Sewing</span><span class="p">,</span>
+    <span class="n">BRepBuilderAPI_Transform</span><span class="p">,</span>
+    <span class="n">brepbuilderapi_Precision</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.BRepGProp</span> <span class="kn">import</span> <span class="n">brepgprop_SurfaceProperties</span><span class="p">,</span> <span class="n">brepgprop_VolumeProperties</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.BRepPrimAPI</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BRepPrimAPI_MakeBox</span><span class="p">,</span>
+    <span class="n">BRepPrimAPI_MakeCylinder</span><span class="p">,</span>
+    <span class="n">BRepPrimAPI_MakePrism</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.GC</span> <span class="kn">import</span> <span class="n">GC_MakeArcOfCircle</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.Geom</span> <span class="kn">import</span> <span class="n">Geom_TrimmedCurve</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.gp</span> <span class="kn">import</span> <span class="n">gp_Ax1</span><span class="p">,</span> <span class="n">gp_Dir</span><span class="p">,</span> <span class="n">gp_Pln</span><span class="p">,</span> <span class="n">gp_Pnt</span><span class="p">,</span> <span class="n">gp_Trsf</span><span class="p">,</span> <span class="n">gp_Vec</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.GProp</span> <span class="kn">import</span> <span class="n">GProp_GProps</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.TopAbs</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TopAbs_COMPOUND</span><span class="p">,</span>
+    <span class="n">TopAbs_EDGE</span><span class="p">,</span>
+    <span class="n">TopAbs_FACE</span><span class="p">,</span>
+    <span class="n">TopAbs_SHELL</span><span class="p">,</span>
+    <span class="n">TopAbs_SOLID</span><span class="p">,</span>
+    <span class="n">TopAbs_WIRE</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.TopExp</span> <span class="kn">import</span> <span class="n">TopExp_Explorer</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.TopLoc</span> <span class="kn">import</span> <span class="n">TopLoc_Location</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.TopoDS</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TopoDS_Compound</span><span class="p">,</span>
+    <span class="n">TopoDS_Edge</span><span class="p">,</span>
+    <span class="n">TopoDS_Face</span><span class="p">,</span>
+    <span class="n">TopoDS_Iterator</span><span class="p">,</span>
+    <span class="n">TopoDS_Shape</span><span class="p">,</span>
+    <span class="n">TopoDS_Shell</span><span class="p">,</span>
+    <span class="n">TopoDS_Solid</span><span class="p">,</span>
+    <span class="n">TopoDS_Wire</span><span class="p">,</span>
+    <span class="n">topods_Face</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">OCC.Core.TopTools</span> <span class="kn">import</span> <span class="n">TopTools_ListOfShape</span>
+<span class="kn">from</span> <span class="nn">OCCUtils.Construct</span> <span class="kn">import</span> <span class="n">make_face</span><span class="p">,</span> <span class="n">vec_to_dir</span>
+<span class="kn">from</span> <span class="nn">OCCUtils.Topology</span> <span class="kn">import</span> <span class="n">Topo</span>
+
+<span class="kn">from</span> <span class="nn">amworkflow.config.settings</span> <span class="kn">import</span> <span class="n">LOG_LEVEL</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
+    <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> - </span><span class="si">%(name)s</span><span class="s2"> - </span><span class="si">%(levelname)s</span><span class="s2"> - </span><span class="si">%(message)s</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;amworkflow.occ_helpers&quot;</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">LOG_LEVEL</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="create_box">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.create_box">[docs]</a>
+<span class="k">def</span> <span class="nf">create_box</span><span class="p">(</span>
+    <span class="n">length</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">shell</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a box with given length, width, height, and radius. If radius is None or 0, the box will be sewed by a solid.</span>
+
+<span class="sd">    :param float length: Length of the box.</span>
+<span class="sd">    :param float width: Width of the box.</span>
+<span class="sd">    :param float height: Height of the box.</span>
+<span class="sd">    :param float radius: Radius of the box. Default is None, which means that the box is without curves.</span>
+<span class="sd">    :param float alpha: Angle for bending the box. Default is half the length divided by the radius.</span>
+<span class="sd">    :param bool shell: If True, the box will be a shell. Default is False.</span>
+<span class="sd">    :return: The created box in TopoDS_Shape form.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">radius</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">radius</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">shell</span><span class="p">:</span>
+            <span class="n">box</span> <span class="o">=</span> <span class="n">BRepPrimAPI_MakeBox</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+            <span class="n">faces</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Topo</span><span class="p">(</span><span class="n">TopoDS_Solid</span><span class="p">)</span><span class="o">.</span><span class="n">faces_from_solids</span><span class="p">(</span><span class="n">box</span><span class="p">))</span>
+            <span class="n">sewed_face</span> <span class="o">=</span> <span class="n">sew_face</span><span class="p">(</span><span class="n">faces</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">sewed_face</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">BRepPrimAPI_MakeBox</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="p">(</span><span class="n">length</span> <span class="o">/</span> <span class="n">radius</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">radius</span> <span class="o">+</span> <span class="p">(</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">radius</span> <span class="o">-</span> <span class="p">(</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">p1</span> <span class="o">=</span> <span class="n">gp_Pnt</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">p1_2</span> <span class="o">=</span> <span class="n">gp_Pnt</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">m</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">))</span> <span class="o">*</span> <span class="n">R</span><span class="p">,</span> <span class="n">R</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">p2</span> <span class="o">=</span> <span class="n">gp_Pnt</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">m</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">))</span> <span class="o">*</span> <span class="n">R</span><span class="p">,</span> <span class="n">R</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">p3</span> <span class="o">=</span> <span class="n">gp_Pnt</span><span class="p">(</span><span class="n">R</span> <span class="o">-</span> <span class="n">r</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span> <span class="n">r</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">p3_4</span> <span class="o">=</span> <span class="n">gp_Pnt</span><span class="p">(</span><span class="n">R</span> <span class="o">-</span> <span class="n">r</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">0.1</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">),</span> <span class="n">r</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">0.1</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">p4</span> <span class="o">=</span> <span class="n">gp_Pnt</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">arch1_2</span> <span class="o">=</span> <span class="n">GC_MakeArcOfCircle</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p1_2</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span>
+        <span class="n">arch3_4</span> <span class="o">=</span> <span class="n">GC_MakeArcOfCircle</span><span class="p">(</span><span class="n">p3</span><span class="p">,</span> <span class="n">p3_4</span><span class="p">,</span> <span class="n">p4</span><span class="p">)</span>
+        <span class="n">arch_edge1_2</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_MakeEdge</span><span class="p">(</span><span class="n">arch1_2</span><span class="o">.</span><span class="n">Value</span><span class="p">())</span><span class="o">.</span><span class="n">Edge</span><span class="p">()</span>
+        <span class="n">arch_edge3_4</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_MakeEdge</span><span class="p">(</span><span class="n">arch3_4</span><span class="o">.</span><span class="n">Value</span><span class="p">())</span><span class="o">.</span><span class="n">Edge</span><span class="p">()</span>
+        <span class="n">edge2</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_MakeEdge</span><span class="p">(</span><span class="n">p2</span><span class="p">,</span> <span class="n">p3</span><span class="p">)</span><span class="o">.</span><span class="n">Edge</span><span class="p">()</span>
+        <span class="n">edge4</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_MakeEdge</span><span class="p">(</span><span class="n">p4</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span><span class="o">.</span><span class="n">Edge</span><span class="p">()</span>
+        <span class="n">wire</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_MakeWire</span><span class="p">(</span><span class="n">arch_edge1_2</span><span class="p">,</span> <span class="n">edge2</span><span class="p">,</span> <span class="n">arch_edge3_4</span><span class="p">,</span> <span class="n">edge4</span><span class="p">)</span><span class="o">.</span><span class="n">Wire</span><span class="p">()</span>
+        <span class="n">wire_top</span> <span class="o">=</span> <span class="n">geom_copy</span><span class="p">(</span><span class="n">wire</span><span class="p">)</span>
+        <span class="n">translate</span><span class="p">(</span><span class="n">wire_top</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">height</span><span class="p">])</span>
+        <span class="n">prism</span> <span class="o">=</span> <span class="n">create_prism</span><span class="p">(</span><span class="n">wire</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">height</span><span class="p">],</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">bottom_face</span> <span class="o">=</span> <span class="n">create_face</span><span class="p">(</span><span class="n">wire</span><span class="p">)</span>
+        <span class="n">top_face</span> <span class="o">=</span> <span class="n">reverse</span><span class="p">(</span><span class="n">create_face</span><span class="p">(</span><span class="n">wire_top</span><span class="p">))</span>
+        <span class="n">component</span> <span class="o">=</span> <span class="p">[</span><span class="n">prism</span><span class="p">,</span> <span class="n">top_face</span><span class="p">,</span> <span class="n">bottom_face</span><span class="p">]</span>
+        <span class="n">sewing</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_Sewing</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">component</span><span class="p">)):</span>
+            <span class="n">sewing</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">component</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">sewing</span><span class="o">.</span><span class="n">Perform</span><span class="p">()</span>
+        <span class="n">sewed_shape</span> <span class="o">=</span> <span class="n">sewing</span><span class="o">.</span><span class="n">SewedShape</span><span class="p">()</span>
+        <span class="n">solid</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_MakeSolid</span><span class="p">(</span><span class="n">sewed_shape</span><span class="p">)</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+        <span class="n">curve_box</span> <span class="o">=</span> <span class="n">create_compound</span><span class="p">(</span><span class="n">component</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">shell</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sewed_shape</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">solid</span></div>
+
+
+
+<div class="viewcode-block" id="create_prism">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.create_prism">[docs]</a>
+<span class="k">def</span> <span class="nf">create_prism</span><span class="p">(</span><span class="n">shape</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span> <span class="n">vector</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">copy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shell</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a prism from a TopoDS_Shape and vector. </span>
+
+<span class="sd">    :param TopoDS_Shape shape: The shape to be used as the base.</span>
+<span class="sd">    :param list vector: A list of 3 elements (x, y, z). Normally only z is used to define the height of the prism.</span>
+<span class="sd">    :param bool copy: If True, the base wire(s) will be copied. Recommended to always use True.</span>
+<span class="sd">    :return: The created prism.</span>
+<span class="sd">    :rtype: TopoDS_Shell</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BRepPrimAPI_MakePrism</span><span class="p">(</span>
+        <span class="n">shape</span><span class="p">,</span> <span class="n">gp_Vec</span><span class="p">(</span><span class="n">vector</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">vector</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">copy</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="create_wire">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.create_wire">[docs]</a>
+<span class="k">def</span> <span class="nf">create_wire</span><span class="p">(</span><span class="o">*</span><span class="n">edge</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Wire</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a wire from the given edge(s).</span>
+
+<span class="sd">    :param edge: One or more edges to build a wire.</span>
+<span class="sd">    :return: A wire built from the given edge(s).</span>
+<span class="sd">    :rtype: TopoDS_Wire</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BRepBuilderAPI_MakeWire</span><span class="p">(</span><span class="o">*</span><span class="n">edge</span><span class="p">)</span><span class="o">.</span><span class="n">Wire</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="create_face">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.create_face">[docs]</a>
+<span class="k">def</span> <span class="nf">create_face</span><span class="p">(</span><span class="n">wire</span><span class="p">:</span> <span class="n">TopoDS_Wire</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Face</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a BRep face from a TopoDS_Wire.</span>
+
+<span class="sd">    :param TopoDS_Wire wire: The wire to create a face from.</span>
+<span class="sd">    :return: A face created from the given wire.</span>
+<span class="sd">    :rtype: TopoDS_Face</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BRepBuilderAPI_MakeFace</span><span class="p">(</span><span class="n">wire</span><span class="p">)</span><span class="o">.</span><span class="n">Face</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="create_edge">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.create_edge">[docs]</a>
+<span class="k">def</span> <span class="nf">create_edge</span><span class="p">(</span>
+    <span class="n">pnt1</span><span class="p">:</span> <span class="n">gp_Pnt</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pnt2</span><span class="p">:</span> <span class="n">gp_Pnt</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">arch</span><span class="p">:</span> <span class="n">Geom_TrimmedCurve</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Edge</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create an edge between two points or from an arc.</span>
+
+<span class="sd">    :param gp_Pnt pnt1: First point of the edge.</span>
+<span class="sd">    :param gp_Pnt pnt2: Second point of the edge.</span>
+<span class="sd">    :param Geom_TrimmedCurve arch: Arc curve to create the edge from. If None, the edge will be created from pnt1 and pnt2.</span>
+<span class="sd">    :return: The created edge.</span>
+<span class="sd">    :rtype: TopoDS_Edge</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pnt1</span><span class="p">,</span> <span class="n">gp_Pnt</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pnt2</span><span class="p">,</span> <span class="n">gp_Pnt</span><span class="p">):</span>
+        <span class="n">edge</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_MakeEdge</span><span class="p">(</span><span class="n">pnt1</span><span class="p">,</span> <span class="n">pnt2</span><span class="p">)</span><span class="o">.</span><span class="n">Edge</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arch</span><span class="p">,</span> <span class="n">Geom_TrimmedCurve</span><span class="p">):</span>
+        <span class="n">edge</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_MakeEdge</span><span class="p">(</span><span class="n">arch</span><span class="p">)</span><span class="o">.</span><span class="n">Edge</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">edge</span></div>
+
+
+
+<div class="viewcode-block" id="sew_face">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.sew_face">[docs]</a>
+<span class="k">def</span> <span class="nf">sew_face</span><span class="p">(</span><span class="o">*</span><span class="n">component</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sew multiple faces into a single shape.</span>
+
+<span class="sd">    :param component: A list of faces to sew.</span>
+<span class="sd">    :return: The sewed shape.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sewing</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_Sewing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">component</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+        <span class="n">sewing</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">component</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">sewing</span><span class="o">.</span><span class="n">Perform</span><span class="p">()</span>
+    <span class="n">sewed_shape</span> <span class="o">=</span> <span class="n">sewing</span><span class="o">.</span><span class="n">SewedShape</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">sewed_shape</span></div>
+
+
+
+<div class="viewcode-block" id="create_solid">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.create_solid">[docs]</a>
+<span class="k">def</span> <span class="nf">create_solid</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a solid from a TopoDS_Shape.</span>
+
+<span class="sd">    :param TopoDS_Shape item: The shape to convert to a solid.</span>
+<span class="sd">    :return: The created solid.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">BRepBuilderAPI_MakeSolid</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="create_compound">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.create_compound">[docs]</a>
+<span class="k">def</span> <span class="nf">create_compound</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Compound</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a compound from multiple shapes.</span>
+
+<span class="sd">    :param args: The shapes to combine into a compound.</span>
+<span class="sd">    :return: The created compound.</span>
+<span class="sd">    :rtype: TopoDS_Compound</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">builder</span> <span class="o">=</span> <span class="n">BRep_Builder</span><span class="p">()</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">TopoDS_Compound</span><span class="p">()</span>
+    <span class="n">builder</span><span class="o">.</span><span class="n">MakeCompound</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">obj</span></div>
+
+
+
+<div class="viewcode-block" id="translate">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.translate">[docs]</a>
+<span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span> <span class="n">vector</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Translate a shape by a given vector.</span>
+
+<span class="sd">    :param TopoDS_Shape item: The shape to translate.</span>
+<span class="sd">    :param list vector: A list of 3 elements [x, y, z] representing the translation vector.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ts_handler</span> <span class="o">=</span> <span class="n">gp_Trsf</span><span class="p">()</span>
+    <span class="n">ts_handler</span><span class="o">.</span><span class="n">SetTranslation</span><span class="p">(</span><span class="n">gp_Vec</span><span class="p">(</span><span class="n">vector</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">vector</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">TopLoc_Location</span><span class="p">(</span><span class="n">ts_handler</span><span class="p">)</span>
+    <span class="n">item</span><span class="o">.</span><span class="n">Move</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="reverse">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.reverse">[docs]</a>
+<span class="k">def</span> <span class="nf">reverse</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reverse a shape.</span>
+
+<span class="sd">    :param TopoDS_Shape item: The shape to reverse.</span>
+<span class="sd">    :return: The reversed shape.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">Reversed</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="geom_copy">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.geom_copy">[docs]</a>
+<span class="k">def</span> <span class="nf">geom_copy</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Copy a shape.</span>
+
+<span class="sd">    :param TopoDS_Shape item: The shape to copy.</span>
+<span class="sd">    :return: The copied shape.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wire_top_builder</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_Copy</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+    <span class="n">wire_top_builder</span><span class="o">.</span><span class="n">Perform</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">new_item</span> <span class="o">=</span> <span class="n">wire_top_builder</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">new_item</span></div>
+
+
+
+<div class="viewcode-block" id="split">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.split">[docs]</a>
+<span class="k">def</span> <span class="nf">split</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span> <span class="o">*</span><span class="n">tools</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Compound</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Split a shape using one or more tools.</span>
+
+<span class="sd">    :param TopoDS_Shape item: The shape to split.</span>
+<span class="sd">    :param TopoDS_Shape tools: The tools to split the shape with.</span>
+<span class="sd">    :return: The resulting compound shape after splitting.</span>
+<span class="sd">    :rtype: TopoDS_Compound</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">top_list</span> <span class="o">=</span> <span class="n">TopTools_ListOfShape</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tools</span><span class="p">:</span>
+        <span class="n">top_list</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">cut</span> <span class="o">=</span> <span class="n">BOPAlgo_Splitter</span><span class="p">()</span>
+    <span class="n">cut</span><span class="o">.</span><span class="n">SetArguments</span><span class="p">(</span><span class="n">top_list</span><span class="p">)</span>
+    <span class="n">cut</span><span class="o">.</span><span class="n">Perform</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">cut</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="split_by_plane">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.split_by_plane">[docs]</a>
+<span class="k">def</span> <span class="nf">split_by_plane</span><span class="p">(</span>
+    <span class="n">item</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span>
+    <span class="n">nz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">layer_height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">nx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ny</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Compound</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Split a shape into sub-shapes by planes.</span>
+
+<span class="sd">    :param TopoDS_Shape item: The shape to split.</span>
+<span class="sd">    :param int nz: Number of layers in z-direction to split.</span>
+<span class="sd">    :param float layer_height: Height of each layer.</span>
+<span class="sd">    :param int nx: Number of sub-shapes in the x-direction.</span>
+<span class="sd">    :param int ny: Number of sub-shapes in the y-direction.</span>
+<span class="sd">    :return: A compound of sub-shapes.</span>
+<span class="sd">    :rtype: TopoDS_Compound</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span> <span class="o">=</span> <span class="n">get_occ_bounding_box</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+    <span class="n">plan_len</span> <span class="o">=</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">xmin</span> <span class="o">-</span> <span class="n">xmax</span><span class="p">),</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ymin</span> <span class="o">-</span> <span class="n">ymax</span><span class="p">))</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">zmax</span> <span class="o">-</span> <span class="n">zmin</span>
+    <span class="k">if</span> <span class="n">nz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">layer_height</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">nz</span> <span class="o">*</span> <span class="n">layer_height</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Only one of nz or layer_height can be specified. If both are specified, the product of nz: </span><span class="si">{</span><span class="n">nz</span><span class="si">}</span><span class="s2"> and layer_height: </span><span class="si">{</span><span class="n">layer_height</span><span class="si">}</span><span class="s2"> must be equal to the height of the shape: </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Only one of nz or layer_height can be specified. You have specified both but the product of nz: </span><span class="si">%s</span><span class="s2"> and layer_height: </span><span class="si">%s</span><span class="s2"> is equal to the height of the shape: </span><span class="si">%s</span><span class="s2">. I am just going to use nz for splitting the mesh.&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">nz</span><span class="p">,</span> <span class="n">layer_height</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+            <span class="p">)</span>
+    <span class="k">if</span> <span class="n">nz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">z_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">zmin</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">nz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">layer_height</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">z_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">zmin</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">layer_height</span><span class="p">)</span>
+        <span class="n">z_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">z_list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">z</span><span class="p">])))</span>
+    <span class="c1"># bo = BOPAlgo_Builder()</span>
+    <span class="c1"># bo = BOPAlgo_MakerVolume()</span>
+    <span class="n">bo</span> <span class="o">=</span> <span class="n">BOPAlgo_Splitter</span><span class="p">()</span>
+    <span class="n">bo</span><span class="o">.</span><span class="n">AddArgument</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">z_list</span><span class="p">:</span>
+        <span class="n">p1</span><span class="p">,</span> <span class="n">v1</span> <span class="o">=</span> <span class="n">gp_Pnt</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">),</span> <span class="n">gp_Vec</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">fc1</span> <span class="o">=</span> <span class="n">make_face</span><span class="p">(</span>
+            <span class="n">gp_Pln</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">vec_to_dir</span><span class="p">(</span><span class="n">v1</span><span class="p">)),</span> <span class="o">-</span><span class="n">plan_len</span><span class="p">,</span> <span class="n">plan_len</span><span class="p">,</span> <span class="o">-</span><span class="n">plan_len</span><span class="p">,</span> <span class="n">plan_len</span>
+        <span class="p">)</span>
+        <span class="n">bo</span><span class="o">.</span><span class="n">AddTool</span><span class="p">(</span><span class="n">fc1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ny</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span>
+        <span class="n">y_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ny</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">y_list</span><span class="p">:</span>
+            <span class="n">p1</span><span class="p">,</span> <span class="n">v1</span> <span class="o">=</span> <span class="n">gp_Pnt</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">gp_Vec</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">fc1</span> <span class="o">=</span> <span class="n">make_face</span><span class="p">(</span>
+                <span class="n">gp_Pln</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">vec_to_dir</span><span class="p">(</span><span class="n">v1</span><span class="p">)),</span> <span class="o">-</span><span class="n">plan_len</span><span class="p">,</span> <span class="n">plan_len</span><span class="p">,</span> <span class="o">-</span><span class="n">plan_len</span><span class="p">,</span> <span class="n">plan_len</span>
+            <span class="p">)</span>
+            <span class="n">bo</span><span class="o">.</span><span class="n">AddArgument</span><span class="p">(</span><span class="n">fc1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span>
+        <span class="n">x_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">nx</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">x_list</span><span class="p">:</span>
+            <span class="n">p1</span><span class="p">,</span> <span class="n">v1</span> <span class="o">=</span> <span class="n">gp_Pnt</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">gp_Vec</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">fc1</span> <span class="o">=</span> <span class="n">make_face</span><span class="p">(</span>
+                <span class="n">gp_Pln</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">vec_to_dir</span><span class="p">(</span><span class="n">v1</span><span class="p">)),</span> <span class="o">-</span><span class="n">plan_len</span><span class="p">,</span> <span class="n">plan_len</span><span class="p">,</span> <span class="o">-</span><span class="n">plan_len</span><span class="p">,</span> <span class="n">plan_len</span>
+            <span class="p">)</span>
+            <span class="n">bo</span><span class="o">.</span><span class="n">AddArgument</span><span class="p">(</span><span class="n">fc1</span><span class="p">)</span>
+    <span class="n">bo</span><span class="o">.</span><span class="n">Perform</span><span class="p">()</span>
+    <span class="n">top</span> <span class="o">=</span> <span class="n">Topo</span><span class="p">(</span><span class="n">bo</span><span class="o">.</span><span class="n">Shape</span><span class="p">())</span>
+    <span class="n">geo</span> <span class="o">=</span> <span class="n">create_compound</span><span class="p">(</span><span class="n">top</span><span class="o">.</span><span class="n">solids</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">geo</span></div>
+
+
+
+<div class="viewcode-block" id="get_occ_bounding_box">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.get_occ_bounding_box">[docs]</a>
+<span class="k">def</span> <span class="nf">get_occ_bounding_box</span><span class="p">(</span><span class="n">shape</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the bounding box of a shape.</span>
+
+<span class="sd">    :param TopoDS_Shape shape: The shape to get the bounding box for.</span>
+<span class="sd">    :return: A tuple containing (xmin, ymin, zmin, xmax, ymax, zmax).</span>
+<span class="sd">    :rtype: tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bbox</span> <span class="o">=</span> <span class="n">Bnd_Box</span><span class="p">()</span>
+    <span class="n">add_bbox</span> <span class="o">=</span> <span class="n">brepbndlib_Add</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">bbox</span><span class="p">)</span>
+    <span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span> <span class="o">=</span> <span class="n">bbox</span><span class="o">.</span><span class="n">Get</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span></div>
+
+
+
+<div class="viewcode-block" id="explore_topo">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.explore_topo">[docs]</a>
+<span class="k">def</span> <span class="nf">explore_topo</span><span class="p">(</span><span class="n">shape</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span> <span class="n">shape_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Explore a shape and return a list of sub-shapes of a specified type.</span>
+
+<span class="sd">    :param TopoDS_Shape shape: The shape to explore.</span>
+<span class="sd">    :param str shape_type: The type of sub-shapes to retrieve (e.g., &quot;wire&quot;, &quot;face&quot;, &quot;shell&quot;, &quot;solid&quot;, &quot;compound&quot;, &quot;edge&quot;).</span>
+<span class="sd">    :return: A list of sub-shapes.</span>
+<span class="sd">    :rtype: list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">map_type</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;wire&quot;</span><span class="p">:</span> <span class="n">TopAbs_WIRE</span><span class="p">,</span>
+        <span class="s2">&quot;face&quot;</span><span class="p">:</span> <span class="n">TopAbs_FACE</span><span class="p">,</span>
+        <span class="s2">&quot;shell&quot;</span><span class="p">:</span> <span class="n">TopAbs_SHELL</span><span class="p">,</span>
+        <span class="s2">&quot;solid&quot;</span><span class="p">:</span> <span class="n">TopAbs_SOLID</span><span class="p">,</span>
+        <span class="s2">&quot;compound&quot;</span><span class="p">:</span> <span class="n">TopAbs_COMPOUND</span><span class="p">,</span>
+        <span class="s2">&quot;edge&quot;</span><span class="p">:</span> <span class="n">TopAbs_EDGE</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">explorer</span> <span class="o">=</span> <span class="n">TopExp_Explorer</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">map_type</span><span class="p">[</span><span class="n">shape_type</span><span class="p">])</span>
+    <span class="c1"># This method is called by the explorer.</span>
+    <span class="k">while</span> <span class="n">explorer</span><span class="o">.</span><span class="n">More</span><span class="p">():</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">explorer</span><span class="o">.</span><span class="n">Current</span><span class="p">())</span>
+        <span class="n">explorer</span><span class="o">.</span><span class="n">Next</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="intersect">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.intersect">[docs]</a>
+<span class="k">def</span> <span class="nf">intersect</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Intersect a shape with a plane at a given position.</span>
+
+<span class="sd">    :param TopoDS_Shape item: The shape to intersect.</span>
+<span class="sd">    :param float position: The position of the plane in world coordinates.</span>
+<span class="sd">    :param str axis: The axis along which the intersection is made.</span>
+<span class="sd">    :return: The intersected shape.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">intsctr</span> <span class="o">=</span> <span class="n">BRepAlgoAPI_Common</span>
+    <span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span> <span class="o">=</span> <span class="n">get_occ_bounding_box</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+    <span class="n">bnd_x</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">xmin</span> <span class="o">-</span> <span class="n">xmax</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.2</span>
+    <span class="n">bnd_y</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ymin</span> <span class="o">-</span> <span class="n">ymax</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.2</span>
+    <span class="n">bnd_z</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">zmin</span> <span class="o">-</span> <span class="n">zmax</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.2</span>
+    <span class="k">match</span> <span class="n">axis</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span>
+            <span class="n">plan_len</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">bnd_x</span><span class="p">,</span> <span class="n">bnd_y</span><span class="p">)</span>
+            <span class="n">p1</span><span class="p">,</span> <span class="n">v1</span> <span class="o">=</span> <span class="n">gp_Pnt</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">position</span><span class="p">),</span> <span class="n">gp_Vec</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">fc1</span> <span class="o">=</span> <span class="n">make_face</span><span class="p">(</span>
+                <span class="n">gp_Pln</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">vec_to_dir</span><span class="p">(</span><span class="n">v1</span><span class="p">)),</span> <span class="o">-</span><span class="n">plan_len</span><span class="p">,</span> <span class="n">plan_len</span><span class="p">,</span> <span class="o">-</span><span class="n">plan_len</span><span class="p">,</span> <span class="n">plan_len</span>
+            <span class="p">)</span>
+    <span class="n">common</span> <span class="o">=</span> <span class="n">intsctr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">fc1</span><span class="p">)</span>
+    <span class="n">common</span><span class="o">.</span><span class="n">Build</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="scale">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.scale">[docs]</a>
+<span class="k">def</span> <span class="nf">scale</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span> <span class="n">cnt_pnt</span><span class="p">:</span> <span class="n">gp_Pnt</span><span class="p">,</span> <span class="n">factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Scale a shape by a given factor.</span>
+
+<span class="sd">    :param TopoDS_Shape item: The shape to scale.</span>
+<span class="sd">    :param gp_Pnt cnt_pnt: The center point for scaling.</span>
+<span class="sd">    :param float factor: The scaling factor.</span>
+<span class="sd">    :return: The scaled shape.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scaling_transform</span> <span class="o">=</span> <span class="n">gp_Trsf</span><span class="p">()</span>
+    <span class="n">scaling_transform</span><span class="o">.</span><span class="n">SetScale</span><span class="p">(</span><span class="n">cnt_pnt</span><span class="p">,</span> <span class="n">factor</span><span class="p">)</span>
+    <span class="n">scaled_shape</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_Transform</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">scaling_transform</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">scaled_shape</span></div>
+
+
+
+<div class="viewcode-block" id="carve_hollow">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.carve_hollow">[docs]</a>
+<span class="k">def</span> <span class="nf">carve_hollow</span><span class="p">(</span><span class="n">face</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span> <span class="n">factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Carve a hollow in a face by scaling it down from itself.</span>
+
+<span class="sd">    :param TopoDS_Shape face: The face to carve.</span>
+<span class="sd">    :param float factor: The scaling factor.</span>
+<span class="sd">    :return: The carved shape.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cnt</span> <span class="o">=</span> <span class="n">get_face_center_of_mass</span><span class="p">(</span><span class="n">face</span><span class="p">,</span> <span class="n">gp_pnt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">cutter</span> <span class="o">=</span> <span class="n">scale</span><span class="p">(</span><span class="n">face</span><span class="p">,</span> <span class="n">cnt</span><span class="p">,</span> <span class="n">factor</span><span class="p">)</span>
+    <span class="n">cut</span> <span class="o">=</span> <span class="n">BRepAlgoAPI_Cut</span><span class="p">(</span><span class="n">face</span><span class="p">,</span> <span class="n">cutter</span><span class="p">)</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">cut</span></div>
+
+
+
+<div class="viewcode-block" id="rotate_face">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.rotate_face">[docs]</a>
+<span class="k">def</span> <span class="nf">rotate_face</span><span class="p">(</span>
+    <span class="n">shape</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span> <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">cnt</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rotate a shape around its center of mass by a given angle.</span>
+
+<span class="sd">    :param TopoDS_Shape shape: The shape to rotate.</span>
+<span class="sd">    :param float angle: The angle to rotate by (in degrees).</span>
+<span class="sd">    :param str axis: The axis to rotate around (default is &quot;z&quot;).</span>
+<span class="sd">    :param tuple cnt: The center of rotation. If None, the center of mass is used.</span>
+<span class="sd">    :return: The rotated shape.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">transform</span> <span class="o">=</span> <span class="n">gp_Trsf</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">cnt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cnt</span> <span class="o">=</span> <span class="n">get_face_center_of_mass</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">gp_pnt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">match</span> <span class="n">axis</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">gp_Ax1</span><span class="p">(</span><span class="n">cnt</span><span class="p">,</span> <span class="n">gp_Dir</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">case</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">gp_Ax1</span><span class="p">(</span><span class="n">cnt</span><span class="p">,</span> <span class="n">gp_Dir</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">case</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">gp_Ax1</span><span class="p">(</span><span class="n">cnt</span><span class="p">,</span> <span class="n">gp_Dir</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">transform</span><span class="o">.</span><span class="n">SetRotation</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+    <span class="n">transformed</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_Transform</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">transform</span><span class="p">)</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">transformed</span></div>
+
+
+
+<div class="viewcode-block" id="fuse">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.fuse">[docs]</a>
+<span class="k">def</span> <span class="nf">fuse</span><span class="p">(</span><span class="n">shape1</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span> <span class="n">shape2</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fuse two shapes into one.</span>
+
+<span class="sd">    :param TopoDS_Shape shape1: The first shape to fuse.</span>
+<span class="sd">    :param TopoDS_Shape shape2: The second shape to fuse.</span>
+<span class="sd">    :return: The fused shape.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fuse</span> <span class="o">=</span> <span class="n">BRepAlgoAPI_Fuse</span><span class="p">(</span><span class="n">shape1</span><span class="p">,</span> <span class="n">shape2</span><span class="p">)</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">fuse</span></div>
+
+
+
+<div class="viewcode-block" id="cut">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.cut">[docs]</a>
+<span class="k">def</span> <span class="nf">cut</span><span class="p">(</span><span class="n">shape1</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span> <span class="n">shape2</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Cut one shape from another.</span>
+
+<span class="sd">    :param TopoDS_Shape shape1: The shape to cut from.</span>
+<span class="sd">    :param TopoDS_Shape shape2: The shape to cut with.</span>
+<span class="sd">    :return: The cut shape.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">comm</span> <span class="o">=</span> <span class="n">BRepAlgoAPI_Cut</span><span class="p">(</span><span class="n">shape1</span><span class="p">,</span> <span class="n">shape2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">comm</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="common">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.common">[docs]</a>
+<span class="k">def</span> <span class="nf">common</span><span class="p">(</span><span class="n">shape1</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">,</span> <span class="n">shape2</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Shape</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the common volume between two shapes.</span>
+
+<span class="sd">    :param TopoDS_Shape shape1: The first shape.</span>
+<span class="sd">    :param TopoDS_Shape shape2: The second shape.</span>
+<span class="sd">    :return: The common shape.</span>
+<span class="sd">    :rtype: TopoDS_Shape</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">comm</span> <span class="o">=</span> <span class="n">BRepAlgoAPI_Common</span><span class="p">(</span><span class="n">shape1</span><span class="p">,</span> <span class="n">shape2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">comm</span><span class="o">.</span><span class="n">Shape</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_boundary">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.get_boundary">[docs]</a>
+<span class="k">def</span> <span class="nf">get_boundary</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Wire</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the boundary edges of a shape.</span>
+
+<span class="sd">    :param TopoDS_Shape item: The shape to get the boundary for.</span>
+<span class="sd">    :return: The boundary wire.</span>
+<span class="sd">    :rtype: TopoDS_Wire</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bbox</span> <span class="o">=</span> <span class="n">get_occ_bounding_box</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+    <span class="n">edge</span> <span class="o">=</span> <span class="n">explore_topo</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;edge&quot;</span><span class="p">)</span>
+    <span class="n">xx</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">yy</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">edge</span><span class="p">:</span>
+        <span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span> <span class="o">=</span> <span class="n">get_occ_bounding_box</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ymin</span> <span class="o">+</span> <span class="n">ymax</span> <span class="o">&lt;</span> <span class="mf">1e-3</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+            <span class="nb">abs</span><span class="p">((</span><span class="n">ymin</span> <span class="o">+</span> <span class="n">ymax</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-3</span>
+        <span class="p">):</span>
+            <span class="n">xx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">xmin</span> <span class="o">+</span> <span class="n">xmax</span> <span class="o">&lt;</span> <span class="mf">1e-3</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">abs</span><span class="p">((</span><span class="n">xmin</span> <span class="o">+</span> <span class="n">xmax</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1e-3</span><span class="p">):</span>
+            <span class="n">yy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">xx</span> <span class="o">+</span> <span class="n">yy</span>
+    <span class="n">wire</span> <span class="o">=</span> <span class="n">create_compound</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wire</span></div>
+
+
+
+<div class="viewcode-block" id="get_face_center_of_mass">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.get_face_center_of_mass">[docs]</a>
+<span class="k">def</span> <span class="nf">get_face_center_of_mass</span><span class="p">(</span><span class="n">face</span><span class="p">:</span> <span class="n">TopoDS_Face</span><span class="p">,</span> <span class="n">gp_pnt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the center of mass of a face.</span>
+
+<span class="sd">    :param TopoDS_Face face: The face to get the center of mass for.</span>
+<span class="sd">    :param bool gp_pnt: If True, return a gp_Pnt object; otherwise, return a tuple of coordinates.</span>
+<span class="sd">    :return: The center of mass.</span>
+<span class="sd">    :rtype: gp_Pnt or tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">props</span> <span class="o">=</span> <span class="n">GProp_GProps</span><span class="p">()</span>
+    <span class="n">brepgprop_SurfaceProperties</span><span class="p">(</span><span class="n">face</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
+    <span class="n">face_surf</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">CentreOfMass</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">gp_pnt</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">face_surf</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">face_surf</span><span class="o">.</span><span class="n">Coord</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_volume_center_of_mass">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.get_volume_center_of_mass">[docs]</a>
+<span class="k">def</span> <span class="nf">get_volume_center_of_mass</span><span class="p">(</span><span class="n">vol</span><span class="p">:</span> <span class="n">TopoDS_Solid</span><span class="p">,</span> <span class="n">gp_pnt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the center of mass of a volume.</span>
+
+<span class="sd">    :param TopoDS_Solid vol: The volume to get the center of mass for.</span>
+<span class="sd">    :param bool gp_pnt: If True, return a gp_Pnt object; otherwise, return a tuple of coordinates.</span>
+<span class="sd">    :return: The center of mass.</span>
+<span class="sd">    :rtype: gp_Pnt or tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">props</span> <span class="o">=</span> <span class="n">GProp_GProps</span><span class="p">()</span>
+    <span class="n">brepgprop_VolumeProperties</span><span class="p">(</span><span class="n">vol</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
+    <span class="n">cog</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">CentreOfMass</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">gp_pnt</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">cog</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">cog</span><span class="o">.</span><span class="n">Coord</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_face_area">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.get_face_area">[docs]</a>
+<span class="k">def</span> <span class="nf">get_face_area</span><span class="p">(</span><span class="n">face</span><span class="p">:</span> <span class="n">TopoDS_Face</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the area of a face.</span>
+
+<span class="sd">    :param TopoDS_Face face: The face to get the area for.</span>
+<span class="sd">    :return: The area of the face.</span>
+<span class="sd">    :rtype: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">props</span> <span class="o">=</span> <span class="n">GProp_GProps</span><span class="p">()</span>
+    <span class="n">brepgprop_SurfaceProperties</span><span class="p">(</span><span class="n">face</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span>
+    <span class="n">face_area</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">Mass</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">face_area</span></div>
+
+
+
+<div class="viewcode-block" id="get_faces">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.get_faces">[docs]</a>
+<span class="k">def</span> <span class="nf">get_faces</span><span class="p">(</span><span class="n">_shape</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the faces of a shape.</span>
+
+<span class="sd">    :param TopoDS_Shape _shape: The shape to get the faces for.</span>
+<span class="sd">    :return: A list of faces.</span>
+<span class="sd">    :rtype: list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">topExp</span> <span class="o">=</span> <span class="n">TopExp_Explorer</span><span class="p">()</span>
+    <span class="n">topExp</span><span class="o">.</span><span class="n">Init</span><span class="p">(</span><span class="n">_shape</span><span class="p">,</span> <span class="n">TopAbs_FACE</span><span class="p">)</span>
+    <span class="n">_faces</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="n">topExp</span><span class="o">.</span><span class="n">More</span><span class="p">():</span>
+        <span class="n">fc</span> <span class="o">=</span> <span class="n">topods_Face</span><span class="p">(</span><span class="n">topExp</span><span class="o">.</span><span class="n">Current</span><span class="p">())</span>
+        <span class="n">_faces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fc</span><span class="p">)</span>
+        <span class="n">topExp</span><span class="o">.</span><span class="n">Next</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">_faces</span></div>
+
+
+
+<div class="viewcode-block" id="traverse">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.traverse">[docs]</a>
+<span class="k">def</span> <span class="nf">traverse</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">TopoDS_Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Topo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Traverse a shape using Topo.</span>
+
+<span class="sd">    :param TopoDS_Shape item: The shape to traverse.</span>
+<span class="sd">    :return: A Topo object representing the traversed shape.</span>
+<span class="sd">    :rtype: Topo</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Topo</span><span class="p">(</span><span class="n">item</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="create_polygon">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.create_polygon">[docs]</a>
+<span class="k">def</span> <span class="nf">create_polygon</span><span class="p">(</span><span class="n">points</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">isface</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Face</span> <span class="ow">or</span> <span class="n">TopoDS_Wire</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a polygon from a list of points.</span>
+
+<span class="sd">    :param list points: The list of points defining the polygon.</span>
+<span class="sd">    :param bool isface: If True, the polygon will be face-oriented; otherwise, it will be a wire.</span>
+<span class="sd">    :return: The created polygon.</span>
+<span class="sd">    :rtype: TopoDS_Face or TopoDS_Wire</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pb</span> <span class="o">=</span> <span class="n">BRepBuilderAPI_MakePolygon</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">pt</span> <span class="ow">in</span> <span class="n">points</span><span class="p">:</span>
+        <span class="n">pb</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+    <span class="n">pb</span><span class="o">.</span><span class="n">Build</span><span class="p">()</span>
+    <span class="n">pb</span><span class="o">.</span><span class="n">Close</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">isface</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">create_face</span><span class="p">(</span><span class="n">pb</span><span class="o">.</span><span class="n">Wire</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pb</span><span class="o">.</span><span class="n">Wire</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="create_wire_by_points">
+<a class="viewcode-back" href="../../index.html#amworkflow.occ_helpers.create_wire_by_points">[docs]</a>
+<span class="k">def</span> <span class="nf">create_wire_by_points</span><span class="p">(</span><span class="n">points</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TopoDS_Wire</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a closed wire (loop) from a list of points.</span>
+
+<span class="sd">    :param list points: The list of points defining the wire.</span>
+<span class="sd">    :return: The created wire.</span>
+<span class="sd">    :rtype: TopoDS_Wire</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pts</span> <span class="o">=</span> <span class="n">points</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pts</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="n">create_edge</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">pts</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">wire</span> <span class="o">=</span> <span class="n">create_wire</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pts</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="n">create_edge</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">pts</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">wire</span> <span class="o">=</span> <span class="n">create_wire</span><span class="p">(</span><span class="n">wire</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">edge</span> <span class="o">=</span> <span class="n">create_edge</span><span class="p">(</span><span class="n">pts</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">pts</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">wire</span> <span class="o">=</span> <span class="n">create_wire</span><span class="p">(</span><span class="n">wire</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wire</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Annika Robens-Radermacher, Yuxiang He
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Annika Robens-Radermacher, Yuxiang He.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
