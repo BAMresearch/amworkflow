@@ -528,7 +528,7 @@ class DuplicationCheck:
             base_value = np.array(base_value)
             item_value = np.array(item_value)
 
-        return np.isclose(np.linalg.norm(base_value - item_value), 0)
+        return np.isclose(np.linalg.norm(base_value - item_value), 0, atol=1e-3)
 
     def new_item(self, item_value: any, item_type) -> tuple:
         """
@@ -903,6 +903,7 @@ class Pnt(TopoObj):
                 self.occ_pnt = gp_Pnt(*self.coord.tolist())
                 self.enrich_property({"occ_pnt": self.occ_pnt})
             self.id = self.register_item()
+            logger.debug("Created point %s: %s", self.id, self.value)
 
     @classmethod
     def my_custom_reconstructor(cls, state_dict):
@@ -972,7 +973,7 @@ class Segment(TopoObj):
             self.type = 1
             self.value = [self.start_pnt, self.end_pnt]
             if ENABLE_OCC and valid:
-                logger.debug("Creating OCC edge by points: %s, %s", pnt1.id, pnt2.id)
+
                 self.occ_edge = occh.create_edge(pnt1.occ_pnt, pnt2.occ_pnt)
                 self.enrich_property({"occ_edge": self.occ_edge})
             self.enrich_property(
@@ -986,6 +987,10 @@ class Segment(TopoObj):
             if not valid:
                 self.enrich_property({"self_edge": True})
             self.register_item()
+            if ENABLE_OCC and valid:
+                logger.debug(
+                    "Created OCC edge %s by points: %s, %s", self.id, pnt1.id, pnt2.id
+                )
             self.update_dependency(pnt1, pnt2)
 
     def check_input(self, pnt1: Pnt, pnt2: Pnt) -> bool:
@@ -1026,7 +1031,7 @@ class Segment(TopoObj):
             raise ValueError(f"Wrong type of point: {type(pnt2)}.")
         if pnt1.id == pnt2.id:
             logger.warning(
-                "Two points are the same: %s, %s, skip this segment creation.",
+                "Two points are the same: %s, %s, a self-edge segment will be created.",
                 pnt1.id,
                 pnt2.id,
             )
@@ -1651,6 +1656,7 @@ def find_intersect_node_on_edge(
     :param line2: The second line
     :type line2: Union[np.ndarray, Segment]
     """
+    result = []
     parallel, colinear = check_parallel_line_line(line1, line2)
     if parallel:
         if colinear:
@@ -1659,10 +1665,10 @@ def find_intersect_node_on_edge(
                 for ind in index:
                     if ind in [0, 1]:
                         pnt_candidate = [line1.start_pnt, line1.end_pnt]
-                        return ((line2.id, pnt_candidate[ind]),)
+                        result.append((line2.id, pnt_candidate[ind]))
                     else:
                         pnt_candidate = [line2.start_pnt, line2.end_pnt]
-                        return ((line1.id, pnt_candidate[ind - 2]),)
+                        result.append((line1.id, pnt_candidate[ind - 2]))
 
     else:
         distance = shortest_distance_line_line(line1, line2)
@@ -1672,7 +1678,9 @@ def find_intersect_node_on_edge(
             if update_property is not None:
                 intersect_pnt.enrich_property(update_property)
                 update_source(intersect_pnt)
-            return ((line1.id, intersect_pnt.id), (line2.id, intersect_pnt.id))
+            result.append((line1.id, intersect_pnt.id))
+            result.append((line2.id, intersect_pnt.id))
+    return result
 
 
 def read_from_csv(file_path: str, delimiter: str = ",") -> list:
@@ -1714,9 +1722,20 @@ def _find_proper_loop(exam_loop: list):
         #             return None
         exam_segment.property["CWBP"].update({"examine": True})
         if not exam_segment.property["CWBP"]["active"]:
+            logger.debug(f"Inactive segment, tossing:{exam_segment}")
             return None
         if exam_segment.property["CWBP"]["position"] == "imagine":
+            logger.debug(f"Imagine segment, tossing:{exam_segment}")
             return None
+    loop = []
+    for i in exam_loop:
+        for j in get_from_source(oid=i):
+            loop.append(j.value)
+    area = get_face_area(loop)
+    logger.debug(f"exam loop area:{exam_loop}, {area}")
+    if np.isclose(area, 0, 1e-3):
+        logger.debug(f"tossing loop:{exam_loop}")
+        return None
     #     if pnt in in_wall_points.items():
     #         in_wall_point_count += 1
     #     if exam_segment.id in imagine_segments.keys():
@@ -1781,6 +1800,7 @@ class CreateWallByPoints:
         self.edges_to_be_modified = {}
         self.create_sides()
         self.find_overlap_node_on_edge()
+        print(self.edges_to_be_modified)
         self.modify_edge()
         self.postprocessing()
 
@@ -2051,15 +2071,17 @@ class CreateWallByPoints:
         line_pairs = []
         new_property = {"CWBP": {"position": "digraph", "active": True}}
         for line1 in self.side_segments:
-            for line2 in self.side_segments:
-                if line1.id != line2.id:
-                    if [line1.id, line2.id] not in visited or [
-                        line2.id,
-                        line1.id,
-                    ] not in visited:
-                        visited.append([line1.id, line2.id])
-                        visited.append([line2.id, line1.id])
-                        line_pairs.append((line1, line2, new_property))
+            if not line1.property["self_edge"]:
+                for line2 in self.side_segments:
+                    if not line2.property["self_edge"]:
+                        if line1.id != line2.id:
+                            if [line1.id, line2.id] not in visited or [
+                                line2.id,
+                                line1.id,
+                            ] not in visited:
+                                visited.append([line1.id, line2.id])
+                                visited.append([line2.id, line1.id])
+                                line_pairs.append((line1, line2, new_property))
         if ENABLE_CONCURRENT_MODE:
             logger.info("Using concurrent mode to find intersect nodes.")
             num_processes = multiprocessing.cpu_count()
@@ -2074,7 +2096,6 @@ class CreateWallByPoints:
             if result is not None:
                 logger.debug(f"result:{result}")
                 for pair in result:
-                    logger.debug(f"pair:{pair}")
                     seg = list(get_from_source(oid=pair[0]))[0]
                     pnt = list(get_from_source(oid=pair[1]))[0]
                     if pnt.id in seg.value:
@@ -2139,7 +2160,7 @@ class CreateWallByPoints:
             update_source(point)
             for ind2, edge in edges.items():
                 lmbda, dist = shortest_distance_point_line(edge, point)
-                if dist < 0.99 * 0.5 * self.th:
+                if dist < 0.6 * 0.5 * self.th:
                     logger.debug(
                         "pnt:%s,dist:%s,lmbda:%s, vec:%s",
                         point.id,
@@ -2198,6 +2219,7 @@ class CreateWallByPoints:
                     update_source(edge)
                     logger.debug(f"Find imagine edge {edge.id}: {edge.value}")
                     self.delete_digraph(edge.value[0], edge.value[1])
+                    update_source(edge)
                     logger.debug(f"Delete digraph {edge.value[0]}-{edge.value[1]}")
                     break
 
@@ -2255,6 +2277,11 @@ class CreateWallByPoints:
             points.update({i.id: i})
         print(loop_r)
         boundary = [points[i].occ_pnt for i in loop_r[0]]
+        logger.debug("boundary:")
+        logger.debug([points[i].value for i in loop_r[0]])
+        logger.debug("Inner loops:")
+        for i in loop_r[1:]:
+            logger.debug([points[j].value for j in i])
         poly0 = occh.create_polygon(boundary)
         poly_r = poly0
         for i, h in enumerate(loop_r):
@@ -2344,6 +2371,7 @@ class CreateWallByPoints:
         # Set labels and title
         plt.xlabel("X-axis")
         plt.ylabel("Y-axis")
+        plt.axis("equal")
         plt.title("Points With Polygons detected")
 
         plt.subplot(1, 2, 2)

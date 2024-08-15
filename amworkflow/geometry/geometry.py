@@ -126,6 +126,7 @@ class GeometryParamWall(GeometryOCC):
         line_width: float | None = None,
         radius: float | None = None,
         infill: typing.Literal["solid", "honeycomb", "zigzag"] | None = None,
+        infill_num: int = 1,
         layer_thickness: float | None = None,
         **kwargs,
     ) -> None:
@@ -148,6 +149,7 @@ class GeometryParamWall(GeometryOCC):
         self.infill = infill
         self.line_width = line_width
         self.layer_thickness = layer_thickness
+        self.infill_num = infill_num
 
         super().__init__(**kwargs)
 
@@ -193,15 +195,20 @@ class GeometryParamWall(GeometryOCC):
                 points, th=self.line_width, height=self.height
             )
             shape = creator.Shape()
+            creator.visualize()
 
         elif self.infill == "honeycomb":
-            points = self.honeycomb_infill(self.length, self.width, self.line_width)
+            points = self.honeycomb_infill(
+                self.length, self.width, self.line_width, self.infill_num
+            )
             creator = builtincad.CreateWallByPoints(
                 points, th=self.line_width, height=self.height
             )
             shape = creator.Shape()
         elif self.infill == "zigzag":
-            points = self.zigzag_infill(self.length, self.width, self.line_width)
+            points = self.zigzag_infill(
+                self.length, self.width, self.line_width, self.infill_num
+            )
             creator = builtincad.CreateWallByPoints(
                 points, th=self.line_width, height=self.height
             )

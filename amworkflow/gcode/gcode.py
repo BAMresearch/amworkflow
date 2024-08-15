@@ -1,8 +1,8 @@
 import csv
 import logging
-import sys
 import os
 import re
+import sys
 import typing
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -15,10 +15,11 @@ import amworkflow.gcode.printer_config as printer_config
 from amworkflow.config.settings import ROOT_PATH
 from amworkflow.geometry import builtinCAD as bcad
 
-import stltovoxel
-#import pyvista as pv
+# import stltovoxel
+# import pyvista as pv
 
 typing.override = lambda x: x
+
 
 class Gcode:
     """Base class with API for any gcode writer."""
@@ -60,7 +61,7 @@ class Gcode:
             if state.name in config:
                 setattr(self, state.name, config[state.name])
 
-    
+
 class PowderbedCodeFromSTL(Gcode):
     """Print instructions writer from stl file"""
 
@@ -83,14 +84,16 @@ class PowderbedCodeFromSTL(Gcode):
         self.debug_mode = debug_mode
         # additional zeros at the top and bottom of each layer in dsmn-file
         self.add_zeros = add_zeros
-                        
+
         super().__init__(**kwargs)
 
         # Standard of the printer firmware
         # Careful, the file "printer_config.py" also has to be changed whenever parameters in the config are added/removed
         self.load_standard(self.standard)
 
-    def create(self, in_file: Path, out_dsmn: Path, out_xyz: Path, out_dsmn_dir: Path = None) -> None:
+    def create(
+        self, in_file: Path, out_dsmn: Path, out_xyz: Path, out_dsmn_dir: Path = None
+    ) -> None:
         """Create dsmn printer instructions file by given stl file
 
         Args:
@@ -104,15 +107,15 @@ class PowderbedCodeFromSTL(Gcode):
         """
 
         ### Recalculate parameters
-        self.RecoaterClosingPositionLaying = np.floor(self.PrinterX*1000) + 100
-        self.RecoaterClosingPositionPrinting = np.floor(self.PrinterX*1000) + 200
+        self.RecoaterClosingPositionLaying = np.floor(self.PrinterX * 1000) + 100
+        self.RecoaterClosingPositionPrinting = np.floor(self.PrinterX * 1000) + 200
         self.VoxelDimY = self.PrinterY / self.NozzleNum
         self.VoxelDimX = self.VoxelDimY
         self.VoxelDimZ = self.VoxelDimY
 
         ### creating of paths for various stuff
         stl_name, stl_fileending = os.path.splitext(os.path.basename(in_file))
-        #working_folder = os.getcwd()
+        # working_folder = os.getcwd()
 
         recipe_name = "DSMR-" + stl_name + stl_fileending
 
@@ -120,7 +123,6 @@ class PowderbedCodeFromSTL(Gcode):
             current_directory = os.getcwd()
             root_directory = os.path.dirname(current_directory)
             out_dsmn_dir = os.path.join(current_directory, "output")
-
 
             if not os.path.exists(out_dsmn_dir):
                 os.makedirs(out_dsmn_dir)
@@ -130,11 +132,11 @@ class PowderbedCodeFromSTL(Gcode):
 
         ####
         ### Convert to xyz file (one file total)
-        out = stltovoxel.convert_file(in_file, out_xyz, voxel_size = self.VoxelDimY*self.stl_unit, parallel = False)
+        # out = stltovoxel.convert_file(in_file, out_xyz, voxel_size = self.VoxelDimY*self.stl_unit, parallel = False)
 
         ### Load xyz file for further processing
         # Read xyz file and parse coordinates
-        with open(out_xyz, 'r') as file:
+        with open(out_xyz, "r") as file:
             lines = file.readlines()
 
         # Extract x, y, z coordinates from each line
@@ -144,25 +146,39 @@ class PowderbedCodeFromSTL(Gcode):
         voxel_array = np.array(coordinates) / self.stl_unit
 
         # Find unique values and sort ascending (1st col: x, 2nd col: y, 3rd col: z)
-        unique_x = np.unique(voxel_array[:,0])
-        unique_y = np.unique(voxel_array[:,1])
-        unique_z = np.unique(voxel_array[:,2])
+        unique_x = np.unique(voxel_array[:, 0])
+        unique_y = np.unique(voxel_array[:, 1])
+        unique_z = np.unique(voxel_array[:, 2])
 
         # Get real voxel dimension produced by stl2voxel
         sorted_x_temp = np.sort(unique_x)
-        sliced_voxel_dim_x = (sorted_x_temp[1]-sorted_x_temp[0])
+        sliced_voxel_dim_x = sorted_x_temp[1] - sorted_x_temp[0]
         sorted_y_temp = np.sort(unique_y)
-        sliced_voxel_dim_y = (sorted_y_temp[1]-sorted_y_temp[0])
+        sliced_voxel_dim_y = sorted_y_temp[1] - sorted_y_temp[0]
         sorted_z_temp = np.sort(unique_z)
-        sliced_voxel_dim_z = (sorted_z_temp[1]-sorted_z_temp[0])
+        sliced_voxel_dim_z = sorted_z_temp[1] - sorted_z_temp[0]
 
         # Create arrays for dimensions, adding small offset to stop-value, because it may not be included
-        sorted_x = np.arange(np.min(unique_x), np.max(unique_x)+0.01*self.VoxelDimX, sliced_voxel_dim_x)
-        sorted_y = np.arange(np.min(unique_y), np.max(unique_y)+0.01*self.VoxelDimY, sliced_voxel_dim_y)
-        sorted_z = np.arange(np.min(unique_z), np.max(unique_z)+0.01*self.VoxelDimZ, sliced_voxel_dim_z)
+        sorted_x = np.arange(
+            np.min(unique_x),
+            np.max(unique_x) + 0.01 * self.VoxelDimX,
+            sliced_voxel_dim_x,
+        )
+        sorted_y = np.arange(
+            np.min(unique_y),
+            np.max(unique_y) + 0.01 * self.VoxelDimY,
+            sliced_voxel_dim_y,
+        )
+        sorted_z = np.arange(
+            np.min(unique_z),
+            np.max(unique_z) + 0.01 * self.VoxelDimZ,
+            sliced_voxel_dim_z,
+        )
 
         # Prepare array
-        voxel_3d_array = np.zeros((sorted_x.shape[0], sorted_y.shape[0], sorted_z.shape[0]))
+        voxel_3d_array = np.zeros(
+            (sorted_x.shape[0], sorted_y.shape[0], sorted_z.shape[0])
+        )
 
         # Sort ones where a coordinate exists into 3d array
         for i, row in enumerate(voxel_array):
@@ -174,23 +190,23 @@ class PowderbedCodeFromSTL(Gcode):
             voxel_3d_array[x_index, y_index, z_index] = 1
 
         # Calculate optimized printer_x and lines_num for less printing duration, also recoater values
-        self.PrinterX = (voxel_3d_array.shape[1] + 2*self.add_zeros) * self.VoxelDimX
-        self.LinesNum = voxel_3d_array.shape[1] + 2*self.add_zeros
-        self.RecoaterClosingPositionLaying = np.floor(self.PrinterX*1000) + 100
-        self.RecoaterClosingPositionPrinting = np.floor(self.PrinterX*1000) + 200
+        self.PrinterX = (voxel_3d_array.shape[1] + 2 * self.add_zeros) * self.VoxelDimX
+        self.LinesNum = voxel_3d_array.shape[1] + 2 * self.add_zeros
+        self.RecoaterClosingPositionLaying = np.floor(self.PrinterX * 1000) + 100
+        self.RecoaterClosingPositionPrinting = np.floor(self.PrinterX * 1000) + 200
 
         ### Write header - printer parameters
         with open(out_dsmn, "w") as file:
             file.write(recipe_name + "\n")
             file.write(self.PrinterName + "\n")
-            file.write(str(self.VoxelDimY*1000) + "\n")
-            file.write(str(self.PrinterY*1000) + "\n")
-            file.write(str(self.VoxelDimX*1000) + "\n")
-            file.write(str(np.round(self.PrinterX*1000, 1)) + "\n")
+            file.write(str(self.VoxelDimY * 1000) + "\n")
+            file.write(str(self.PrinterY * 1000) + "\n")
+            file.write(str(self.VoxelDimX * 1000) + "\n")
+            file.write(str(np.round(self.PrinterX * 1000, 1)) + "\n")
             file.write(str(self.NozzleOpen) + "\n")
             file.write(str(self.NozzleNum) + "\n")
-            file.write(str(self.VoxelDimZ*1000) + "\n")
-            file.write(str(self.PrinterZ*1000) + "\n")
+            file.write(str(self.VoxelDimZ * 1000) + "\n")
+            file.write(str(self.PrinterZ * 1000) + "\n")
             file.write(str(self.PrintSpeedX) + "\n")
             file.write(str(self.PrintSpeedY) + "\n")
             file.write(str(self.PrintSpeedZ) + "\n")
@@ -215,41 +231,55 @@ class PowderbedCodeFromSTL(Gcode):
             file.write(str(self.MaxLiquid1LevelRange1To7) + "\n")
             file.write(str(self.MinLiquid2LevelRange1To7) + "\n")
             file.write(str(self.MaxLiquid2LevelRange1To7) + "\n")
-            file.write("\n"*67)   # Values from 34 to 100 are not existant, therefore empty lines
+            file.write(
+                "\n" * 67
+            )  # Values from 34 to 100 are not existant, therefore empty lines
 
         ### Write body - voxel to hex
         # Check if there are more voxels along x than nozzles
         if voxel_3d_array.shape[0] > self.NozzleNum:
-            raise ValueError(f"{voxel_3d_array.shape[0]} x-voxels to only {self.NozzleNum} nozzles, rescale model to fit within printer width of {self.PrinterY}m")
+            raise ValueError(
+                f"{voxel_3d_array.shape[0]} x-voxels to only {self.NozzleNum} nozzles, rescale model to fit within printer width of {self.PrinterY}m"
+            )
         # Check if 4 bit to hex encoding possible
         if self.NozzleNum % 4 != 0:
-            raise ValueError("Number of nozzles not a multiple of 4, 4bit to hex encoding not possible")
-        
+            raise ValueError(
+                "Number of nozzles not a multiple of 4, 4bit to hex encoding not possible"
+            )
+
         # Prepare array
-        printerbed_3d_array = np.zeros((self.NozzleNum, self.LinesNum, sorted_z.shape[0]))
+        printerbed_3d_array = np.zeros(
+            (self.NozzleNum, self.LinesNum, sorted_z.shape[0])
+        )
 
         # Sort into temporary array
         for ii in range(voxel_3d_array.shape[2]):
             # Position smaller prints into larger printer bed, roughly in the middle
-            A_large = printerbed_3d_array[:,:,ii]
-            A_small = voxel_3d_array[:,:,ii]
+            A_large = printerbed_3d_array[:, :, ii]
+            A_small = voxel_3d_array[:, :, ii]
             start_row = (A_large.shape[0] - A_small.shape[0]) // 2
             start_col = (A_large.shape[1] - A_small.shape[1]) // 2
 
-            A_large[start_row:start_row + A_small.shape[0], start_col:start_col + A_small.shape[1]] = A_small
-            printerbed_3d_array[:,:,ii] = A_large
+            A_large[
+                start_row : start_row + A_small.shape[0],
+                start_col : start_col + A_small.shape[1],
+            ] = A_small
+            printerbed_3d_array[:, :, ii] = A_large
 
         # Print the actual dsmn-file
         for layers in range(printerbed_3d_array.shape[2]):
             printer_hex = []
-            temp_array = np.transpose(printerbed_3d_array[:,:,layers])
+            temp_array = np.transpose(printerbed_3d_array[:, :, layers])
 
             for row in temp_array:
                 # Partitioning of rows in parts of length 4
-                chunks = [row[i:i+4] for i in range(0, len(row), 4)]
+                chunks = [row[i : i + 4] for i in range(0, len(row), 4)]
 
                 # Convert every chunk into binary number and then into hex number
-                hex_values = [hex(int(''.join(map(str, chunk.astype(int))), 2))[2:].upper() for chunk in chunks]
+                hex_values = [
+                    hex(int("".join(map(str, chunk.astype(int))), 2))[2:].upper()
+                    for chunk in chunks
+                ]
 
                 # Combine hex numbers
                 printer_hex.append(hex_values)
@@ -258,11 +288,13 @@ class PowderbedCodeFromSTL(Gcode):
                 for hex_values in printer_hex:
                     file.write("".join(hex_values) + "\n")
                 if self.debug_mode:
-                    file.write("-" * (int(self.NozzleNum/4)) + "\n") # line separator between layers
+                    file.write(
+                        "-" * (int(self.NozzleNum / 4)) + "\n"
+                    )  # line separator between layers
 
         # # Visualize voxels with pyvista
         # def visualize_voxels(voxel_centers):
-        
+
         #     # Create a point cloud representation
         #     point_cloud = pv.PolyData(voxel_centers) #pv.PointCloud(voxel_polydata)
 
@@ -275,7 +307,10 @@ class PowderbedCodeFromSTL(Gcode):
         log_file_path = out_dsmn.parent / out_log
         params_log = {
             "tot_voxel_num": np.count_nonzero(voxel_3d_array),
-            "tot_voxel_volume": np.count_nonzero(voxel_3d_array) * self.VoxelDimX * self.VoxelDimY * self.VoxelDimZ,
+            "tot_voxel_volume": np.count_nonzero(voxel_3d_array)
+            * self.VoxelDimX
+            * self.VoxelDimY
+            * self.VoxelDimZ,
             "tot_num_layers": unique_z.shape[0],
             "target_deviation": 0.05,
             "sliced_voxel_dim_x": sliced_voxel_dim_x,
@@ -291,7 +326,10 @@ class PowderbedCodeFromSTL(Gcode):
             # Number of voxels
             print(f"Number of voxels: {params_log['tot_voxel_num']}", file=f)
             # Total voxel volume
-            print(f"Print volume: {params_log['tot_voxel_volume']*1000:.3f} liters", file=f)
+            print(
+                f"Print volume: {params_log['tot_voxel_volume']*1000:.3f} liters",
+                file=f,
+            )
             # Number of layers
             print(f"Number of layers: {params_log['tot_num_layers']}", file=f)
             # Requested voxel dimensions
@@ -303,16 +341,35 @@ class PowderbedCodeFromSTL(Gcode):
             warning_x = ""
             warning_y = ""
             warning_z = ""
-            if np.abs(1 - params_log["sliced_voxel_dim_x"]/self.VoxelDimX) > params_log["target_deviation"]:
+            if (
+                np.abs(1 - params_log["sliced_voxel_dim_x"] / self.VoxelDimX)
+                > params_log["target_deviation"]
+            ):
                 warning_x = " \t -> Voxel size deviation threshold reached"
-            if np.abs(1 - params_log["sliced_voxel_dim_y"]/self.VoxelDimY) > params_log["target_deviation"]:
+            if (
+                np.abs(1 - params_log["sliced_voxel_dim_y"] / self.VoxelDimY)
+                > params_log["target_deviation"]
+            ):
                 warning_y = " \t -> Voxel size deviation threshold reached"
-            if np.abs(1 - params_log["sliced_voxel_dim_z"]/self.VoxelDimZ) > params_log["target_deviation"]:
+            if (
+                np.abs(1 - params_log["sliced_voxel_dim_z"] / self.VoxelDimZ)
+                > params_log["target_deviation"]
+            ):
                 warning_z = " \t -> Voxel size deviation threshold reached"
             print("Actual voxel dimensions:", file=f)
-            print(f"\t x: {params_log['sliced_voxel_dim_x']*1000:.3f} mm" + warning_x, file=f)
-            print(f"\t y: {params_log['sliced_voxel_dim_y']*1000:.3f} mm" + warning_y, file=f)
-            print(f"\t z: {params_log['sliced_voxel_dim_z']*1000:.3f} mm" + warning_z, file=f)
+            print(
+                f"\t x: {params_log['sliced_voxel_dim_x']*1000:.3f} mm" + warning_x,
+                file=f,
+            )
+            print(
+                f"\t y: {params_log['sliced_voxel_dim_y']*1000:.3f} mm" + warning_y,
+                file=f,
+            )
+            print(
+                f"\t z: {params_log['sliced_voxel_dim_z']*1000:.3f} mm" + warning_z,
+                file=f,
+            )
+
 
 class GcodeFromPoints(Gcode):
     """Gcode writer from path points."""
@@ -322,9 +379,9 @@ class GcodeFromPoints(Gcode):
         layer_num: float = 1,
         layer_height: float = 1,
         line_width: float = 1,
-        offset_from_origin: np.ndarray|bool = None,
+        offset_from_origin: np.ndarray | bool = None,
         unit: str = "mm",
-        standard: str = "ConcretePrinter", # TU Berlin ConcretePrinter, BAM ConcretePrinter_BAM !!
+        standard: str = "ConcretePrinter",  # TU Berlin ConcretePrinter, BAM ConcretePrinter_BAM !!
         coordinate_system: str = "absolute",
         nozzle_diameter: float = 0.4,
         kappa: float = 1,  # to compute extrusion only for TU printer
@@ -333,7 +390,7 @@ class GcodeFromPoints(Gcode):
         tool_number: int = 0,
         feedrate: int = 1800,
         fixed_feedrate: bool = False,
-        pumpspeed: float = None, # precentage of pumpspeed only for BAM printer
+        pumpspeed: float = None,  # precentage of pumpspeed only for BAM printer
         rotate: bool = False,
         density: float = 1,
         ramp: bool = False,
@@ -404,11 +461,11 @@ class GcodeFromPoints(Gcode):
 
         super().__init__(self.standard, **kwargs)
 
-        self.load_standard(standard) # function from base class
+        self.load_standard(standard)  # function from base class
 
     def head_tail(self):
         """create container of header and tail of gcode depending on selected standard"""
-        if self.standard == 'ConcretePrinter':
+        if self.standard == "ConcretePrinter":
             self.header = [
                 self.Absolute,
                 self.ExtruderAbsolute,
@@ -417,7 +474,7 @@ class GcodeFromPoints(Gcode):
             ]
             # Container of header of gcode
             self.tail = [self.ExtruderOFF, self.FanOFF, self.MotorOFF]
-        elif self.standard == 'ConcretePrinter_BAM':
+        elif self.standard == "ConcretePrinter_BAM":
             # used examples from Anthony for header and tail
             self.header = [
                 f"{self.LinearMove} {self.SetFeedRate}14000 {self.SetZ}500",
@@ -460,20 +517,21 @@ class GcodeFromPoints(Gcode):
 
         self.init_gcode()
 
-
-        if self.layer_num == 'given by file':
+        if self.layer_num == "given by file":
             # points include full path/all layers
-            self.gcode.append(f';==========Layers==========\n')
+            self.gcode.append(f";==========Layers==========\n")
             coordinates = self.points
             coordinates = np.round(np.vstack((coordinates, coordinates[0])), 5)
-            if self.standard == 'ConcretePrinter':  # TU printer needs extrusion info
-                E = 0 # TODO compute extrusion for that case
+            if self.standard == "ConcretePrinter":  # TU printer needs extrusion info
+                E = 0  # TODO compute extrusion for that case
                 for j, coord in enumerate(coordinates):
                     self.move(coord, e=np.round(E, 5), f=self.feedrate)
-            elif self.standard == 'ConcretePrinter_BAM':  # BAM printer needs no extrusion info
+            elif (
+                self.standard == "ConcretePrinter_BAM"
+            ):  # BAM printer needs no extrusion info
                 for j, coord in enumerate(coordinates):
-                    if j==0: # first point differently
-                        self.move([coord[0],coord[1]], f=self.feedrate)
+                    if j == 0:  # first point differently
+                        self.move([coord[0], coord[1]], f=self.feedrate)
                         self.elevate(coord[-1])
                         self.gcode.append(self.SpindleOn + "\n")  # for BAM printer
                     else:
@@ -482,25 +540,26 @@ class GcodeFromPoints(Gcode):
             # repeat on given layer for the given layer number and z accoring layer height
             z = 0
             for i in range(self.layer_num):
-                self.gcode.append(f';==========Layer {i+1}==========\n')
+                self.gcode.append(f";==========Layer {i+1}==========\n")
 
                 z += self.layer_height
                 coordinates = self.points
                 coordinates = np.round(np.vstack((coordinates, coordinates[0])), 5)
 
                 if not self.ramp:
-                    self.elevate(z) # stepping
+                    self.elevate(z)  # stepping
 
-                if self.standard == 'ConcretePrinter':
-                    self.reset_extrusion() # for TU printer
-                elif self.standard == 'ConcretePrinter_BAM':
+                if self.standard == "ConcretePrinter":
+                    self.reset_extrusion()  # for TU printer
+                elif self.standard == "ConcretePrinter_BAM":
                     if i == 0:
-                        self.move(coordinates[0],f=self.feedrate)
+                        self.move(coordinates[0], f=self.feedrate)
                         self.elevate(z)  # stepping
                         self.gcode.append(self.SpindleOn + "\n")  # for BAM printer
 
-
-                if self.standard == 'ConcretePrinter': # TU printer needs extrusion info
+                if (
+                    self.standard == "ConcretePrinter"
+                ):  # TU printer needs extrusion info
                     E = 0
                     for j, coord in enumerate(coordinates):
                         if i == 0 and j == 0:
@@ -515,18 +574,19 @@ class GcodeFromPoints(Gcode):
                             )
                         E += extrusion_length
                         if self.ramp:
-                            coord = list(coord)+[z] # ramping in z direction
+                            coord = list(coord) + [z]  # ramping in z direction
                         self.move(coord, e=np.round(E, 5), f=self.feedrate)
-                elif self.standard == 'ConcretePrinter_BAM': # BAM printer needs no extrusion info
+                elif (
+                    self.standard == "ConcretePrinter_BAM"
+                ):  # BAM printer needs no extrusion info
                     for j, coord in enumerate(coordinates):
                         if self.ramp:
                             coord = list(coord) + [z]  # ramping in z direction
 
-                        if i==0 and j==0:
-                            self.logger.info('start with second point here')
+                        if i == 0 and j == 0:
+                            self.logger.info("start with second point here")
                         else:
-                            self.move(coord,f=self.feedrate, s=self.pumpspeed)
-
+                            self.move(coord, f=self.feedrate, s=self.pumpspeed)
 
         self.write_gcode(out_gcode, self.gcode)
         out_log = f"log_{out_gcode.stem}.csv"
@@ -593,21 +653,20 @@ class GcodeFromPoints(Gcode):
         if self.offset_from_origin is None:
             self.offset_from_origin = np.zeros_like(points_form_file[0])
 
-        assert len(self.offset_from_origin) == np.array(points_form_file).shape[1], "Offset from origin must have the same dimension as the points"
+        assert (
+            len(self.offset_from_origin) == np.array(points_form_file).shape[1]
+        ), "Offset from origin must have the same dimension as the points"
         # subtract offset
-        self.points = (
-            points_form_file
-            + self.offset_from_origin
-        ).tolist()
+        self.points = (points_form_file + self.offset_from_origin).tolist()
 
         # check if point are given for each layer or only for one
         if np.array(self.points).shape[1] == 3:
             # get layer height and layer number from file
-            self.layer_height = 'given by file'
-            self.layer_num = 'given by file'
+            self.layer_height = "given by file"
+            self.layer_num = "given by file"
 
         if self.rotate:
-            if np.array(self.points).shape[1]==2:
+            if np.array(self.points).shape[1] == 2:
                 # add zero z coordinate
                 points_3d = np.zeros((np.array(self.points).shape[0], 3))
                 points_3d[:, :2] = self.points
@@ -662,7 +721,13 @@ class GcodeFromPoints(Gcode):
             cmd += f" {self.SetFeedRate}{f}"
         self.gcode.append(cmd + "\n")
 
-    def move(self, p: list, e: float|bool = None, f: float|bool = None, s: float|bool=None):
+    def move(
+        self,
+        p: list,
+        e: float | bool = None,
+        f: float | bool = None,
+        s: float | bool = None,
+    ):
         """Move to a point in XY or XYZ plane"""
         if len(p) == 2:
             cmd = f"{self.LinearMove} {self.SetX}{p[0]} {self.SetY}{p[1]}"
@@ -684,7 +749,7 @@ class GcodeFromPoints(Gcode):
         :param gcode: gcode string
         :type gcode: str
         """
-        self.gcode.append(';==========Post==========\n')
+        self.gcode.append(";==========Post==========\n")
         for line in self.tail:
             self.gcode.append(line + "\n")
         # logging.info(f"Write gcode to {filename}")
@@ -741,13 +806,9 @@ class GcodeFromPoints(Gcode):
         if len(current_pt) == 3:
             # points for all layers given
             self.material_consumption = (
-                    self.print_length
-                    * self.line_width
-                    * 1e-6
+                self.print_length * self.line_width * 1e-6
             )  # in Liters
-            self.time_consumption = (
-                    self.print_length / self.feedrate * 60
-            )  # in seconds
+            self.time_consumption = self.print_length / self.feedrate * 60  # in seconds
         else:
             self.material_consumption = (
                 self.print_length
@@ -761,10 +822,9 @@ class GcodeFromPoints(Gcode):
             )  # in seconds
         self.timedelta = timedelta(seconds=self.time_consumption)
         self.comment_info()
-        self.gcode.append(';==========Priming==========\n')
+        self.gcode.append(";==========Priming==========\n")
         for line in self.header:
             self.gcode.append(line + "\n")
-
 
     def set_fanspeed(self, speed):
         """Set fan speed
@@ -808,8 +868,8 @@ class GcodeFromPoints(Gcode):
         self.gcode.append(comment(f"Timestamp: {datetime.now()}"))
         self.gcode.append(comment(f"Length: {length}"))
         self.gcode.append(comment(f"Width: {width}"))
-        if self.layer_num == 'given by file':
-            height = np.array(self.points)[:,-1].max()
+        if self.layer_num == "given by file":
+            height = np.array(self.points)[:, -1].max()
         else:
             height = self.layer_height * self.layer_num
         self.gcode.append(comment(f"Height: {height}"))
@@ -837,9 +897,7 @@ class GcodeFromPoints(Gcode):
         )
         if self.offset_from_origin is not None:
             self.gcode.append(
-                comment(
-                    f"Original point: ({str(self.offset_from_origin)})"
-                )
+                comment(f"Original point: ({str(self.offset_from_origin)})")
             )
 
 
@@ -965,11 +1023,11 @@ class GcodeMultiplier(object):
         if auto_balance:
             for i in range(0, self.num_vertic):
                 for j in range(0, self.num_horizant):
-                    self.gcodelist[
-                        i * self.num_horizant + j
-                    ].points = self.auto_balance(
-                        self.grid[i * self.num_horizant + j],
-                        self.gcodelist[i * self.num_horizant + j].points,
+                    self.gcodelist[i * self.num_horizant + j].points = (
+                        self.auto_balance(
+                            self.grid[i * self.num_horizant + j],
+                            self.gcodelist[i * self.num_horizant + j].points,
+                        )
                     )
                     self.visualize_cache.append(
                         bcad.bounding_box(
@@ -1124,11 +1182,11 @@ class GcodeMultiplier(object):
         if auto_balance:
             for i in range(0, self.num_vertic):
                 for j in range(0, self.num_horizant):
-                    self.gcodelist[
-                        i * self.num_horizant + j
-                    ].points = self.auto_balance(
-                        self.grid[i * self.num_horizant + j],
-                        self.gcodelist[i * self.num_horizant + j].points,
+                    self.gcodelist[i * self.num_horizant + j].points = (
+                        self.auto_balance(
+                            self.grid[i * self.num_horizant + j],
+                            self.gcodelist[i * self.num_horizant + j].points,
+                        )
                     )
                     self.visualize_cache.append(
                         bcad.bounding_box(
